@@ -1,117 +1,82 @@
-const db = require("../db");
-const fs = require("fs");
-
-exports.getAllPagamentos = (req, res) => {
-  db.query("SELECT * FROM turmas", (err, results) => {
-    if (err) return res.status(500).json(err);
-    res.status(200).json(results);
-  });
-};
-
-exports.getPagamentosById = (req, res) => {
-  const id = req.params.id;
-  db.query("SELECT * FROM turmas WHERE id = ?", [id], (err, result) => {
-    if (err) return res.status(500).json(err);
-    res.status(200).json(result);
-  });
-};
-
-exports.getTurmaByFaculdadeId = (req, res) => {
-  const id = req.params.id;
-  db.query("SELECT * FROM turmas WHERE id = ?", [id], (err, result) => {
-    if (err) return res.status(500).json(err);
-    res.status(200).json(result);
-  });
-};
-
-exports.createTurma = (req, res) => {
-  const { faculdade_id, nome, ano_formatura } = req.body;
-  const query =
-    "INSERT INTO turmas (faculdade_id, nome, ano_formatura) VALUES (?, ?, ?)";
-  db.query(query, [faculdade_id, nome, ano_formatura], (err, result) => {
-    if (err) return res.status(500).json(err);
-    res.status(201).json({ id: result.insertId, ...req.body });
-  });
-};
-
-exports.updateTurma = (req, res) => {
-  const id = req.params.id;
-  const { faculdade_id, nome, ano_formatura } = req.body;
-  const query =
-    "UPDATE turmas SET faculdade_id = ?, nome = ?, ano_formatura = ? WHERE id = ?";
-  db.query(query, [faculdade_id, nome, ano_formatura, , id], (err) => {
-    if (err) return res.status(500).json(err);
-    res.status(200).json({ message: "Turma atualizado com sucesso!" });
-  });
-};
-
-exports.deleteTurma = (req, res) => {
-  const id = req.params.id;
-  db.query("DELETE FROM turmas WHERE id = ?", [id], (err) => {
-    if (err) return res.status(500).json(err);
-    res.status(200).json({ message: "Turma deletado com sucesso!" });
-  });
-};
-
-exports.getArquivosByTurmaId = (req, res) => {
-  const { id } = req.params;
-
-  db.query(
-    "SELECT nome_arquivo, tipo_mime, dados FROM arquivos WHERE id_turma = ?",
-    [id],
-    (err, results) => {
-      if (err) return res.status(500).json(err);
-
-      if (results.length === 0) {
-        return res.status(404).json({ message: "Nenhum arquivo encontrado para a turma especificada!" });
-      }
-
-      const arquivos = results.map((arquivo) => ({
-        nome_arquivo: arquivo.nome_arquivo,
-        tipo_mime: arquivo.tipo_mime,
-        dados: arquivo.dados.toString("base64")
-      }));
-
-      res.json(arquivos);
-    }
-  );
-};
+import pool from "../db.js"
 
 
+class PagamentosController {
+  async getAllPagamentos(req, res) {
+    const page = parseInt(req.query.page) || 1; // Página atual (default: 1)
+    const limit = parseInt(req.query.limit) || 10; // Itens por página (default: 10)
+    const offset = (page - 1) * limit; // Calcula o deslocamento
 
-exports.getArquivoById = (req, res) => {
-  const { id } = req.params;
-
-  db.query(
-    "SELECT nome_arquivo, dados, tipo_mime FROM arquivos WHERE id = ?",
-    [id],
-    (err, results) => {
-      if (err) return res.status(500).json(err);
-      if (results.length === 0)
-        return res.status(404).json({ message: "Arquivo não encontrado!" });
-
-      const { nome_arquivo, dados, tipo_mime } = results[0];
-
-      res.setHeader(
-        "Content-Disposition",
-        `attachment; filename="${nome_arquivo}"`
+    try {
+      const [results] = await pool.query(
+        "SELECT * FROM pagamentos LIMIT ? OFFSET ?",
+        [limit, offset]
       );
-      res.setHeader("Content-Type", tipo_mime);
-      res.send(dados);
+
+      const [countResult] = await pool.query(
+        "SELECT COUNT(*) AS total FROM pagamentos"
+      );
+      const total = countResult[0].total;
+      const totalPages = Math.ceil(total / limit);
+
+      res.status(200).json({
+        page,
+        totalPages,
+        totalItems: total,
+        itemsPerPage: limit,
+        data: results,
+      });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
     }
-  );
-};
+  }
 
-exports.deleteArquivo = (req, res) => {
-  const { id } = req.params;
+  async getPagamentosBySituacao(req, res) {
+    const situacao = req.params.id;
+    const { periodo } = req.query;
 
-  db.query("DELETE FROM arquivos WHERE id = ?", [id], (err, result) => {
-    if (err) return res.status(500).json(err);
+    let query = "SELECT * FROM pagamentos WHERE situacao = ?";
+    let params = [situacao];
 
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ message: "Arquivo não encontrado!" });
+    if (periodo) {
+      const dataAtual = new Date().toISOString().split("T")[0];
+      query += " AND vencimento BETWEEN ? AND ?";
+      params.push(periodo, dataAtual);
     }
 
-    res.status(200).json({ message: "Arquivo deletado com sucesso!" });
-  });
-};
+    try {
+      const [results] = await pool.query(query, params);
+      res.status(200).json(results);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+
+  async getPagamentosByIdBling(req, res) {
+    const id_bling = req.params.id;
+
+    try {
+      const [results] = await pool.query("SELECT * FROM pagamentos WHERE id_bling = ?", [id_bling]);
+      res.status(200).json(results);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+
+  async getPagamentosByNumeroDocumento(req, res) {
+    const { numeroDocumento } = req.query;
+
+    try {
+      const [results] = await pool.query(
+        "SELECT * FROM pagamentos WHERE numeroDocumento = ? ORDER BY dataEmissao DESC LIMIT 1",
+        [numeroDocumento]
+      );
+      res.status(200).json(results[0] || null);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+
+}
+
+export default new PagamentosController();

@@ -1,6 +1,6 @@
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
-const db = require("../db"); // Importa a conexão com o banco de dados
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import db from "../db"; // Importa a conexão com o banco de dados
 
 async function createUser({ aluno_id, email, senha, tipo }) {
   const hashedPassword = await bcrypt.hash(senha, 10);
@@ -34,10 +34,10 @@ async function verifyPassword(storedPassword, password) {
 
 function generateToken(user) {
   return jwt.sign(
-    { id: user.id, tipo: user.tipo, nome: user.nome, email: user.email },
+    { id: user.id, tipo: user.tipo, nome: user.nome, email: user.email, documento: user.documento },
     process.env.JWT_SECRET,
     { expiresIn: "24h" }
   );
 }
 
-module.exports = { createUser, findUserByEmail, verifyPassword, generateToken };
+export default { createUser, findUserByEmail, verifyPassword, generateToken };

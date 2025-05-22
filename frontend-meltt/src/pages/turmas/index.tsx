@@ -1,20 +1,22 @@
 import {
+  Box,
   Button,
-  CircularProgress,
   IconButton,
+  Modal,
   Paper,
   Slide,
   Stack,
   TableCell,
   TableRow,
   Tooltip,
+  Typography,
 } from "@mui/material";
 import BasicTable from "../../components/table";
 import { useEffect, useState } from "react";
-import { useTurmaContext } from "../../providers/turmaContext";
+import { useTurmaContext, Turma } from "../../providers/turmaContext";
 import { useNavigate } from "react-router-dom";
-import { apiDeleteData, apiGetData } from "../../services/api";
-import { IoMdAdd } from "react-icons/io";
+import { apiGetData } from "../../services/api";
+import { IoIosDocument, IoMdAdd } from "react-icons/io";
 import { jwtDecode } from "jwt-decode";
 import { getToken } from "../../utils/token";
 import { CustomJwtPayload } from "../../components/customDrawer";
@@ -24,52 +26,55 @@ import LoadingTable from "../../components/loadingTable";
 import { turmasColumns } from "./table/columns";
 import { format } from "date-fns";
 import { FaEye } from "react-icons/fa6";
-import { FaTrashAlt } from "react-icons/fa";
 import { MdModeEdit } from "react-icons/md";
 
-interface Turma {
-  id: number;
-  nome: string;
-  ano_formatura: any;
-  criado_em: any;
-}
 
 const TurmasPage = () => {
   const navigate = useNavigate();
   const { dispatchTurma } = useTurmaContext();
-  const [loading, setLoading] = useState(false);
-  const [loadingDelete, setLoadingDelete] = useState(false);
-  const [turmas, setTurmas] = useState([]);
+  const [page, setPage] = useState(1);
   const [onLoad, setOnLoad] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const [turmas, setTurmas] = useState([]);
+  const [totalPages, setTotalPages] = useState(0);
+
+  const [openModalDetails, setOpenModalDetails] = useState(false);
+
   const token = getToken();
   const decoded = token ? jwtDecode<CustomJwtPayload>(token) : null;
 
-  const fetchTurmas = async () => {
+  const fetchTurmas = async (page: number) => {
     setLoading(true);
-    try {
-      const response = await apiGetData("academic", "/turmas");
-      setTurmas(response);
-    } catch (error) {
-      toast.error("Erro ao buscar alunos");
+    if (decoded?.tipo === "ADMIN") {
+      try {
+        const response = await apiGetData("academic", `/turmas?page=${page}`);
+        setTotalPages(response.totalPages);
+        setTurmas(response.data);
+      } catch (error) {
+        toast.error("Erro ao buscar turmas");
+      }
+    } if (decoded?.tipo === 'ALUNO') {
+      try {
+        const response = await apiGetData("academic", `/turmas/${decoded?.turma_id}`);
+        setTurmas(response);
+      } catch (error) {
+        toast.error("Erro ao buscar turmas");
+      }
     }
 
     setLoading(false);
   };
 
-  const onClickDelete = async (row: Turma) => {
-    setLoadingDelete(true);
+  const handleChangePagination = (_: React.ChangeEvent<unknown>, value: number) => {
     try {
-      const response = await apiDeleteData("academic", `/turmas/${row.id}`);
-      if (response.message.includes("deletado")) {
-        fetchTurmas();
-        toast.success("Turma excluída com sucesso");
-      }
-      console.log("response", response);
+      fetchTurmas(value);
     } catch (error) {
-      toast.error("Erro ao excluir turma");
+      toast.error("Erro ao buscar Turmas");
     }
-    setLoadingDelete(false);
+    setPage(value);
   };
+
 
   const dataRowAdmin = (row: Turma) => {
     return (
@@ -91,17 +96,19 @@ const TurmasPage = () => {
         </TableCell>
         <TableCell align="left">
           <Stack direction={"row"}>
-            {decoded?.tipo === "ADMIN" && (
-              <Tooltip title="Editar Turma" arrow>
-                <IconButton onClick={() => navigate(`/turmas/edit/${row.id}`)}>
-                  {loadingDelete ? (
-                    <CircularProgress color="secondary" size={12} />
-                  ) : (
-                    <MdModeEdit color="#2d1c63" size={22} />
-                  )}
-                </IconButton>
-              </Tooltip>
-            )}
+            <Tooltip title="Editar Turma" arrow>
+              <IconButton onClick={() => {
+                dispatchTurma({ type: "SET_TURMA_SELECIONADA", payload: row });
+                navigate(`/turmas/edit/${row.id}`)
+              }}>
+                <MdModeEdit color="#2d1c63" size={22} />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Ver Estatuto">
+              <IconButton onClick={() => window.open(row.arquivo_url, "_blank")}>
+                <IoIosDocument color="#2d1c63" size={22} />
+              </IconButton>
+            </Tooltip>
             <Tooltip title="Visualizar Turma" arrow>
               <IconButton
                 onClick={() => navigate(`/turmas/view/${row.id}/pagina-turma`)}
@@ -109,13 +116,6 @@ const TurmasPage = () => {
                 <FaEye color="#2d1c63" size={22} />
               </IconButton>
             </Tooltip>
-            {decoded?.tipo === "ADMIN" && (
-              <Tooltip title="Deletar Turma" arrow>
-                <IconButton onClick={() => onClickDelete(row)}>
-                  <FaTrashAlt size={20} className="text-red-600" />
-                </IconButton>
-              </Tooltip>
-            )}
           </Stack>
         </TableCell>
       </TableRow>
@@ -141,6 +141,11 @@ const TurmasPage = () => {
           {row.criado_em ? format(row.criado_em, "dd/MM/yyyy") : "N/As"}
         </TableCell>
         <TableCell align="left">
+          <Tooltip title="Ver Estatuto">
+            <IconButton onClick={() => window.open(row.arquivo_url, "_blank")}>
+              <IoIosDocument color="#2d1c63" size={22} />
+            </IconButton>
+          </Tooltip>
           <Tooltip title="Ver página da turma" arrow>
             <IconButton
               onClick={() => navigate(`/turmas/view/${row.id}/pagina-turma`)}
@@ -154,7 +159,7 @@ const TurmasPage = () => {
   };
 
   useEffect(() => {
-    fetchTurmas();
+    fetchTurmas(1);
     setOnLoad(true);
   }, []);
 
@@ -211,14 +216,17 @@ const TurmasPage = () => {
           >
             {loading ? (
               <LoadingTable />
-            ) : turmas.length > 0 ? (
+            ) : turmas?.length > 0 ? (
               <BasicTable
+                totalPages={totalPages}
                 columns={turmasColumns}
                 rows={turmas}
                 loading={loading}
                 dataRow={
                   decoded?.tipo === "ADMIN" ? dataRowAdmin : dataRowStudent
                 }
+                page={page}
+                handleChangePagination={handleChangePagination}
               />
             ) : (
               <NoTableData
@@ -231,6 +239,31 @@ const TurmasPage = () => {
           </Paper>
         </Paper>
       </Slide>
+      <Modal
+        open={openModalDetails}
+        onClose={() => setOpenModalDetails(false)}
+        aria-labelledby="modal-modal-title"
+        aria-describedby="modal-modal-description"
+      >
+        <Box sx={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: 400,
+          bgcolor: 'background.paper',
+          borderRadius: 2,
+          boxShadow: 24,
+          p: 3,
+        }}>
+          <Typography color="textPrimary" variant="h6" component="h2">
+            Text in a modal
+          </Typography>
+          <Typography id="modal-modal-description" sx={{ mt: 2 }}>
+            Duis mollis, est non commodo luctus, nisi erat porttitor ligula.
+          </Typography>
+        </Box>
+      </Modal>
     </Stack>
   );
 };

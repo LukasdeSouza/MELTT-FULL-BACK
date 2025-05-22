@@ -245,7 +245,7 @@ const ContratosEventosPage = () => {
                           borderRadius: 2,
                         }}
                       >
-                        <Typography variant="body1" fontFamily={"Poppins"} color="primary" fontWeight={600}>
+                        <Typography variant="body1" color="primary" fontWeight={600}>
                           {column.name}
                         </Typography>
                         {column.items.map((item, index) => (
@@ -260,7 +260,7 @@ const ContratosEventosPage = () => {
                                 <CardContent>
                                   <Stack direction={"column"} gap={2}>
                                     <Stack direction={"column"} gap={1}>
-                                      <Typography variant="caption" color="textSecondary" fontFamily={"Poppins"}>
+                                      <Typography variant="caption" color="textSecondary">
                                         Criado em: {item.createdAt}
                                       </Typography>
                                     </Stack>

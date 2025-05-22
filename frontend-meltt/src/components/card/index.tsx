@@ -1,4 +1,4 @@
-import { Divider, Stack, Typography } from "@mui/material";
+import { Stack, Typography } from "@mui/material";
 import { ReactNode } from "react";
 
 const CustomCard = ({
@@ -35,14 +35,13 @@ const CustomCard = ({
                 fontSize: 18,
                 fontWeight: 600,
                 color: "#342394",
-                fontFamily: "Poppins",
               }}
             >
               {title}
             </Typography>
             <Typography
               color="textSecondary"
-              sx={{ fontSize: 12, fontWeight:'light', fontFamily: "Poppins" }}
+              sx={{ fontSize: 12, fontWeight:'light' }}
             >
               {subtitle}
             </Typography>

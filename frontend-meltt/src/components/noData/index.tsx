@@ -21,7 +21,7 @@ const NoTableData = ({
     >
       <Stack direction={"row"} alignItems={"center"}>
         <Stack direction={"column"} width={"320px"} gap={2}>
-          <Typography fontFamily={"Poppins"} variant="caption" color="textSecondary">
+          <Typography variant="caption" color="textSecondary">
             {pronoum == "she" ? "Nenhuma" : "Nenhum"} {pageName}{" "}
             {pronoum == "she" ? "cadastrada" : "cadastrado"} ainda! Comece agora
             e cadastre {pronoum == "she" ? "a sua primeira" : "o seu primeiro"}{" "}

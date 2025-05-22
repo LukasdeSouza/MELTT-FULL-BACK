@@ -21,13 +21,19 @@ const CustomTooltip = ({ payload, label }: { payload?: any; label?: any }) => {
 
   return (
     <div className="custom-tooltip bg-white shadow-md rounded-md p-2">
-      <small>{`Data: ${formattedDate}`}</small>
+      <small style={{color: 'black'}}>{`Data: ${formattedDate}`}</small>
       <hr />
-      {payload.map((entry: any, index: number) => (
-        <p key={index} style={{ color: entry.stroke }}>
-          {`${formatKey(entry.dataKey)}: ${entry.value}`}
-        </p>
-      ))}
+      {payload.map((entry: any, index: number) => {
+        const valorFormatado = new Intl.NumberFormat('pt-BR', {
+          style: 'currency',
+          currency: 'BRL',
+        }).format(entry.value);
+        return (
+          <p key={index} style={{ color: entry.stroke }}>
+            {`${formatKey(entry.dataKey)}: ${valorFormatado}`}
+          </p>
+        )
+      })}
     </div>
   );
 };
@@ -41,7 +47,7 @@ const CustomLegend = ({ payload }: { payload?: any }) => {
           key={index}
           style={{ color: entry.color }}
         >
-          {formatKey(entry.value)}
+          R$ {formatKey(entry.value)} por Dia de Vencimento
         </li>
       ))}
     </ul>

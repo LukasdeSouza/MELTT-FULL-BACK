@@ -1,14 +1,20 @@
-const express = require('express');
-const router = express.Router();
-const bcrypt = require("bcryptjs");
-const { createUser, findUserByEmail, verifyPassword, generateToken } = require('../models/user');
-const authMiddleware = require('../middlewares/auth');
-const connection = require('../db');
+// Bibliotecas
+import express from 'express';
+import bcrypt from "bcryptjs";
 
+// Modulos
+import authMiddleware from '../middlewares/auth';
+import connection from '../db';
+import { createUser, findUserByEmail, verifyPassword, generateToken } from '../models/user';
+
+// Instâncias
+const router = express.Router();
+
+// Rotas
 router.post('/register', async (req, res) => {
-  const { aluno_id, email, senha, tipo } = req.body;
-  console.log('req.body', req.body)
-  if(!aluno_id |!email || !senha || !tipo) {
+  const { aluno_id, email, documento = null, senha, tipo, id_bling = null } = req.body;
+
+  if (!aluno_id || !email || !senha || !tipo) {
     return res.status(400).json({ error: 'Nome, E-mail, Senha e Tipo são obrigatórios' });
   }
 
@@ -16,22 +22,27 @@ router.post('/register', async (req, res) => {
   if (user) {
     return res.status(400).json({ error: 'E-mail já cadastrado' });
   }
-  
+
   try {
-    const user = await createUser({ aluno_id, email, senha, tipo });
+    const user = await createUser({ aluno_id, email, documento, senha, tipo, id_bling });
+    console.log('createUser', user)
     res.status(201).json({ user, message: "Usuário gerado com sucesso!" });
   } catch (error) {
     res.status(500).json({ error: 'Houve um erro realizar seu cadastro. Tente novamente mais tarde' });
   }
 });
 
+
 router.post('/login', async (req, res) => {
   const { email, senha } = req.body;
   try {
     const user = await findUserByEmail(email);
     console.log('user', user);
-    if (!user || !(await verifyPassword(user.senha, senha))) {
-      return res.status(401).json({ error: 'E-mail ou Senha incorretos' });
+    if (!user) {
+      return res.status(401).json({ error: 'E-mail não cadastrado' });
+    }
+    if(user.senha !== senha) {
+      return res.status(401).json({ error: 'Senha incorreta' });
     }
     const token = generateToken(user);
     res.json({ token });
@@ -125,5 +136,4 @@ router.delete('/:id', authMiddleware, async (req, res) => {
   }
 });
 
-
-module.exports = router;
+export default router;

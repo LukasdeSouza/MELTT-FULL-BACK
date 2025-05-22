@@ -5,7 +5,6 @@ import {
   Box,
   Button,
   Card,
-  IconButton,
   Modal,
   Stack,
   TextField,
@@ -26,7 +25,7 @@ type DesktopLayoutProps = {
 };
 const DesktopLayout = ({ children }: DesktopLayoutProps) => {
   const { pathname } = useLocation();
-  const pathNameTransform = pathname.split("/")[1];
+  const pathNameTransform = pathname.split("/")[1]; // Quando converto a rota /usuarios, é omitido o acento agudo
   const token = getToken();
   const decoded = token ? jwtDecode<CustomJwtPayload>(token) : null;
 
@@ -37,7 +36,6 @@ const DesktopLayout = ({ children }: DesktopLayoutProps) => {
 
   const [profilePicture, setProfilePicture] = useState<string>("");
 
-  console.log('openprofilepicture', openProfileImage);
   const onSubmitTeacher = async (values: any) => {
     setLoadingSavePassword(true);
     // const { senha } = values;

@@ -1,6 +1,5 @@
 export const eventsColumns = [
-  { label: "Nome", key: "nome_evento" },
-  { label: "Descrição", key: "descricao_evento" },
-  { label: "Valor Ingresso", key: "valor_ingresso" },
-  { label: "Ações", key: "acoes" },
+  { label: "Nome do Evento", key: "access_code" },
+  {label: 'Data de formatra', key: "data_formatura"},
+  { label: "Ações", key: "actions" },
 ];

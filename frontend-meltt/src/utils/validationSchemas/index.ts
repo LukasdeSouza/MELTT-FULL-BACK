@@ -3,7 +3,20 @@ import * as Yup from "yup";
 export const validateStudentSchema = Yup.object({
   nome: Yup.string().required("o campo nome é obrigatório."),
   email: Yup.string().required("o campo email é obrigatório."),
-  plano: Yup.string().required("o campo plano é obrigatório."),
+  documento: Yup.string().required("o campo documento é obrigatório."),
+  senha: Yup.string().required("o campo senha é obrigatório."),
+  confirmar_senha: Yup.string().required("o campo confirmar senha é obrigatório."),
+  tipo: Yup.string().required("o campo tipo é obrigatório."),
+  turma_id: Yup.string().optional(),
+  telefone: Yup.string().required("o campo telefone é obrigatório."),
+  ativo: Yup.boolean().required("o campo ativo é obrigatório."),
+});
+
+export const validateUpdateStudentSchema = Yup.object({
+  nome: Yup.string().required("o campo nome é obrigatório."),
+  documento: Yup.string().required("o campo documento é obrigatório."),
+  telefone: Yup.string().required("o campo telefone é obrigatório."),
+  ativo: Yup.boolean().required("o campo ativo é obrigatório."),
 });
 
 export const validateFaculdadeSchema = Yup.object({
@@ -14,7 +27,31 @@ export const validateFaculdadeSchema = Yup.object({
 
 export const validateTurmaSchema = Yup.object({
   nome: Yup.string().required("o campo nome é obrigatório."),
+  identificador: Yup.string().required("o campo identificador é obrigatório."),
+  ano_formatura: Yup.string().required("o campo ano de formatura é obrigatório."),
+  regras_adesao: Yup.string().required("o campo regras de adesão é obrigatório."),
+  regras_rescisao: Yup.string().required("o campo regras de rescisão é obrigatório."),
+  regras_renegociacao: Yup.string().required("o campo regras de renegociação é obrigatório."),
+  planos_formatura: Yup.array().required("o campo planos de formatura é obrigatório."),
 });
+
+export const validateAdesaoSchema = Yup.object({
+  aluno_id: Yup.string().required("o campo aluno é obrigatório."),
+  turma_id: Yup.string().required("o campo turma é obrigatório."),
+  status: Yup.string().required("o campo ano de status é obrigatório."),
+});
+
+export const validateTarefaSchema = Yup.object({
+  nome: Yup.string().required("o campo nome é obrigatório."),
+  responsaveis: Yup.array().required("o campo responsáveis é obrigatório."),
+  atribuido_por: Yup.string().required("o campo atribuído por é obrigatório."),
+})
+
+export const validatePlanoSchema = Yup.object({
+  nome: Yup.string().required("o campo nome é obrigatório."),
+  valor: Yup.string().required("o campo valor é obrigatório."),
+  incluso: Yup.string().required("o campo incluso e detalhes é obrigatório."),
+})
 
 export const validateTeacherSchema = Yup.object({
   nome: Yup.string().required("o campo nome é obrigatório."),

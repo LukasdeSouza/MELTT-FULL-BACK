@@ -74,7 +74,6 @@ const ContratosPage = () => {
             <Typography
               color="textSecondary"
               variant={"body2"}
-              fontFamily={"Poppins"}
             >
               Leia o Contrato e estando de acordo, <b>assine clicando no botão abaixo</b>:
             </Typography>

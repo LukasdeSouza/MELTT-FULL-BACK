@@ -12,14 +12,11 @@ import {
   ListSubheader,
   Stack,
   Tab,
-  Tabs,
   Typography,
 } from "@mui/material";
 import { useCallback, useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { IoMdCloudDownload } from "react-icons/io";
 import { IoAdd } from "react-icons/io5";
-import { MdCloudUpload } from "react-icons/md";
 import { useNavigate, useParams } from "react-router-dom";
 import { SlMagnifier } from "react-icons/sl";
 import { apiGetData } from "../../../../services/api";
@@ -31,11 +28,10 @@ import { TbTrash } from "react-icons/tb";
 import { getToken } from "../../../../utils/token";
 import { jwtDecode } from "jwt-decode";
 import { CustomJwtPayload } from "../../../../components/customDrawer";
-import { downloadArquivo } from "../../../../utils/functions";
 import { FiMessageCircle } from "react-icons/fi";
 import { BiArrowBack } from "react-icons/bi";
-import { LoadingButton, TabContext, TabList, TabPanel } from "@mui/lab";
-import { FaSignature } from "react-icons/fa6";
+import { TabContext, TabList, TabPanel } from "@mui/lab";
+
 
 const PaginaDaTurmaPage = () => {
   const { id } = useParams();
@@ -52,12 +48,11 @@ const PaginaDaTurmaPage = () => {
 
   const [turma, setTurma] = useState<Turma[]>([]);
   const [topicos, setTopicos] = useState([]);
-  const [arquivosTurmas, setArquivosTurmas] = useState([]);
 
   const [file, setFile] = useState<File | null>(null);
 
-  const onChangeTab = (event: React.SyntheticEvent, newValue: string) => {
-    setTabView(newValue);
+  const onChangeTab = (_: React.SyntheticEvent, newValue: string) => {
+    setTabView(newValue)
   };
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
@@ -113,9 +108,9 @@ const PaginaDaTurmaPage = () => {
   const fetchArquivos = async () => {
     try {
       await apiGetData("academic", `/turmas/arquivos/turma/${id}`).then(
-        (data) => {
-          setArquivosTurmas(data);
-        }
+        (data) => data
+          // setArquivosTurmas(data);
+        
       );
     } catch (error: any) {
       toast.error(error.response.data.message);
@@ -185,7 +180,6 @@ const PaginaDaTurmaPage = () => {
             <Typography
               color="primary"
               variant="h6"
-              fontFamily={"Poppins"}
               fontWeight={600}
             >
               Página da Turma -{" "}
@@ -199,9 +193,8 @@ const PaginaDaTurmaPage = () => {
           <TabContext value={tabView}>
             <TabList onChange={onChangeTab} aria-label="lab API tabs example">
               <Tab label="Postagens" value={"0"} />
-              <Tab label="Arquivos da Turma" value={"1"} />
             </TabList>
-            <TabPanel value={"0"}>
+            <TabPanel value={"0"} sx={{mt: 4}}>
               <Stack direction={"column"} mt={-4} gap={1}>
                 <Stack
                   direction={"row"}
@@ -211,7 +204,6 @@ const PaginaDaTurmaPage = () => {
                   <Typography
                     color="primary"
                     variant="body2"
-                    fontFamily={"Poppins"}
                   ></Typography>
                   {decoded?.tipo === "ADMIN" && (
                     <Button
@@ -264,13 +256,11 @@ const PaginaDaTurmaPage = () => {
                             secondary={`Descrição: ${item.descricao}`}
                             primaryTypographyProps={{
                               color: "primary",
-                              fontFamily: "Poppins",
                               fontSize: "14px",
                               fontWeight: 600,
                             }}
                             secondaryTypographyProps={{
                               fontSize: "12px",
-                              fontFamily: "Poppins",
                             }}
                           />
                         </ListItemButton>
@@ -287,7 +277,7 @@ const PaginaDaTurmaPage = () => {
                 </List>
               </Stack>
             </TabPanel>
-            <TabPanel value={"1"}>
+            {/* <TabPanel value={"1"}>
               <Stack direction={"column"} mt={-4} gap={1}>
                 <Stack
                   direction={"row"}
@@ -297,7 +287,6 @@ const PaginaDaTurmaPage = () => {
                   <Typography
                     color="primary"
                     variant="body2"
-                    fontFamily={"Poppins"}
                   ></Typography>
                   {decoded?.tipo === "ADMIN" ? (
                     <Button
@@ -367,7 +356,6 @@ const PaginaDaTurmaPage = () => {
                             secondary={item.tipo_mime}
                             primaryTypographyProps={{
                               color: "primary",
-                              fontFamily: "Poppins",
                               fontSize: "14px",
                             }}
                             secondaryTypographyProps={{
@@ -380,7 +368,7 @@ const PaginaDaTurmaPage = () => {
                   )}
                 </List>
               </Stack>
-            </TabPanel>
+            </TabPanel> */}
           </TabContext>
         </Box>
       </Stack>

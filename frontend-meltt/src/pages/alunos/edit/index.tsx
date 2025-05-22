@@ -1,18 +1,21 @@
 import {
   Button,
   FormControl,
+  FormControlLabel,
+  FormGroup,
   InputLabel,
   MenuItem,
   Paper,
   Select,
   Stack,
+  Switch,
   TextField,
   Typography,
 } from "@mui/material";
 import { useNavigate, useParams } from "react-router-dom";
 import { Formik } from "formik";
 
-import { validateStudentSchema } from "../../../utils/validationSchemas";
+import { validateStudentSchema, validateUpdateStudentSchema } from "../../../utils/validationSchemas";
 import toast from "react-hot-toast";
 import { useEffect, useState } from "react";
 import "dayjs/locale/pt-br";
@@ -22,6 +25,8 @@ import { LoadingButton } from "@mui/lab";
 import { BiSave } from "react-icons/bi";
 import { useAlunoContext } from "../../../providers/alunoContext";
 import { initialValuesAluno } from "../../../initialValues";
+import formatPhoneNumber from "../../../utils/formatters/masks/phoneNumberMask.js";
+import resetPhoneNumber from "../../../utils/formatters/masks/resetPhoneNumber.js";
 
 export type StudentInfo = {
   educacao_basica: string | undefined;
@@ -38,16 +43,17 @@ export type StudentInitialValuesFn = (
 const AlunosPageEdit = () => {
   const navigate = useNavigate();
   const { stateAluno } = useAlunoContext();
+  const [tipoUsuario, setTipoUsuario] = useState(null);
 
   const { id } = useParams();
 
-  const [faculdades, setFaculdades] = useState([]);
   const [turmas, setTurmas] = useState([]);
 
   const [openLoadingBackdrop, setOpenLoadingBackdrop] = useState(false);
   const [loadingAluno, setLoadingAluno] = useState(false);
-  const [loadingFaculdades, setLoadingFaculdades] = useState(false);
   const [loadingTurmas, setLoadingTurmas] = useState(false);
+
+  const tiposUsuario = ["ADMIN", "ALUNO", "ASSOCIACAO"];
 
   const getAlunosInitialValue = Object.keys(initialValuesAluno).reduce(
     (acc, key) => {
@@ -60,46 +66,86 @@ const AlunosPageEdit = () => {
     {} as any
   );
 
-  const fetchFaculdades = async () => {
-    setLoadingFaculdades(true);
-    await apiGetData("academic", `/faculdades`).then((data) =>
-      setFaculdades(data)
-    );
-    setLoadingFaculdades(false);
-  };
-
   const fetchTurmas = async () => {
     setLoadingTurmas(true);
-    await apiGetData("academic", `/turmas`).then((data) => setTurmas(data));
+    await apiGetData("academic", `/turmas`).then((response) => {
+      console.log(response.data)
+      setTurmas(response.data)
+    });
     setLoadingTurmas(false);
   };
 
   const onSubmitAluno = async (values: any) => {
-    setLoadingAluno(true);
     try {
       if (id) {
-        const response = await apiPutData("academic", `/alunos/${id}`, values);
-        console.log("response edit", response);
-        if (response.value?.id) {
+        setLoadingAluno(true);
+        const { telefone, nome, documento, ativo } = values;
+        const telefoneApenasNumeros = resetPhoneNumber(telefone);
+        const valuesToUpdate = { telefone: telefoneApenasNumeros, nome, documento, ativo };
+        console.log("valuesToUpdate", valuesToUpdate);
+        const response = await apiPutData("academic", `/usuarios/${id}`, valuesToUpdate);
+        console.log("response", response);
+        if (response !== null) {
           toast.success("Aluno atualizado com sucesso");
-          navigate("/alunos");
+          navigate("/usuarios");
         }
       } else {
-        const response = await apiPostData("academic", "/alunos", values);
+        console.log("aqui");
+        let newTurma_id;
 
-        if (response.id) {
-          toast.success("Aluno salvo com sucesso");
-          navigate("/alunos");
+        const { senha, confirmar_senha, ativo, documento, tipo, turma_id, telefone, ...rest } = values;
+        const telefoneApenasNumeros = resetPhoneNumber(telefone);
+        if (senha !== confirmar_senha) {
+          toast.error("As senhas não conferem");
+        }
+        if (turma_id === "") {
+          newTurma_id = null;
+          values = { ...rest, senha, documento, tipo, turma_id: newTurma_id, ativo: ativo ? 1 : 0, telefone: telefoneApenasNumeros };
+        } else {
+          values = { ...rest, senha, documento, tipo, turma_id, ativo: ativo ? 1 : 0, telefone: telefoneApenasNumeros };
+        }
+        console.log("values", values);
+        setLoadingAluno(true);
+        if (tipo === "ALUNO") {
+          console.log(documento)
+          const response = await apiGetData("academic", `/pagamentos/documentos?numeroDocumento=${documento}`);
+
+          console.log("response", response);
+
+          if (response.id === null) {
+            toast.error("Este aluno não possui nem vínculo de pagamento no Bling");
+          }
+
+          if (response.id) {
+            values.id_bling = response.id_bling;
+
+            console.log("values2", values);
+            const responseAluno = await apiPostData("academic", `/usuarios`, values);
+
+            console.log("responseAluno", responseAluno);
+
+            if (responseAluno.id) {
+              toast.success("Aluno salvo com sucesso");
+              navigate("/usuarios");
+            }
+          }
+        } else {
+          const response = await apiPostData("academic", "/usuarios", values);
+          console.log("response", response);
+          if (response.id) {
+            toast.success("Usuário criado com sucesso");
+            navigate("/usuarios");
+          }
         }
       }
     } catch (error) {
       toast.error("Erro ao salvar aluno");
+    } finally {
+      setLoadingAluno(false);
     }
-    setLoadingAluno(false);
   };
 
   useEffect(() => {
-    fetchFaculdades();
     fetchTurmas();
   }, []);
 
@@ -128,11 +174,15 @@ const AlunosPageEdit = () => {
           <Formik
             initialValues={{
               ...getAlunosInitialValue,
+              telefone: formatPhoneNumber(getAlunosInitialValue.telefone),
             }}
-            validationSchema={validateStudentSchema}
-            onSubmit={(values: any) => onSubmitAluno(values)}
+            validationSchema={id ? validateUpdateStudentSchema : validateStudentSchema}
+            onSubmit={(values: any) => {
+              console.log(values)
+              onSubmitAluno(values)
+            }}
           >
-            {({ values, errors, handleChange, handleSubmit }) => (
+            {({ values, errors, handleChange, handleSubmit, setFieldValue }) => (
               <form
                 className="h-[100%] flex flex-col justify-between"
                 onSubmit={handleSubmit}
@@ -146,7 +196,7 @@ const AlunosPageEdit = () => {
                 <Stack padding={2} gap={2} width={"100%"}>
                   <Stack direction={"column"}>
                     <Typography fontFamily={"Poppins"} fontWeight={600}>
-                      Dados do Aluno
+                      Dados do Usuário
                     </Typography>
                     <Typography
                       fontFamily={"Poppins"}
@@ -160,98 +210,146 @@ const AlunosPageEdit = () => {
                   <Stack width={"100%"} direction={"row"} gap={2}>
                     <TextField
                       fullWidth
-                      focused
                       label="Nome"
                       name="nome"
-                      placeholder="nome completo do aluno"
+                      placeholder="Digite seu nome"
                       size="small"
-                      value={values.nome}
+                      value={values.nome ?? ""}
                       error={Boolean(errors.nome)}
                       onChange={handleChange}
                     />
                     <TextField
                       fullWidth
-                      focused
-                      label="E-mail"
-                      name="email"
-                      placeholder="fulanodetal@gmail.com"
-                      size="small"
-                      value={values.email}
-                      error={Boolean(errors.email)}
-                      onChange={handleChange}
-                    />
-                  </Stack>
-                  <Stack width={"100%"} direction={"row"} gap={2}>
-                    <TextField
-                      focused
                       label="Telefone Celular"
                       name="telefone"
                       placeholder="(XX) XXXXX-XXXX"
                       size="small"
-                      value={values.telefone}
-                      onChange={handleChange}
-                    />
-                    <TextField
-                      fullWidth
-                      focused
-                      label="Plano da Formatura"
-                      name="plano"
-                      placeholder="ex: Básico, Completo"
-                      size="small"
-                      value={values.plano}
-                      error={Boolean(errors.plano)}
-                      onChange={handleChange}
+                      value={values.telefone ?? ""}
+                      error={Boolean(errors.telefone)}
+                      onChange={(e) => {
+                        const formattedValue = formatPhoneNumber(e.target.value);
+                        setFieldValue("telefone", formattedValue);
+                      }}
+                      inputProps={{ maxLength: 15 }}
                     />
                   </Stack>
                   <Stack width={"100%"} direction={"row"} gap={2}>
-                    <FormControl fullWidth>
-                      <InputLabel sx={{ p: 0.5, bgcolor: "#fff" }}>Faculdade</InputLabel>
-                      <Select
+                    {!id && (
+                      <TextField
                         fullWidth
-                        name="faculdade"
-                        disabled={loadingFaculdades}
+                        label="Email"
+                        name="email"
+                        placeholder="email@example.com"
                         size="small"
-                        value={values.faculdade}
+                        value={values.email ?? ""}
+                        error={Boolean(errors.email)}
                         onChange={handleChange}
-                      >
-                        {faculdades.map((faculdade: any) => (
-                          <MenuItem value={faculdade.id}>
-                            {faculdade.nome}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
-                    <FormControl fullWidth>
-                      <InputLabel sx={{ p: 0.5, bgcolor: "#fff" }}>Turma</InputLabel>
-                      <Select
-                        fullWidth
-                        name="turma_id"
-                        size="small"
-                        value={values.turma}
-                        disabled={loadingTurmas}
-                        onChange={handleChange}
-                      >
-                        {turmas.map((turma: any) => (
-                          <MenuItem value={turma.id}>{turma.nome}</MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
+                      />
+                    )}
+                    <TextField
+                      sx={{ width: id ? "50%" : "100%" }}
+                      label="Documento"
+                      name="documento"
+                      placeholder="RG ou CPF"
+                      size="small"
+                      value={values.documento ?? ""}
+                      error={Boolean(errors.documento)}
+                      onChange={handleChange}
+                    />
                   </Stack>
-                  <Stack width={"40%"}>
-                    <FormControl fullWidth>
-                      <InputLabel sx={{ p: 0.5, bgcolor: "#fff" }}>Formatura foi paga integralmente?</InputLabel>
-                      <Select
+                  {!id && (
+                    <Stack width={"100%"} direction={"row"} gap={2}>
+                      <TextField
                         fullWidth
-                        name="formatura_paga"
+                        label="Senha"
+                        name="senha"
+                        placeholder="Digite sua senha"
                         size="small"
-                        value={values.formatura_paga}
+                        value={values.senha ?? ""}
+                        error={Boolean(errors.senha)}
                         onChange={handleChange}
-                      >
-                        <MenuItem value={1}>Sim, já foi paga</MenuItem>
-                        <MenuItem value={0}>Não foi paga</MenuItem>
-                      </Select>
+                      />
+                      <TextField
+                        sx={{ width: "100%" }}
+                        label="Confirmar Senha"
+                        name="confirmar_senha"
+                        placeholder="Digite sua senha novamente"
+                        size="small"
+                        value={values.confirmar_senha ?? ""}
+                        error={Boolean(errors.confirmar_senha)}
+                        onChange={handleChange}
+                      />
+                    </Stack>
+                  )}
+                  {!id && (
+                    <Stack width={"100%"} direction={"row"} gap={2}>
+                      <FormControl sx={{ width: "50%" }} size="small">
+                        <InputLabel
+                          id="tipo"
+                          sx={{
+                            backgroundColor: "white",
+                            px: 0.5,
+                          }}
+                        >
+                          Tipo de Usuário
+                        </InputLabel>
+                        <Select
+                          labelId="tipo"
+                          name="tipo"
+                          value={values.tipo ?? ""}
+                          disabled={loadingTurmas}
+                          onChange={(event) => {
+                            handleChange(event); // Mantém a funcionalidade do Formik
+                            setTipoUsuario(event.target.value); // Executa a outra função desejada
+                          }}
+                        >
+                          {tiposUsuario.map((tipo: string) => (
+                            <MenuItem key={tipo} value={tipo}>
+                              {tipo}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                      <FormControl sx={{ width: "50%", visibility: tipoUsuario == "ALUNO" ? "visible" : "hidden" }} size="small">
+                        <InputLabel
+                          id="turma-label"
+                          sx={{
+                            backgroundColor: "white",
+                            px: 0.5,
+                          }}
+                        >
+                          Turma
+                        </InputLabel>
+                        <Select
+                          labelId="turma-label"
+                          name="turma_id"
+                          value={turmas.some((t: { id: number }) => t.id === values.turma_id) ? values.turma_id : ""}
+                          disabled={loadingTurmas}
+                          onChange={handleChange}
+                        >
+                          {turmas.map((turma: { id: number, nome: string }) => (
+                            <MenuItem key={turma.id} value={turma.id}>
+                              {turma.nome}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    </Stack>
+                  )}
+                  <Paper elevation={0} sx={{ width: "50%", padding: 0, margin: 0, alignSelf: "start" }}>
+                    <FormControl component="fieldset">
+                      <FormGroup aria-label="position" row>
+                        <FormControlLabel
+                          name="ativo"
+                          control={<Switch checked={values.ativo}
+                            onChange={(e) => setFieldValue('ativo', e.target.checked)} color="primary"
+                          />}
+                          label="Ativo"
+                          labelPlacement="start"
+                        />
+                      </FormGroup>
                     </FormControl>
-                  </Stack>
+                  </Paper >
                 </Stack>
                 <Stack
                   width={"100%"}
@@ -265,7 +363,7 @@ const AlunosPageEdit = () => {
                     color="primary"
                     variant="outlined"
                     size="small"
-                    onClick={() => navigate("/alunos")}
+                    onClick={() => navigate("/usuarios")}
                     sx={{ width: 120, borderRadius: 2, fontFamily: "Poppins" }}
                   >
                     Voltar

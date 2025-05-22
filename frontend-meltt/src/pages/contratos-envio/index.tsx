@@ -8,7 +8,6 @@ import {
   MenuItem,
   Paper,
   Select,
-  SelectChangeEvent,
   Slide,
   Stack,
   TableCell,
@@ -16,15 +15,11 @@ import {
   Typography,
 } from "@mui/material";
 import BasicTable from "../../components/table";
-import { SetStateAction, useCallback, useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useCallback, useEffect, useState } from "react";
 import { apiGetData } from "../../services/api";
 import { contratosColumns } from "./columns";
 import LoadingTable from "../../components/loadingTable";
 import NoTableData from "../../components/noData";
-import { getToken } from "../../utils/token";
-import { jwtDecode } from "jwt-decode";
-import { CustomJwtPayload } from "../../components/customDrawer";
 import { format } from "date-fns";
 import CustomModal from "../../components/modal";
 import { useDropzone } from "react-dropzone";
@@ -37,11 +32,8 @@ import { FaFileSignature } from "react-icons/fa6";
 import { MdError } from "react-icons/md";
 import { PDFDocument } from "pdf-lib";
 
+
 const ContratosEnvioPage = () => {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const token = getToken();
-  const decoded = token ? jwtDecode<CustomJwtPayload>(token) : null;
   const [onLoad, setOnLoad] = useState(false);
   const [openModal, setOpenModal] = useState(false);
 
@@ -154,13 +146,6 @@ const ContratosEnvioPage = () => {
       )}`;
 
       console.log("BASE64", base64File);
-
-      let dataObj = {
-        user_id: associacao?.id,
-        assinado: 0,
-        associacao: associacao?.nome,
-        contrato_pdf: base64File,
-      };
 
       // const responseSaveContrato = await fetch(
       //   `${import.meta.env.VITE_ACADEMIC_API_URL}/contratos`,
@@ -309,13 +294,16 @@ const ContratosEnvioPage = () => {
                 rows={listContratos}
                 loading={false}
                 dataRow={dataRow}
+                handleChangePagination={() => {}}
+                page={1}
+                totalPages={1}
               />
             ) : (
               <NoTableData
                 pronoum={"he"}
                 pageName="Contrato"
                 disabledButton={true}
-                onClickAction={() => navigate("/atividades/edit")}
+                onClickAction={() => {}}
               />
             )}
           </Paper>

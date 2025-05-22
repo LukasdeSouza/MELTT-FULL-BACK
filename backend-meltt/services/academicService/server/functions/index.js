@@ -1,4 +1,4 @@
-const { Bancos, Boletos, StreamToPromise } = require("gerar-boletos");
+import { Bancos, Boletos, StreamToPromise } from "gerar-boletos";
 
 export function calcularNossoNumero(
   cooperativa,

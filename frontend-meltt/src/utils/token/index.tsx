@@ -11,9 +11,12 @@ export const getToken = () => {
   }
 };
 
-export const removeToken = () => {
+export const removeAllTokens = () => {
   localStorage.removeItem("@meltt-user-token");
+  localStorage.removeItem("bling-access-token");
+  localStorage.removeItem("bling-refresh-token");
 }
+
 
 export const setBlingAccessToken = (token: string) => {
   localStorage.setItem("bling-access-token", token);

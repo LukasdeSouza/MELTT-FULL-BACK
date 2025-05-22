@@ -7,48 +7,21 @@ import {
   Typography,
 } from "@mui/material";
 import { useEffect, useState } from "react";
-import { HiOutlineClipboardDocument } from "react-icons/hi2";
 import BasicTable from "../../../components/table";
 import { apiGetData } from "../../../services/api";
-import { format } from "date-fns";
-import { dashboardActivitiesColumns, dashboarStudentsColumns } from "./columns";
+import { dashboarStudentsColumns } from "./columns";
 import LoadingTable from "../../../components/loadingTable";
 import BoxDashboardValues from "../../../components/box/dashboardValues";
-import CustomLineChart from "../../../components/charts/line";
+import toast from "react-hot-toast";
+import CustomBarChart from "../../../components/charts/bar";
 
 const DashboardFornecedoresPage = () => {
   const [onLoad, setOnLoad] = useState(false);
   const [loading, setLoading] = useState(false);
   const [listFornecedores, setListFornecedores] = useState<any[]>([]);
-  const [listAtividades, setListAtividades] = useState<any[]>([]);
 
-  const dataRowActivities = (row: any) => {
-    return (
-      <TableRow
-        key={row.name}
-        sx={{
-          "&:last-child td, &:last-child th": { border: 0 },
-          " &:hover": { bgcolor: "#F7F7F7", cursor: "pointer" },
-        }}
-      >
-        <TableCell component="th" scope="row">
-          <Stack direction={"column"} gap={0.5}>
-            <Typography variant="body1" color="primary" fontWeight={600}>
-              {row.objetivo}
-            </Typography>
-            <Stack direction={"row"} gap={1}>
-              <HiOutlineClipboardDocument className="text-gray-400" />
-              <Typography fontSize={10} color="textSecondary">
-                {format(row.data_atividade, "dd/MM/yyyy")}
-              </Typography>
-            </Stack>
-          </Stack>
-        </TableCell>
-        <TableCell align="left">{row.aluno_nome}</TableCell>
-        <TableCell align="left">{row.materia}</TableCell>
-      </TableRow>
-    );
-  };
+  const [totalPagamentosEfetuados, setTotalPagamentosEfetuados] = useState(0);
+  const [totalPagamentosNaoEfetuados, setTotalPagamentosNaoEfetuados] = useState(0);
 
   const dataRowFornecedores = (row: any) => {
     return (
@@ -71,15 +44,34 @@ const DashboardFornecedoresPage = () => {
     );
   };
 
+  const fetchFornecedores = async () => {
+    try {
+      let response = await apiGetData("academic", `/fornecedores`);
+      setListFornecedores(response.data);
+
+      const { efetuados, naoEfetuados } = response.data.reduce(
+        (acc: { efetuados: number; naoEfetuados: number; }, fornecedor: { valor_cotado: string; status: string; }) => {
+          const valor = parseFloat(fornecedor.valor_cotado) || 0;
+          if (fornecedor.status === "Pagamento efetuado") {
+            acc.efetuados += valor;
+          } else if (fornecedor.status === "Pagamento não efetuado") {
+            acc.naoEfetuados += valor;
+          }
+          return acc;
+        },
+        { efetuados: 0, naoEfetuados: 0 }
+      );
+
+      setTotalPagamentosEfetuados(efetuados);
+      setTotalPagamentosNaoEfetuados(naoEfetuados);
+    } catch (error) {
+      toast.error("Erro ao buscar fornecedores");
+    }
+  }
+
   useEffect(() => {
     setLoading(false);
-    // apiGetData("academic", "/atividades/getAll").then((res) =>
-    //   setListAtividades(res.slice(0, 5))
-    // );
-    apiGetData("academic", `/fornecedores`).then((res) =>
-      setListFornecedores(res.slice(0, 5))
-    );
-
+    fetchFornecedores();
     setOnLoad(true);
   }, []);
 
@@ -112,106 +104,16 @@ const DashboardFornecedoresPage = () => {
           timeout={300}
         >
           <Stack direction={"row"} justifyContent={"space-between"}>
-            <BoxDashboardValues title="Valor recebido" />
-            <BoxDashboardValues title="Valor a receber" />
-            <BoxDashboardValues title="Total inadimplente" />
+            <BoxDashboardValues title="Valor Pago a Fornecedores" valor={totalPagamentosEfetuados} />
+            <BoxDashboardValues title="Valor em Aberto" valor={totalPagamentosNaoEfetuados}/>
           </Stack>
         </Slide>
         <Slide direction="right" in={onLoad} mountOnEnter>
           <Stack direction={"column"}>
-            <CustomLineChart
-              data={[
-                {
-                  data_valor: "2021-01-01",
-                  valor_pago: 500,
-                },
-                {
-                  data_valor: "2021-02-01",
-                  valor_pago: 2000,
-                },
-                {
-                  data_valor: "2021-03-01",
-                  valor_pago: 1500,
-                },
-                {
-                  data_valor: "2021-04-01",
-                  valor_pago: 3000,
-                },
-              ]}
+            <CustomBarChart
+              data={listFornecedores.filter(f => f.valor_cotado && f.cnpj)}
             />
             <Stack direction={"row"} gap={4}>
-              <Paper
-                elevation={0}
-                sx={{
-                  p: 4,
-                  flexGrow: 1,
-                  width: "100%",
-                  height: "calc(100vh - 200px)",
-                  borderRadius: 4,
-                }}
-              >
-                <Paper
-                  elevation={0}
-                  sx={{
-                    height: "100%",
-                    overflow: "auto",
-                    "&::-webkit-scrollbar": {
-                      width: "8px",
-                      height: "12px",
-                    },
-                    "&::-webkit-scrollbar-thumb": {
-                      backgroundColor: "#ddd",
-                      borderRadius: "12px",
-                    },
-                    "&::-webkit-scrollbar-track": {
-                      background: "#EFEFEF",
-                    },
-                  }}
-                >
-                  <Stack direction={"row"} justifyContent={"space-between"}>
-                    <Typography
-                      color="primary"
-                      variant="body1"
-                      fontWeight={600}
-                      fontFamily={"Poppins"}
-                    >
-                      Detalhamentos dos pagamentos
-                    </Typography>
-                    {/* <Typography
-                    color="textSecondary"
-                    variant="subtitle2"
-                    fontFamily={"Poppins"}
-                    sx={{mr: 2}}
-                  >
-                    total de atividades: {listAtividades?.length}
-                  </Typography> */}
-                  </Stack>
-                  {loading ? (
-                    <LoadingTable />
-                  ) : listAtividades.length > 0 ? (
-                    <BasicTable
-                      columns={dashboardActivitiesColumns}
-                      rows={listAtividades}
-                      loading={false}
-                      dataRow={dataRowActivities}
-                    />
-                  ) : (
-                    <Stack
-                      height={"100%"}
-                      alignItems={"center"}
-                      justifyContent={"center"}
-                    >
-                      <Typography
-                        textAlign={"center"}
-                        color="textSecondary"
-                        variant="subtitle2"
-                      >
-                        Desculpe, nenhuma informação encontrada 🙈
-                      </Typography>
-                    </Stack>
-                  )}
-                </Paper>
-              </Paper>
               <Paper
                 elevation={0}
                 sx={{
@@ -247,17 +149,16 @@ const DashboardFornecedoresPage = () => {
                     mb={2}
                   >
                     <Typography
-                      color="primary"
+                      color="secondary"
                       variant="body1"
                       fontWeight={600}
-                      fontFamily={"Poppins"}
+                      fontFamily={'Poppins'}
                     >
                       Fornecedores Cadastrados
                     </Typography>
                     <Typography
                       color="textSecondary"
                       variant="subtitle2"
-                      fontFamily={"Poppins"}
                       sx={{ mr: 2 }}
                     >
                       total de fornecedores: {listFornecedores?.length}
@@ -271,6 +172,9 @@ const DashboardFornecedoresPage = () => {
                       rows={listFornecedores}
                       loading={false}
                       dataRow={dataRowFornecedores}
+                      handleChangePagination={() => { }}
+                      page={1}
+                      totalPages={1}
                     />
                   ) : (
                     <Stack

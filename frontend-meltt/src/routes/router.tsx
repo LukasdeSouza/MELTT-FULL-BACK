@@ -13,25 +13,35 @@ import SplashScreen from "../pages/splash";
 import TurmasPage from "../pages/turmas";
 import PagamentosPage from "../pages/pagamentos";
 import EventosPage from "../pages/eventos";
-import FornecedoresPage from "../pages/fornecedores";
 import FornecedoresEditPage from "../pages/fornecedores/edit";
-import TurmasPageEdit from "../pages/turmas/view";
 import TurmasPageNew from "../pages/turmas/new";
 import PaginaDaTurmaPage from "../pages/turmas/view/paginaDaTurma";
 import PaginadaTurmaCriarTopicoPage from "../pages/turmas/view/paginaDaTurma/topico/new";
 import TopicoViewPage from "../pages/turmas/view/paginaDaTurma/topico/view";
-import DashboardAlunosPage from "../pages/dashboards";
 import DashboardFornecedoresPage from "../pages/dashboards/fornecedores";
-import DashboardTurmasPage from "../pages/dashboards/turmas";
 import ViewPagamentoPage from "../pages/pagamentos/view";
 import AlunosPageView from "../pages/alunos/view";
-import EventosPageEdit from "../pages/eventos/edit";
 import ContratosPage from "../pages/contratos";
 import ContratosEnvioPage from "../pages/contratos-envio";
 import SplashGetBlingInfo from "../pages/splash/blingInfo";
 import PreContratoPage from "../pages/pre-contratos";
 import AdesoesPage from "../pages/adesoes";
 import ContratosEventosPage from "../pages/contratos-eventos";
+import TurmasEditPage from "../pages/turmas/edit";
+import TarefasPage from "../pages/tarefas";
+import FornecedoresPage from "../pages/fornecedores";
+import TarefasNewPage from "../pages/tarefas/new";
+import TarefasEditPage from "../pages/tarefas/edit";
+import AdesaoEditPage from "../pages/adesoes/edit";
+import EventosCompradoresPage from "../pages/eventos/compradores";
+import EventosParticipantesPage from "../pages/eventos/participantes";
+import EventosTicketsPage from "../pages/eventos/tickets";
+import EventosNewPage from "../pages/eventos/new";
+import EventosCheckinsPage from "../pages/eventos/checkins";
+import DashboardPagamentosPage from "../pages/dashboards";
+import EstatutosPage from "../pages/estatutos";
+import PlanosFormaturaPage from "../pages/planos";
+import PlanosFormaturaNewPage from "../pages/planos/new";
 
 export const router = createBrowserRouter([
   {
@@ -63,7 +73,7 @@ export const router = createBrowserRouter([
     element: <SplashScreen />,
   },
   {
-    path: "/splash-bling-info/:id?",
+    path: "/splash-bling-info",
     element: <SplashGetBlingInfo />,
   },
   {
@@ -72,44 +82,40 @@ export const router = createBrowserRouter([
     children: [
       {
         path: "/",
-        element: <Navigate to="/alunos" replace />,
+        element: <Navigate to="/turmas" replace />,
       },
       {
         path: "/dashboard",
-        element: <DashboardAlunosPage/>,
+        element: <DashboardPagamentosPage/>,
       },
       {
-        path: "/dashboard/alunos",
-        element: <DashboardAlunosPage/>,
+        path: "/dashboard/usuarios",
+        element: <DashboardPagamentosPage/>,
       },
       {
         path: "/dashboard/fornecedor",
         element: <DashboardFornecedoresPage/>,
       },
       {
-        path: "/dashboard/turma",
-        element: <DashboardTurmasPage/>,
-      },
-      {
-        path: "/alunos",
+        path: "/usuarios",
         element: <AlunosPage />,
       },
       {
-        path: "/alunos/edit/:id?",
+        path: "/usuarios/edit/:id?",
         element: <AlunosPageEdit />,
       },
       {
-        path: "/alunos/view/:id?",
+        path: "/usuarios/view/:id?",
         element: <AlunosPageView />,
       },
-      // {
-      //   path: "/faculdades",
-      //   element: <FaculdadesPage />,
-      // },
-      // {
-      //   path: "/faculdades/edit/:id?",
-      //   element: <FaculdadesPageEdit />,
-      // },
+      {
+        path: "/adesoes",
+        element: <AdesoesPage/>
+      },
+      {
+        path: "/adesoes/edit/:id?",
+        element: <AdesaoEditPage/>
+      },
       {
         path: "/turmas",
         element: <TurmasPage />,
@@ -120,11 +126,7 @@ export const router = createBrowserRouter([
       },
       {
         path: "/turmas/edit/:id",
-        element: <TurmasPageEdit />,
-      },
-      {
-        path: "/turmas/view/:id",
-        element: <TurmasPageEdit />,
+        element: <TurmasEditPage />,
       },
       {
         path: "/turmas/view/:id/pagina-turma",
@@ -139,7 +141,7 @@ export const router = createBrowserRouter([
         element: <TopicoViewPage />,
       },
       {
-        path: "/alunos",
+        path: "/usuarios",
         element: <AlunosPage />,
       },
       {
@@ -151,16 +153,20 @@ export const router = createBrowserRouter([
         element: <ViewPagamentoPage />,
       },
       {
-        path: "/fornecedores",
+        path: "/contratos-eventos",
         element: <ContratosEventosPage/>
       },
-      // {
-      //   path: "/fornecedores",
-      //   element: <FornecedoresPage/>
-      // },
       {
-        path: "/fornecedor/edit/:id?",
-        element: <FornecedoresEditPage/>
+        path: "/planos-formatura",
+        element: <PlanosFormaturaPage/>
+      },
+      {
+        path: "/planos-formatura/new",
+        element: <PlanosFormaturaNewPage/>
+      },
+      {
+        path: "/fornecedores",
+        element: <FornecedoresPage/>
       },
       {
         path: "/fornecedores/edit/:id?",
@@ -175,12 +181,36 @@ export const router = createBrowserRouter([
         element: <EventosPage/>,
       },
       {
-        path: "/eventos/edit/:id?",
-        element: <EventosPageEdit/>,
+        path: "eventos/new",
+        element: <EventosNewPage/>
       },
       {
-        path: "/adesoes",
-        element: <AdesoesPage/>
+        path: "/eventos/participantes/:id",
+        element: <EventosParticipantesPage/>,
+      },
+      {
+        path: "/eventos/tickets/:id",
+        element: <EventosTicketsPage/>,
+      },
+      {
+        path: "/eventos/compradores/:id",
+        element: <EventosCompradoresPage/>,
+      },
+      {
+        path: "/eventos/checkins/:id",
+        element: <EventosCheckinsPage/>,
+      },
+      {
+        path: "/tarefas",
+        element: <TarefasPage/>,
+      },
+      {
+        path: "/tarefas/new",
+        element: <TarefasNewPage/>,
+      },
+      {
+        path: "/tarefas/edit/:id?",
+        element: <TarefasEditPage/>,
       },
       {
         path: "/pre-contratos",
@@ -189,6 +219,10 @@ export const router = createBrowserRouter([
       {
         path: "/contratos",
         element: <ContratosPage/>
+      },
+      {
+        path: "/estatuto",
+        element: <EstatutosPage/>
       },
       {
         path: "/suporte",

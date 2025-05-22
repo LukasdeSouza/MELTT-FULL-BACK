@@ -2,12 +2,13 @@
   "name": "authservice",
   "version": "1.0.0",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "cross-env NODE_ENV=development nodemon server.js",
-    "start": "cross-env NODE_ENV=production node server.js",
-    "build": "cross-env NODE_ENV=production node server.js",
-    "dev:local": "cross-env NODE_ENV=development node server.js"
+    "dev": "nodemon server/app.js",
+    "start": "node server/app.js",
+    "build": "echo Building...",
+    "dev:local": "node server/app.js"
   },
   "keywords": [],
   "author": "",

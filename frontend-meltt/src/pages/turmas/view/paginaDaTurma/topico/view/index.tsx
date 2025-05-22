@@ -22,10 +22,15 @@ import { IoMdArrowBack } from "react-icons/io";
 import { IoChatbox } from "react-icons/io5";
 import { Formik } from "formik";
 import { format } from "date-fns";
+import { getToken } from "../../../../../../utils/token";
+import { CustomJwtPayload } from "../../../../../../components/customDrawer";
+import { jwtDecode } from "jwt-decode";
 
 const TopicoViewPage = () => {
   const { topicoId } = useParams();
   const navigate = useNavigate();
+  const token = getToken();
+  const decoded = token ? jwtDecode<CustomJwtPayload>(token) : null;
 
   const [loadingTopicos, setLoadingTopicos] = useState(false);
   const [loadingSaveResposta, setLoadingSaveResposta] = useState(false);
@@ -76,7 +81,7 @@ const TopicoViewPage = () => {
     const dataObj = {
       resposta: values.resposta,
       topico_id: topicoId,
-      aluno_id: topico[0]?.aluno_id,
+      usuario_id:decoded?.id,
     };
 
     const response = await apiPostData("academic", "/respostas", dataObj);
@@ -113,14 +118,13 @@ const TopicoViewPage = () => {
             color="primary"
             size="small"
             onClick={() => navigate(-1)}
-            sx={{ width: "28px", mb:1 }}
+            sx={{ width: "28px", mb: 1 }}
           >
             <IoMdArrowBack />
           </IconButton>
           <Typography
             color="primary"
             variant="h6"
-            fontFamily={"Poppins"}
             fontWeight={600}
           >
             Título:{""}
@@ -133,7 +137,6 @@ const TopicoViewPage = () => {
           <Typography
             color="primary"
             variant="body1"
-            fontFamily={"Poppins"}
             fontWeight={400}
           >
             {loadingTopicos ? (
@@ -196,7 +199,6 @@ const TopicoViewPage = () => {
                       )}`}
                       secondaryTypographyProps={{
                         fontSize: "12px",
-                        fontFamily: "Poppins",
                       }}
                     />
                   </ListItemButton>

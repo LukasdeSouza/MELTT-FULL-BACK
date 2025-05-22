@@ -19,6 +19,8 @@ export interface CustomJwtPayload extends JwtPayload {
   nome?: string;
   email?: string;
   tipo?: string;
+  turma_id?: string;
+  id_bling?: string;
 }
 import {
   menuListAdmin,
@@ -27,7 +29,7 @@ import {
 } from "../../utils/arrays";
 import IconLogout from "../../assets/icons/logout";
 import { useLocation, useNavigate } from "react-router-dom";
-import { getToken, removeToken } from "../../utils/token";
+import { getToken, removeAllTokens } from "../../utils/token";
 import { IoSettings } from "react-icons/io5";
 import { DrawerMenuListType } from "../../types";
 import { FaBell } from "react-icons/fa6";
@@ -79,8 +81,6 @@ export default function CustomDrawer(props: Props) {
     setAnchorElNotifications(null);
   };
 
-  console.log('openProfileImage', props.openProfileImage)
-
   const openPopoverSettings = Boolean(anchorElSettings);
   const openPopoverNotifications = Boolean(anchorElNotifications);
   const idPopoverSettings = openPopoverSettings ? "simple-popover" : undefined;
@@ -92,12 +92,12 @@ export default function CustomDrawer(props: Props) {
     decoded?.tipo === "ADMIN"
       ? menuListAdmin
       : decoded?.tipo === "ASSOCIACAO"
-      ? menuListAssociacao
-      : menuListAluno;
+        ? menuListAssociacao
+        : menuListAluno;
 
   const fetchNotificacoes = async () => {
     try {
-      const response = await apiGetData("academic", "/notificacoes");
+      const response = await apiGetData("academic", `/notificacoes?id=${decoded?.id}`);
       setNotificacoes(response);
     } catch (error) {
       toast.error("Erro ao buscar notificações");
@@ -108,7 +108,7 @@ export default function CustomDrawer(props: Props) {
     const interval = setInterval(fetchNotificacoes, 300000);
     fetchNotificacoes();
     return () => clearInterval(interval);
-  },[]);
+  }, []);
 
   const drawer = (
     <Box
@@ -117,8 +117,11 @@ export default function CustomDrawer(props: Props) {
       justifyContent={"space-between"}
       width={280}
       height={"100%"}
-      bgcolor={"#2D1C63"}
+      // bgcolor={"#2D1C63"}
       role="presentation"
+      sx={{
+        background: "linear-gradient(135deg, #2D1C63 30%, #1B0E40 100%)"
+      }}
     >
       <Stack direction={"column"} gap={4} ml={2}>
         <Stack pt={8} px={3} ml={4}>
@@ -135,7 +138,18 @@ export default function CustomDrawer(props: Props) {
               >
                 <ListItemButton
                   selected={location.pathname.includes(item.route)}
-                  sx={{ borderRadius: "32px 0 0 32px" }}
+                  sx={{
+                    borderRadius: "32px 0 0 32px",
+                    ...(location.pathname === item.route ||
+                      routeSelected === item.route ||
+                      routeSelected.includes(item.route)
+                      ? {
+                        backgroundColor: "#fff",
+                        boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.2)",
+                        // transform: "scale(0.95)",
+                      }
+                      : {}),
+                  }}
                   onClick={() => {
                     setRouteSelected(item.route);
                     navigate(item.route);
@@ -146,8 +160,8 @@ export default function CustomDrawer(props: Props) {
                       style: {
                         color:
                           location.pathname === item.route ||
-                          routeSelected === item.route ||
-                          routeSelected.includes(item.route)
+                            routeSelected === item.route ||
+                            routeSelected.includes(item.route)
                             ? "#DB1F8D"
                             : "#F1F5F9",
                       },
@@ -155,10 +169,9 @@ export default function CustomDrawer(props: Props) {
                   </ListItemIcon>
                   <Typography
                     sx={{
-                      fontFamily: "Poppins",
                       ...(location.pathname === item.route ||
-                      routeSelected === item.route ||
-                      routeSelected.includes(item.route)
+                        routeSelected === item.route ||
+                        routeSelected.includes(item.route)
                         ? { color: "#342394", fontWeight: 700 }
                         : { color: "white" }),
                     }}
@@ -168,7 +181,7 @@ export default function CustomDrawer(props: Props) {
                 </ListItemButton>
               </ListItem>
               {item.subRoutes && item.subRoutes.length > 0 && (
-                <Collapse in={routeSelected.includes("dashboard")}>
+                <Collapse in={location.pathname === item.route && (item.route.includes("fornecedores") || item.route.includes("dashboard"))}>
                   <List component="div" disablePadding sx={{ paddingLeft: 5 }}>
                     {item.subRoutes.map((subItem, subIndex) => (
                       <ListItem key={`${index}-${subIndex}`} disablePadding>
@@ -180,16 +193,12 @@ export default function CustomDrawer(props: Props) {
                             navigate(subItem.route);
                           }}
                         >
-                          {/* <ListItemIcon>
-                          {subItem.icon}
-                          </ListItemIcon> */}
                           <Typography
                             sx={{
                               ml: 4,
-                              fontFamily: "Poppins",
                               fontSize: 14,
                               ...(location.pathname === subItem.route ||
-                              routeSelected === subItem.route
+                                routeSelected === subItem.route
                                 ? { color: "white", fontWeight: 700 }
                                 : { color: "#eee" }),
                             }}
@@ -204,13 +213,14 @@ export default function CustomDrawer(props: Props) {
               )}
             </React.Fragment>
           ))}
+
         </List>
       </Stack>
       <List>
         <ListItem disablePadding>
           <ListItemButton
             onClick={() => {
-              removeToken();
+              removeAllTokens();
               navigate("/login");
             }}
           >
@@ -248,7 +258,6 @@ export default function CustomDrawer(props: Props) {
               component="div"
               sx={{
                 ml: 27,
-                fontFamily: "Poppins",
                 textTransform: "capitalize",
                 fontWeight: 600,
                 flexGrow: 1,
@@ -262,7 +271,6 @@ export default function CustomDrawer(props: Props) {
               component="div"
               sx={{
                 ml: 27.5,
-                fontFamily: "Poppins",
                 textTransform: "capitalize",
                 fontWeight: 300,
                 flexGrow: 1,
@@ -292,21 +300,19 @@ export default function CustomDrawer(props: Props) {
               >
                 <Box sx={{ width: "100%", padding: 1, maxWidth: 280 }}>
                   <List>
-                    {notificacoes.length > 0 ? (
-                      notificacoes.map((notificacao, index) => (
+                    {notificacoes?.length > 0 ? (
+                      notificacoes?.map((notificacao, index) => (
                         <ListItem key={index} disablePadding>
                           <ListItemButton>
                             <ListItemText
                               primary={notificacao.mensagem}
                               secondary={format(notificacao.criada_em, 'dd/MM/yyyy')}
                               primaryTypographyProps={{
-                                fontFamily: "Poppins",
                                 fontSize: 12,
                                 fontWeight: 600,
                                 color: "primary"
                               }}
                               secondaryTypographyProps={{
-                                fontFamily: "Poppins",
                                 fontSize: 10,
                                 color: "secondary"
                               }}
@@ -318,7 +324,7 @@ export default function CustomDrawer(props: Props) {
                     ) : (
                       <small
                         className="text-xs"
-                        style={{ fontFamily: "Poppins" }}
+                        style={{}}
                       >
                         😥 nenhuma notificação disponível
                       </small>
@@ -351,7 +357,6 @@ export default function CustomDrawer(props: Props) {
                         <ListItemText
                           primary="Alterar Minha Senha"
                           primaryTypographyProps={{
-                            fontFamily: "Poppins",
                             fontSize: 14,
                           }}
                         />
@@ -366,21 +371,21 @@ export default function CustomDrawer(props: Props) {
                 <Typography
                   variant="body2"
                   fontWeight={600}
-                  sx={{ color: "#111", fontFamily: "Poppins" }}
+                  sx={{ color: "#111", }}
                 >
                   {decoded?.nome}
                 </Typography>
                 <Typography
                   variant="caption"
                   mt={-1}
-                  sx={{ color: "#bbb", fontFamily: "Poppins" }}
+                  sx={{ color: "#bbb", }}
                 >
                   {decoded?.email}
                 </Typography>
                 <Typography
                   variant="caption"
                   mt={-1}
-                  sx={{ color: "#bbb", fontFamily: "Poppins" }}
+                  sx={{ color: "#bbb", }}
                 >
                   {decoded?.tipo}
                 </Typography>
@@ -390,7 +395,7 @@ export default function CustomDrawer(props: Props) {
                 src="https://media.licdn.com/dms/image/v2/C4D0BAQGHK2vhhHiVfQ/company-logo_200_200/company-logo_200_200/0/1678893040439/meltt_formaturas_logo?e=2147483647&v=beta&t=HbKS2BEqaCTDQL4JYmNDwzxD0OH-tS1wNYau8TDjrjw"
                 alt="das"
                 onClick={() => props.setOpenProfileImage(true)}
-                sx={{ width: 50, height: 50, cursor:'pointer' }}
+                sx={{ width: 50, height: 50, cursor: 'pointer' }}
               />
             </Stack>
           </Stack>

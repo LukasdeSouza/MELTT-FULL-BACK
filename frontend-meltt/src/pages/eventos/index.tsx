@@ -1,7 +1,6 @@
 import {
   Avatar,
   Button,
-  CircularProgress,
   IconButton,
   Link,
   Paper,
@@ -9,63 +8,70 @@ import {
   Stack,
   TableCell,
   TableRow,
+  Tooltip,
+  Typography,
 } from "@mui/material";
-import { IoMdAdd } from "react-icons/io";
 import { useNavigate } from "react-router-dom";
 import LoadingTable from "../../components/loadingTable";
 import BasicTable from "../../components/table";
-import NoTableData from "../../components/noData";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { apiDeleteData, apiGetData } from "../../services/api";
-import { FaEye } from "react-icons/fa6";
-import { MdModeEdit } from "react-icons/md";
-import { FaTrashAlt } from "react-icons/fa";
+import { apiGetData } from "../../services/api";
+import { FaMoneyBillWave, FaPeopleGroup } from "react-icons/fa6";
 import { eventsColumns } from "./table/columns";
+import { IoAdd, IoTicket } from "react-icons/io5";
+import { FaCheckCircle } from "react-icons/fa";
+import { getToken } from "../../utils/token";
+import { jwtDecode } from "jwt-decode";
+import { CustomJwtPayload } from "../../components/customDrawer";
+import MelttLogo from "../../assets/logo/melttLogo";
 
 const EventosPage = () => {
   const navigate = useNavigate();
+  const token = getToken();
+  const decoded = token ? jwtDecode<CustomJwtPayload>(token) : null;
+
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
+
   const [loading, setLoading] = useState(false);
-  const [loadingDelete, setLoadingDelete] = useState(false);
   const [eventos, setEventos] = useState([]);
 
   const [onLoad, setOnLoad] = useState(false);
 
 
-  const fetchEventos = async () => {
+  const fetchEventos = async (page: number) => {
     setLoading(true);
-    try {
-      const response = await apiGetData("academic", "/eventos");
-      setEventos(response);
-    } catch (error) {
-      toast.error("Erro ao buscar eventos");
+    if (decoded?.tipo === 'ADMIN') {
+      try {
+        const response = await apiGetData("academic", `/eventos?page=${page}`);
+        setTotalPages(response.totalPages);
+        setEventos(response.data);
+      } catch (error) {
+        toast.error("Nenhuma informação encontrada para eventos");
+      }
+    } if (decoded?.tipo === 'ALUNO') {
+      try {
+        const response = await apiGetData("academic", `/eventos/turma/${decoded.turma_id}`);
+        setEventos(response);
+      } catch (error) {
+        toast.error("Nenhuma informação encontrada para eventos");
+      }
     }
     setLoading(false);
   };
 
-  const onClickRowView = (row: any) => {
-    // dispatchAluno({ type: "SET_ALUNO_SELECIONADO", payload: row });
-    navigate(`/eventos/view/${row.id}`);
-  };
-
-  const onClickRowEdit = (row: any) => {
-    // dispatchAluno({ type: "SET_ALUNO_SELECIONADO", payload: row });
-    navigate(`/eventos/edit/${row.id}`);
-  };
-
-  const onClickDelete = async (id: number) => {
-    setLoadingDelete(true);
+  const handleChangePagination = (_: React.ChangeEvent<unknown>, value: number) => {
     try {
-      const response = await apiDeleteData("academic", `/eventos/${id}`);
-      if (response.id) {
-        fetchEventos();
-        toast.success("Evento excluído com sucesso");
-      }
-      console.log("response", response);
+      fetchEventos(value);
     } catch (error) {
-      toast.error("Erro ao excluir evento");
+      toast.error("Erro ao buscar Turmas");
     }
-    setLoadingDelete(false);
+    setPage(value);
+  };
+
+  const onClickRowView = (row: any, route: string) => {
+    navigate(`/eventos/${route}/${row.token}`);
   };
 
   const dataRow = (row: any) => {
@@ -78,45 +84,55 @@ const EventosPage = () => {
         }}
       >
         <TableCell component="th" scope="row">
-          <Stack direction="row" alignItems="center">
-            <Avatar src={row?.foto_evento} alt="foto evento"/>
+          <Stack direction="row" alignItems="center" gap={2}>
+            <Avatar src={"https://images.pexels.com/photos/1587927/pexels-photo-1587927.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1"} alt="foto evento" sizes="32px" />
             <Link
               color="primary"
               underline="always"
-              onClick={() => onClickRowView(row)}
+              onClick={() => onClickRowView(row, 'compradores')}
               sx={{ fontFamily: "Poppins" }}
             >
-              {row.nome_evento}
+              {row.nome}
             </Link>
           </Stack>
         </TableCell>
         <TableCell align="left" sx={{ fontFamily: "Poppins" }}>
-          {row.descricao_evento}
+          {row.data_formatura ?? 'data não informada'}
         </TableCell>
         <TableCell align="left" sx={{ fontFamily: "Poppins" }}>
-          R${row.valor_ingresso}
-        </TableCell>
-        <TableCell align="left" sx={{ fontFamily: "Poppins" }}>
-          <IconButton size="small" onClick={() => onClickRowView(row)}>
-            <FaEye color="#2d1c63" size={22} />
-          </IconButton>
-          <IconButton size="small" onClick={() => onClickRowEdit(row)}>
-            <MdModeEdit color="#2d1c63" size={22} />
-          </IconButton>
-          <IconButton size="small" onClick={() => onClickDelete(row.id)}>
-            {loadingDelete ? (
-              <CircularProgress color="secondary" size={10} />
-            ) : (
-              <FaTrashAlt color="red" />
+          <Stack direction={'row'} gap={1}>
+            {decoded?.tipo === 'ADMIN' && (
+              <Tooltip title="Ver compradores" arrow>
+                <IconButton size="small" onClick={() => onClickRowView(row, 'compradores')}>
+                  <FaMoneyBillWave color="#2d1c63" size={22} />
+                </IconButton>
+              </Tooltip>
             )}
-          </IconButton>
+            {decoded?.tipo === 'ADMIN' && (
+              <Tooltip title="Ver Tickets" arrow>
+                <IconButton size="small" onClick={() => onClickRowView(row, 'tickets')}>
+                  <IoTicket color="#2d1c63" size={22} />
+                </IconButton>
+              </Tooltip>
+            )}
+            <Tooltip title="Ver Participantes" arrow>
+              <IconButton size="small" onClick={() => onClickRowView(row, 'participantes')}>
+                <FaPeopleGroup color="#2d1c63" size={22} />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Ver Checkins" arrow>
+              <IconButton size="small" onClick={() => onClickRowView(row, 'checkins')}>
+                <FaCheckCircle color="#2d1c63" size={22} />
+              </IconButton>
+            </Tooltip>
+          </Stack>
         </TableCell>
       </TableRow>
     );
   };
 
   useEffect(() => {
-    fetchEventos();
+    fetchEventos(1);
     setOnLoad(true);
   }, []);
 
@@ -130,15 +146,12 @@ const EventosPage = () => {
       >
         <h2 className="text-2xl text-default font-extrabold"></h2>
         <Button
-          color="secondary"
           variant="contained"
-          endIcon={<IoMdAdd />}
-          onClick={() => {
-            navigate("/eventos/edit");
-          }}
-          sx={{ borderRadius: 2 }}
+          color="secondary"
+          endIcon={<IoAdd />}
+          onClick={() => navigate('/eventos/new')}
         >
-          Adicionar
+          Novo Evento
         </Button>
       </Stack>
       <Slide direction="right" in={onLoad} mountOnEnter>
@@ -178,14 +191,16 @@ const EventosPage = () => {
                 rows={eventos}
                 loading={loading}
                 dataRow={dataRow}
+                page={page}
+                totalPages={totalPages}
+                handleChangePagination={handleChangePagination}
               />
             ) : (
-              <NoTableData
-                pronoum={"he"}
-                pageName="evento"
-                disabledButton={false}
-                onClickAction={() => navigate("/eventos/edit")}
-              />
+              <Stack width={'100%'} alignItems={'center'} sx={{ mt: 20 }}>
+                <MelttLogo />
+                <Typography color="primary" variant="body2" sx={{ fontFamily: "Poppins" }}>Não há eventos para mostrar...</Typography>
+                <Typography color="textSecondary" variant="caption" sx={{ fontFamily: "Poppins" }}>tente novamente mais tarde</Typography>
+              </Stack>
             )}
           </Paper>
         </Paper>

@@ -15,7 +15,6 @@ import MelttLogo from "../../assets/logo/melttLogo";
 import { Formik } from "formik";
 import toast from "react-hot-toast";
 import { LoadingButton } from "@mui/lab";
-import { apiPostData } from "../../services/api";
 import { baseAuthURL } from "../../utils/baseURL";
 
 type TypeCadastroFormValues = {

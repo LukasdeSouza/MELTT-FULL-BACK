@@ -109,14 +109,12 @@ const TurmasPageView = () => {
                   <Typography
                     color="primary"
                     variant="h6"
-                    fontFamily={"Poppins"}
                   >
                     🎉 Página da Turma - <b>{turma[0]?.nome} </b>
                   </Typography>
                   <Typography
                     color="textSecondary"
                     variant="caption"
-                    fontFamily={"Poppins"}
                   >
                     acompanhe os últimos tópicos da turma, eventos e novidades
                   </Typography>
@@ -137,21 +135,19 @@ const TurmasPageView = () => {
                     color="primary"
                     variant="body1"
                     fontWeight={600}
-                    fontFamily={"Poppins"}
                   >
                     Lista de Alunos
                   </Typography>
                   <Typography
                     color="textSecondary"
                     variant="caption"
-                    fontFamily={"Poppins"}
                   >
                     veja a lista com todos os alunos cadastrados nesta turma.
                   </Typography>
                 </Stack>
                 <Typography
                   color="secondary"
-                  sx={{ fontFamily: "Poppins", fontSize: 12 }}
+                  sx={{ fontSize: 12 }}
                 >
                   Total de Alunos: <b>{alunos?.length}</b>
                 </Typography>
@@ -164,6 +160,9 @@ const TurmasPageView = () => {
                   rows={alunos}
                   loading={loadingAlunos}
                   dataRow={dataRow}
+                  page={1}
+                  totalPages={1}
+                  handleChangePagination={() => {}}
                 />
               ) : (
                 <NoTableData

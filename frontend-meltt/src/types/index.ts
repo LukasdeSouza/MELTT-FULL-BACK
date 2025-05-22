@@ -45,6 +45,8 @@ export type Aluno = {
 
 export type Turma = {
   nome: string;
+  id: number;
+  identificador: string;
 };
 
 export type Topico = {

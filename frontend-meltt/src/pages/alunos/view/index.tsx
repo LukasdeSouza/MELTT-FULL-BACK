@@ -69,13 +69,16 @@ const AlunosPageView = () => {
   const fetchFaculdade = async () => {
     setLoadingFaculdade(true);
     await apiGetData("academic", `/faculdades/${turma[0].faculdade_id}`).then(
-      (data) => setFaculdade(data)
+      (data) => {
+        console.log(data)
+        setFaculdade(data)
+      }
     );
     setLoadingFaculdade(false);
   };
 
   const onSubmitAluno = async () => {
-    
+
   };
 
   useEffect(() => {
@@ -96,7 +99,6 @@ const AlunosPageView = () => {
         <Paper
           elevation={0}
           style={{
-            fontFamily: "Poppins",
             position: "relative",
             padding: "12px",
             height: "calc(100vh - 132px)",
@@ -116,11 +118,10 @@ const AlunosPageView = () => {
               <form className="h-[100%] flex flex-col justify-between">
                 <Stack padding={2} gap={2} width={"100%"}>
                   <Stack direction={"column"}>
-                    <Typography fontFamily={"Poppins"} fontWeight={600}>
-                      Dados do Aluno
+                    <Typography fontWeight={600}>
+                      Dados do Usuário
                     </Typography>
                     <Typography
-                      fontFamily={"Poppins"}
                       variant="caption"
                       color="textSecondary"
                     >
@@ -129,41 +130,50 @@ const AlunosPageView = () => {
                   </Stack>
                   <Stack width={"100%"} direction={"row"} gap={10}>
                     <TextDetails
-                      text="Nome Completo:"
+                      
+                      text="Nome Completo"
                       details={stateAluno.alunoSelecionado?.nome}
                     />
                     <TextDetails
-                      text="E-mail:"
+                      text="E-mail"
                       details={stateAluno.alunoSelecionado?.email}
                     />
                     <TextDetails
-                      text="Telefone Celular:"
+                      text="Telefone Celular"
                       details={stateAluno.alunoSelecionado?.telefone}
                     />
                     <TextDetails
-                      text="Plano da Formatura:"
-                      details={stateAluno.alunoSelecionado?.plano}
+                      text="Documento"
+                      details={stateAluno.alunoSelecionado?.documento}
                     />
                   </Stack>
                   <Stack width={"100%"} direction={"row"} gap={10}>
                     <TextDetails
-                      text="Faculdade"
-                      details={
-                        loadingFaculdade ? "Carregando..." : faculdade[0]?.nome
-                      }
+                      text="Nível de Acesso"
+                      details={stateAluno.alunoSelecionado?.tipo}
                     />
-                    <TextDetails
-                      text="Turma"
-                      details={loadingTurma ? "Carregando..." : turma[0]?.nome}
-                    />
-                    <TextDetails
-                      text="Turma"
-                      details={
-                        stateAluno.alunoSelecionado?.formatura_paga
-                          ? "Formatura Paga"
-                          : "Formatura em aberto"
-                      }
-                    />
+                    {stateAluno.alunoSelecionado?.tipo === "ALUNO" && (
+                      <>
+                        <TextDetails
+                          text="Faculdade"
+                          details={
+                            loadingFaculdade ? "Carregando..." : faculdade[0]?.nome
+                          }
+                        />
+                        <TextDetails
+                          text="Turma"
+                          details={loadingTurma ? "Carregando..." : turma[0]?.nome}
+                        />
+                        <TextDetails
+                          text="Status de Pagamento"
+                          details={
+                            stateAluno.alunoSelecionado?.formatura_paga
+                              ? "Formatura Paga"
+                              : "Formatura em aberto"
+                          }
+                        />
+                      </>
+                    )}
                   </Stack>
                 </Stack>
                 <Stack
@@ -178,7 +188,7 @@ const AlunosPageView = () => {
                     color="primary"
                     variant="outlined"
                     size="small"
-                    onClick={() => navigate("/alunos")}
+                    onClick={() => navigate("/usuarios")}
                     sx={{ width: 120, borderRadius: 2, fontFamily: "Poppins" }}
                   >
                     Voltar

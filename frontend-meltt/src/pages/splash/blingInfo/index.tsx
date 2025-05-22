@@ -11,7 +11,6 @@ import MelttLogo from "../../../assets/logo/melttLogo";
 import { useEffect, useState } from "react";
 import { apiPostData } from "../../../services/api";
 import toast from "react-hot-toast";
-import { redirectToBlingAuth } from "../../../utils/functions";
 import {
   setBlingAccessToken,
   setBlingRefreshToken,
@@ -28,34 +27,35 @@ const SplashGetBlingInfo = () => {
   const code = queryParams.get("code");
 
   const authenticateInBling = async () => {
-    try {
-      const response = await apiPostData(
-        "authentication",
-        `external/bling/oauth?code=${code}`,
-        {}
-      );
-      setBlingAccessToken(response.access_token);
-      setBlingRefreshToken(response.refresh_token);
-      if (response.access_token) {
-        navigate('/turmas')
+    if(code) {
+      try {
+        const response = await apiPostData(
+          "authentication",
+          `/external/bling/oauth?code=${code}`,
+          {}
+        );
+        setBlingAccessToken(response.access_token);
+        setBlingRefreshToken(response.refresh_token);
+  
+        if (response.access_token) {
+          navigate("/turmas");
+        } else {
+          setShowTryAgain(true);
+          toast.error("Erro ao autenticar via Bling, tente novamente.");
+        }
+      } catch (error) {
+        setShowTryAgain(true);
+        toast.error("Erro ao autenticar via Bling, tente novamente.");
       }
-    } catch (error) {
-      setShowTryAgain(true);
-      toast.error("Erro ao autenticar via Bling, Tente novamente.");
     }
-  };
-
-  const tryAgainBlingAuthenticate = () => {
-    redirectToBlingAuth();
   };
 
   useEffect(() => {
     setShow(true);
-  }, []);
-
-  useEffect(() => {
-    authenticateInBling();
-  }, [code]);
+    setTimeout(() => {
+      authenticateInBling()
+    }, 2500)
+  }, [code !== undefined])
 
   return (
     <Stack
@@ -74,21 +74,24 @@ const SplashGetBlingInfo = () => {
               color="textSecondary"
               fontWeight={"light"}
               variant="subtitle2"
-              fontFamily={"Poppins"}
             >
               <b>
                 {showTryAgain
                   ? "Erro ao buscar informações no BLING"
-                  : "Trazendo informações do BLING, e autenticando via API..."}
+                  : "Trazendo informações do BLING, aguarde..."}
               </b>
             </Typography>
             {showTryAgain ? (
               <Button
                 variant="contained"
                 color="secondary"
-                onClick={tryAgainBlingAuthenticate}
-                endIcon={<SlReload/> }
+                endIcon={<SlReload />}
                 sx={{ fontFamily: "Poppins", textTransform: "none", mt: 1 }}
+                onClick={() => {
+                  // Limpa o flag para tentar redirecionar novamente
+                  sessionStorage.removeItem("blingRedirected");
+                  window.location.reload();
+                }}
               >
                 Tentar Novamente
               </Button>

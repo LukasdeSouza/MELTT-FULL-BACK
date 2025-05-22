@@ -44,13 +44,13 @@ const SupportPage = () => {
             justifyContent={"center"}
           >
             <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTAIYhwsdFaV328N3c_6J05VaEr0Ch5F0KABw&s" />
-            <Typography color="primary" fontFamily={"Poppins"} fontWeight={600}>
+            <Typography color="primary" fontWeight={600}>
               Dificuldades ao utilizar a plataforma?
             </Typography>
-            <Typography color="textSecondary" fontFamily={"Poppins"} variant="caption">
+            <Typography color="textSecondary" variant="caption">
               Fale conosco pelo email: <b>contato@melttformatura.com.br</b>
             </Typography>
-            <Typography color="textSecondary" fontFamily={"Poppins"} variant="caption">
+            <Typography color="textSecondary" variant="caption">
               ou pelo Whatsapp <b>(11) 99999-9999</b>
             </Typography>
           </Box>

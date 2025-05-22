@@ -1,6 +1,4 @@
 import {
-  Button,
-  Divider,
   IconButton,
   InputAdornment,
   Stack,
@@ -47,7 +45,7 @@ const LoginPage = () => {
       } else {
         setToken(data.token);
         toast.success("Login efetuado com sucesso");
-        navigate("/splash");
+        navigate("/turmas");
       }
     } catch (error) {
       alert(error);
@@ -63,7 +61,7 @@ const LoginPage = () => {
       justifyContent={"center"}
       sx={{ backgroundColor: "#44327F" }}
     >
-      <Typography fontWeight={300} fontFamily={"Poppins"} mb={2}>
+      <Typography fontWeight={300} mb={2}>
         Gestão de Formaturas, <b>de maneira eficiente</b>.
       </Typography>
       <Stack
@@ -77,11 +75,11 @@ const LoginPage = () => {
       >
         <MelttLogo />
         <Stack direction={"column"} alignItems={"center"}>
-          <Typography fontWeight={600} fontFamily={"Poppins"} variant="h5">
+          <Typography fontWeight={600} variant="h5">
             Login de Usuário
           </Typography>
           <Typography
-            fontFamily={"Poppins"}
+          
             sx={{ fontSize: 12, fontWeight: 200 }}
           >
             entre com seu email e senha

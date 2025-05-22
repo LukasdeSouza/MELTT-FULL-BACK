@@ -40,7 +40,6 @@ const ViewPagamentoPage = () => {
           <Typography
             color="textSecondary"
             variant="body2"
-            fontFamily={"Poppins"}
           >
             valor
           </Typography>
@@ -48,7 +47,6 @@ const ViewPagamentoPage = () => {
             color="success"
             variant="body1"
             fontWeight={600}
-            fontFamily={"Poppins"}
           >
             R$120.00
           </Typography>
@@ -57,7 +55,6 @@ const ViewPagamentoPage = () => {
           <Typography
             color="textSecondary"
             variant="body2"
-            fontFamily={"Poppins"}
           >
             data de vencimento
           </Typography>
@@ -65,7 +62,6 @@ const ViewPagamentoPage = () => {
             color="error"
             variant="body1"
             fontWeight={600}
-            fontFamily={"Poppins"}
           >
             12/12/2024
           </Typography>
@@ -74,7 +70,6 @@ const ViewPagamentoPage = () => {
           <Typography
             color="textSecondary"
             variant="body2"
-            fontFamily={"Poppins"}
           >
             status do pagamento
           </Typography>
@@ -107,7 +102,7 @@ const ViewPagamentoPage = () => {
           />
         </TabList>
         <TabPanel value={"1"}>
-          <Box px={2} sx={{ fontFamily: "Poppins" }}>
+          <Box px={2}>
             <Typography color="textSecondary" variant="body2">
               escanei o QRCode abaixo com seu aplicativo do banco para efetuar o
               pagamento da fatura em aberto
@@ -115,14 +110,14 @@ const ViewPagamentoPage = () => {
           </Box>
         </TabPanel>
         <TabPanel value={"2"}>
-          <Box px={2} sx={{ fontFamily: "Poppins" }}>
+          <Box px={2}>
             <Typography color="textSecondary" variant="body2">
               cartão de crédito
             </Typography>
           </Box>
         </TabPanel>
         <TabPanel value={"3"}>
-          <Box px={2} sx={{ fontFamily: "Poppins" }}>
+          <Box px={2}>
             <Typography color="textSecondary" variant="body2">
               informações do boleto
             </Typography>

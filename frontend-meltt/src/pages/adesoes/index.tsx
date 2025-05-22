@@ -1,153 +1,214 @@
-import React, { useState } from 'react';
-import { Paper, Typography, Chip, Grid, Button, Modal, Box, TextField, Dialog, DialogTitle, DialogActions } from '@mui/material';
+import {
+  Button,
+  Chip,
+  IconButton,
+  Link,
+  Paper,
+  Slide,
+  Stack,
+  TableCell,
+  TableRow,
+} from "@mui/material";
+import BasicTable from "../../components/table";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { apiGetData } from "../../services/api";
+import { IoMdAdd } from "react-icons/io";
+import toast from "react-hot-toast";
+import NoTableData from "../../components/noData";
+import LoadingTable from "../../components/loadingTable";
+import { FaEye, FaFileSignature } from "react-icons/fa6";
+import { useAdesaoContext } from "../../providers/adesaoContext";
+import { adesoesColumns } from "./table/columns";
+import { format } from "date-fns";
+import { IoWarning } from "react-icons/io5";
 
 interface Adesao {
-    id: number;
-    nomeAluno: string;
-    dataAdesao: string | null;
-    turma: string;
-    valor: string;
-    status: string;
-    descricao: string;
+  id: string | number;
+  aluno_id: string;
+  turma_id: string;
+  status: string;
+  data_assinatura: string;
+  observacoes: string;
 }
 
-const initialAdesoes: Adesao[] = [
-    {
-        id: 1,
-        nomeAluno: 'João Silva',
-        dataAdesao: '2024-02-12',
-        turma: '3º Ano A',
-        valor: 'R$ 150,00',
-        status: 'Aderida',
-        descricao: 'Adesão realizada com sucesso.'
-    },
-    {
-        id: 2,
-        nomeAluno: 'Maria Oliveira',
-        dataAdesao: null,
-        turma: '2º Ano B',
-        valor: 'R$ 120,00',
-        status: 'Pendente',
-        descricao: ''
+const AdesoesPage = () => {
+  const navigate = useNavigate();
+  const { dispatchAdesao } = useAdesaoContext();
+  const [page, setPage] = useState(1);
+
+  const [loading, setLoading] = useState(false);
+
+  const [adesoes, setAdesoes] = useState<Adesao[]>([]);
+  const [adesoesPendentes, setAdesoesPendentes] = useState<[]>([]);
+  const [adesoesConcluidas, setAdesoesConcluidas] = useState<[]>([]);
+
+  const [onLoad, setOnLoad] = useState(false);
+
+  const fetchAdesoes = async (page: number) => {
+    setLoading(true);
+    try {
+      let response = await apiGetData("academic", `/adesoes?page=${page}`)
+      setAdesoes(response.data);
+      setAdesoesConcluidas(response.totalConcluidas)
+      setAdesoesPendentes(response.totalPendentes)
+    } catch (error) {
+      toast.error("Erro ao buscar adesões");
     }
-];
+    setLoading(false);
+  };
 
-const getStatusColor = (status: string) => {
-    switch (status) {
-        case 'Aderida':
-            return 'success';
-        case 'Pendente':
-            return 'warning';
-        case 'Não Aderida':
-            return 'error';
-        default:
-            return 'default';
+  const handleChangePagination = (_: React.ChangeEvent<unknown>, value: number) => {
+    try {
+      fetchAdesoes(value);
+    } catch (error) {
+      toast.error("Erro ao buscar Turmas");
     }
-};
+    setPage(value);
+  };
 
-const AdesoesPage: React.FC = () => {
-    const [adesoes, setAdesoes] = useState<Adesao[]>(initialAdesoes);
-    const [open, setOpen] = useState<boolean>(false);
-    const [openDelete, setOpenDelete] = useState<boolean>(false);
-    const [editingAdesao, setEditingAdesao] = useState<Adesao | null>(null);
-    const [deleteId, setDeleteId] = useState<number | null>(null);
+  const onClickRowView = (row: any) => {
+    dispatchAdesao({ type: "SET_ADESAO_SELECIONADO", payload: row });
+    navigate(`/adesoes/edit/${row.id}`);
+  };
 
-    const handleOpen = (adesao: Adesao | null = null) => {
-        setEditingAdesao(adesao);
-        setOpen(true);
-    };
 
-    const handleClose = () => {
-        setOpen(false);
-        setEditingAdesao(null);
-    };
-
-    const handleSave = (event: React.FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
-        const formData = new FormData(event.currentTarget);
-        const newAdesao: Adesao = {
-            id: editingAdesao ? editingAdesao.id : adesoes.length + 1,
-            nomeAluno: formData.get('nomeAluno') as string,
-            dataAdesao: formData.get('dataAdesao') as string || null,
-            turma: formData.get('turma') as string,
-            valor: formData.get('valor') as string,
-            status: formData.get('status') as string,
-            descricao: formData.get('descricao') as string || ''
-        };
-
-        if (editingAdesao) {
-            setAdesoes(adesoes.map((a) => (a.id === editingAdesao.id ? newAdesao : a)));
-        } else {
-            setAdesoes([...adesoes, newAdesao]);
-        }
-        handleClose();
-    };
-
-    const handleDeleteConfirmation = (id: number) => {
-        setDeleteId(id);
-        setOpenDelete(true);
-    };
-
-    const handleDelete = () => {
-        setAdesoes(adesoes.filter((adesao) => adesao.id !== deleteId));
-        setOpenDelete(false);
-    };
-
+  const dataRow = (row: Adesao) => {
     return (
-        <Grid container spacing={2} sx={{ padding: 3 }}>
-            <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                <Button variant="contained" onClick={() => handleOpen()}>Adicionar Adesão</Button>
-            </Grid>
-            {adesoes.map((adesao) => (
-                <Grid item xs={12} sm={6} md={4} key={adesao.id}>
-                    <Paper elevation={3} sx={{ padding: 2, borderRadius: 2, backgroundColor: '#f5f5f5' }}>
-                        <Typography variant="h6" fontFamily="Poppins">
-                            {adesao.nomeAluno}
-                        </Typography>
-                        <Typography variant="body2" fontFamily="Poppins">
-                            <strong>Turma:</strong> {adesao.turma}
-                        </Typography>
-                        <Typography variant="body2" fontFamily="Poppins">
-                            <strong>Valor:</strong> {adesao.valor}
-                        </Typography>
-                        <Typography variant="body2" fontFamily="Poppins">
-                            <strong>Data de Adesão:</strong> {adesao.dataAdesao || 'Ainda não aderida'}
-                        </Typography>
-                        <Chip label={adesao.status} color={getStatusColor(adesao.status)} sx={{ mt: 1 }} />
-                        {adesao.descricao && (
-                            <Typography variant="body2" fontFamily="Poppins" sx={{ mt: 1 }}>
-                                <strong>Descrição:</strong> {adesao.descricao}
-                            </Typography>
-                        )}
-                        <Button size="small" onClick={() => handleOpen(adesao)} sx={{ mt: 1 }}>Editar</Button>
-                        <Button size="small" color="error" onClick={() => handleDeleteConfirmation(adesao.id)} sx={{ mt: 1, ml: 1 }}>Remover</Button>
-                    </Paper>
-                </Grid>
-            ))}
-            <Modal open={open} onClose={handleClose}>
-                <Box sx={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 400, bgcolor: 'background.paper', p: 4, borderRadius: 2 }}>
-                    <Typography variant="body1" color='primary' fontFamily="Poppins" fontWeight={600}>{editingAdesao ? 'Editar Adesão' : 'Nova Adesão'}</Typography>
-                    <form onSubmit={handleSave}>
-                        <TextField fullWidth margin="dense" label="Nome do Aluno" name="nomeAluno" defaultValue={editingAdesao?.nomeAluno || ''} required />
-                        <TextField fullWidth margin="dense" label="Turma" name="turma" defaultValue={editingAdesao?.turma || ''} required />
-                        <TextField fullWidth margin="dense" label="Valor" name="valor" defaultValue={editingAdesao?.valor || ''} required />
-                        <TextField fullWidth margin="dense" label="Data de Adesão" name="dataAdesao" type="date" defaultValue={editingAdesao?.dataAdesao || ''} />
-                        <TextField fullWidth margin="dense" label="Status" name="status" defaultValue={editingAdesao?.status || ''} required />
-                        <TextField fullWidth margin="dense" label="Descrição" name="descricao" defaultValue={editingAdesao?.descricao || ''} multiline rows={3} />
-                        <Button type="submit" variant="contained" sx={{ mt: 2 }}>Salvar</Button>
-                        <Button onClick={handleClose} sx={{ mt: 2, ml: 1 }}>Cancelar</Button>
-                    </form>
-                </Box>
-            </Modal>
-            <Dialog open={openDelete} onClose={() => setOpenDelete(false)} sx={{ padding: 3 }}>
-                <DialogTitle sx={{ fontFamily: "Poppins" }}>Tem certeza que deseja remover esta adesão?</DialogTitle>
-                <DialogActions>
-                    <Button variant='contained' onClick={() => setOpenDelete(false)} sx={{ fontFamily: 'Poppins' }}>Cancelar</Button>
-                    <Button onClick={handleDelete} color="error" sx={{ fontFamily: 'Poppins' }}>Remover</Button>
-                </DialogActions>
-            </Dialog>
-        </Grid>
+      <TableRow
+        key={row.id}
+        sx={{
+          "&:last-child td, &:last-child th": { border: 0 },
+          " &:hover": { bgcolor: "#F7F7F7", cursor: "pointer" },
+        }}
+      >
+        <TableCell component="th" scope="row">
+          <Link
+            color="primary"
+            underline="always"
+            onClick={() => onClickRowView(row)}
+            sx={{ fontFamily: "Poppins" }}
+          >
+            {row.aluno_id}
+          </Link>
+        </TableCell>
+        <TableCell align="left" sx={{ fontFamily: "Poppins" }}>
+          {row.turma_id}
+        </TableCell>
+        <TableCell align="left" sx={{ fontFamily: "Poppins" }}>
+          {row.status}
+        </TableCell>
+        <TableCell align="left" sx={{ fontFamily: "Poppins" }}>
+          {format(row.data_assinatura, 'dd/MM/yyyy')}
+        </TableCell>
+        <TableCell align="left" sx={{ fontFamily: "Poppins" }}>
+          {row.observacoes}
+        </TableCell>
+        <TableCell align="left" sx={{ fontFamily: "Poppins" }}>
+          <IconButton size="small" onClick={() => onClickRowView(row)}>
+            <FaEye color="#2d1c63" size={22} />
+          </IconButton>
+        </TableCell>
+      </TableRow>
     );
+  };
+
+  useEffect(() => {
+    fetchAdesoes(1);
+    setOnLoad(true);
+  }, []);
+
+  return (
+    <Stack width={"calc(100% - 28px)"}>
+      <Stack
+        direction={"row"}
+        alignItems={"center"}
+        justifyContent={"space-between"}
+        my={2}
+      >
+        <h2 className="text-2xl text-default font-extrabold"></h2>
+        <Stack direction={'row'} alignItems={'center'} gap={2}>
+          <Chip
+            variant="filled"
+            color={"success"}
+            label={`Concluídas: ${adesoesConcluidas}`}
+            icon={<FaFileSignature />}
+            sx={{ p: 1 }}
+          />
+          <Chip
+            variant="filled"
+            color={"warning"}
+            label={`Pendentes: ${adesoesPendentes}`}
+            icon={<IoWarning />}
+            sx={{ p: 1 }}
+          />
+          <Button
+            color="secondary"
+            variant="contained"
+            endIcon={<IoMdAdd />}
+            onClick={() => {
+              navigate("/adesoes/edit");
+            }}
+            sx={{ borderRadius: 2 }}
+          >
+            Adicionar
+          </Button>
+        </Stack>
+      </Stack>
+      <Slide direction="right" in={onLoad} mountOnEnter>
+        <Paper
+          elevation={0}
+          sx={{
+            p: 1,
+            flexGrow: 1,
+            width: "100%",
+            height: "calc(100vh - 170px)",
+            borderRadius: 4,
+          }}
+        >
+          <Paper
+            elevation={0}
+            sx={{
+              height: "100%",
+              overflow: "auto",
+              "&::-webkit-scrollbar": {
+                width: "8px",
+                height: "12px",
+              },
+              "&::-webkit-scrollbar-thumb": {
+                backgroundColor: "#ddd",
+                borderRadius: "12px",
+              },
+              "&::-webkit-scrollbar-track": {
+                background: "#EFEFEF",
+              },
+            }}
+          >
+            {loading ? (
+              <LoadingTable />
+            ) : adesoes.length > 0 ? (
+              <BasicTable
+                totalPages={adesoes.length}
+                columns={adesoesColumns}
+                rows={adesoes}
+                loading={loading}
+                dataRow={dataRow}
+                page={page}
+                handleChangePagination={handleChangePagination}
+              />
+            ) : (
+              <NoTableData
+                pronoum={"he"}
+                pageName="aluno"
+                disabledButton={false}
+                onClickAction={() => navigate("/adesoes/edit")}
+              />
+            )}
+          </Paper>
+        </Paper>
+      </Slide>
+    </Stack>
+  );
 };
 
 export default AdesoesPage;

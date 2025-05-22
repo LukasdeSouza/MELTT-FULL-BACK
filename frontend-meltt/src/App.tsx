@@ -4,7 +4,7 @@ function App() {
 
   return (
     <>
-      <h1>Aplicação EduFlex</h1>
+      <h1>Aplicação MELTT</h1>
     </>
   )
 }

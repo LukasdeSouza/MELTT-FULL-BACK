@@ -2,11 +2,12 @@
   "name": "academicservice",
   "version": "1.0.0",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "cross-env NODE_ENV=development nodemon src/server.js",
-    "start": "cross-env NODE_ENV=production node src/server.js",
-    "dev:local": "cross-env NODE_ENV=development nodemon src/server.js"
+    "dev": "cross-env NODE_ENV=development nodemon server/app.js",
+    "start": "cross-env NODE_ENV=production node server/app.js",
+    "dev:local": "cross-env NODE_ENV=development nodemon server/app.js"
   },
   "keywords": [],
   "author": "",
@@ -14,13 +15,15 @@
   "description": "",
   "dependencies": {
     "@aws-sdk/client-s3": "^3.670.0",
+    "@aws-sdk/s3-request-presigner": "^3.750.0",
     "aws-sdk": "^2.1691.0",
     "axios": "^1.7.7",
     "bcrypt": "^5.1.1",
     "bcryptjs": "^2.4.3",
     "body-parser": "^1.20.2",
-    "canvas": "^2.11.2",
+    "canvas": "^3.1.0",
     "cors": "^2.8.5",
+    "date-fns": "^4.1.0",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "jsonwebtoken": "^9.0.2",

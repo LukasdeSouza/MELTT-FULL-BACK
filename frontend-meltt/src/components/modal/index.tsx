@@ -29,7 +29,7 @@ type CustomModalProps = {
   openModal: boolean;
   handleCloseModal: () => void;
   loadingSave?: boolean;
-  onSubmit: () => void;
+  onSubmit: (e?: any) => void;
   children: React.ReactNode;
 };
 
@@ -58,7 +58,6 @@ const CustomModal = ({
           titleTypographyProps={{
             fontSize: 18,
             fontWeight: 600,
-            fontFamily: "Poppins",
           }}
           subheaderTypographyProps={{ fontSize: 12 }}
           action={
@@ -70,7 +69,7 @@ const CustomModal = ({
         />
 
         <CardContent style={{ padding: 2 }}>
-          <Box padding={2} sx={{ fontFamily: "Poppins" }}>
+          <Box padding={2}>
             {children}
           </Box>
         </CardContent>

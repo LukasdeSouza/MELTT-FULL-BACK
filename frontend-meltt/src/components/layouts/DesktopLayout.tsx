@@ -1,7 +1,7 @@
 import { useLocation } from "react-router-dom";
 import CustomDrawer, { CustomJwtPayload } from "../customDrawer";
 import {
-  Avatar,
+  // Avatar,
   Box,
   Button,
   Card,
@@ -18,7 +18,7 @@ import { jwtDecode } from "jwt-decode";
 import toast from "react-hot-toast";
 import { apiPostData } from "../../services/api";
 import { LoadingButton } from "@mui/lab";
-import { profileAvatarImages } from "../../utils/arrays";
+// import { profileAvatarImages } from "../../utils/arrays";
 
 type DesktopLayoutProps = {
   children: React.ReactNode;
@@ -34,8 +34,9 @@ const DesktopLayout = ({ children }: DesktopLayoutProps) => {
   const [openProfileImage, setOpenProfileImage] = useState(false);
   const [loadingSavePassword, setLoadingSavePassword] = useState(false);
 
-  const [profilePicture, setProfilePicture] = useState<string>("");
+  // const [profilePicture, setProfilePicture] = useState<string>("");
 
+  // console.log('openprofilepicture', openProfileImage);
   const onSubmitTeacher = async (values: any) => {
     setLoadingSavePassword(true);
     // const { senha } = values;
@@ -167,7 +168,7 @@ const DesktopLayout = ({ children }: DesktopLayoutProps) => {
           </CustomCard>
         </Card>
       </Modal>
-      <Modal
+      {/* <Modal
         open={openModalChangePassword}
         onClose={() => setOpenProfileImage(false)}
       >
@@ -258,7 +259,7 @@ const DesktopLayout = ({ children }: DesktopLayoutProps) => {
             </Stack>
           </CustomCard>
         </Card>
-      </Modal>
+      </Modal> */}
     </Box>
   );
 };

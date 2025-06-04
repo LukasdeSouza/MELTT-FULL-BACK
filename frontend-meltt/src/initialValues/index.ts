@@ -4,6 +4,7 @@ export const initialValuesFornecedor = {
   telefone: "",
   cnpj: "",
   responsavel: "",
+  turma_id: '',
   valor_cotado: "",
   status: "Pagamento não efetuado",
 };
@@ -23,13 +24,22 @@ export const initialValuesAdesao = {
   turma_id: "",
   status: "",
   data_assinatura: "",
+  faculdade: "",
   observacoes: "",
+}
+
+export const initialValuesProposta = {
+  nome_proposta: "",
+  turma_id: "",
+  enviado_por: "",
+  valor_proposta: "",
 }
 
 export const initialValuesTarefa = {
   nome: "",
   responsaveis: [],
-  atribuido_por: ""
+  atribuido_por: "",
+  prazo_tarefa: ""
 }
 
 export const initialValuesPlano = {
@@ -45,8 +55,9 @@ export const initialValuesAluno = {
   senha: "",
   confirmar_senha: "",
   telefone: "",
-  turma_id: "",
+  turma_id: null,
   tipo: "",
+  faculdade: "",
   ativo: true,
 }
 

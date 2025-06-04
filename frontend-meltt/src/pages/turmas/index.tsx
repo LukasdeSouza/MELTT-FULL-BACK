@@ -2,20 +2,19 @@ import {
   Box,
   Button,
   IconButton,
-  Modal,
   Paper,
   Slide,
   Stack,
   TableCell,
   TableRow,
+  TextField,
   Tooltip,
-  Typography,
 } from "@mui/material";
 import BasicTable from "../../components/table";
 import { useEffect, useState } from "react";
 import { useTurmaContext, Turma } from "../../providers/turmaContext";
 import { useNavigate } from "react-router-dom";
-import { apiGetData } from "../../services/api";
+import { apiGetData, apiPostData } from "../../services/api";
 import { IoIosDocument, IoMdAdd } from "react-icons/io";
 import { jwtDecode } from "jwt-decode";
 import { getToken } from "../../utils/token";
@@ -24,40 +23,100 @@ import toast from "react-hot-toast";
 import NoTableData from "../../components/noData";
 import LoadingTable from "../../components/loadingTable";
 import { turmasColumns } from "./table/columns";
-import { format } from "date-fns";
+import { format, parseISO } from 'date-fns';
+
 import { FaEye } from "react-icons/fa6";
-import { MdModeEdit } from "react-icons/md";
+import CustomModal from "../../components/modal";
+import { PiSignature } from "react-icons/pi";
+import { MdOutlineModeEdit } from "react-icons/md";
 
 
 const TurmasPage = () => {
   const navigate = useNavigate();
   const { dispatchTurma } = useTurmaContext();
-  const [page, setPage] = useState(1);
-  const [onLoad, setOnLoad] = useState(false);
-  const [loading, setLoading] = useState(false);
-
-  const [turmas, setTurmas] = useState([]);
-  const [totalPages, setTotalPages] = useState(0);
-
-  const [openModalDetails, setOpenModalDetails] = useState(false);
-
   const token = getToken();
   const decoded = token ? jwtDecode<CustomJwtPayload>(token) : null;
 
+  const [page, setPage] = useState(1);
+
+  const [onLoad, setOnLoad] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [totalPages, setTotalPages] = useState(0);
+
+  const [openModal, setOpenModal] = useState(false);
+
+  const [turmas, setTurmas] = useState<any>([]);
+
+  const [uuidContrato, setUuidContrato] = useState("")
+  const [emailToSign, setEmailToSign] = useState<string>("")
+
+
+  const onSendToSign = async () => {
+    toast.loading("Enviando documento para Assinatura");
+    console.log('emailToSign', emailToSign)
+    let createListObj = {
+      signers: [{ email: emailToSign, act: "1", foreign: "0", certificadoicpbr: "1" }],
+      uuid_document: uuidContrato
+    }
+    let signerListObj = { message: "\"Olá! Segue contrato MELTT para assinatura.\"", workflow: "0", skip_email: "0", uuid_document: uuidContrato }
+
+    try {
+      const createList = await apiPostData("academic", "/d4sign/create-signature-list", createListObj)
+      const sendSigner = await apiPostData("academic", "/d4sign/send-to-signer", signerListObj);
+      console.log(createList)
+      console.log(sendSigner)
+      toast.dismiss()
+      toast.success('Contrato Enviado com Sucesso')
+    } catch (error) {
+      toast.error('Erro ao enviar arquivo para assinatura')
+      toast.dismiss();
+    } finally {
+      toast.dismiss();
+      setOpenModal(false)
+    }
+
+  }
+
+  const onSendToSignStudentEstatuto = async () => {
+    toast.loading("Enviando documento para Assinatura");
+
+    let createListObj = {
+      signers: [{ email: decoded?.email, act: "1", foreign: "0", certificadoicpbr: "1" }],
+      uuid_document: turmas[0]?.estatuto_uuid
+    }
+    let signerListObj = { message: "\"Olá! Segue ESTATUTO MELTT para assinatura.\"", workflow: "0", skip_email: "0", uuid_document: turmas[0]?.estatuto_uuid }
+
+    try {
+      const createList = await apiPostData("academic", "/d4sign/create-signature-list", createListObj)
+      const sendSigner = await apiPostData("academic", "/d4sign/send-to-signer", signerListObj);
+      console.log(createList)
+      console.log(sendSigner)
+      toast.dismiss()
+    } catch (error) {
+      toast.error('Erro ao enviar arquivo para assinatura')
+      toast.dismiss();
+    } finally {
+      toast.dismiss();
+      toast.success(`Contrato Enviado com Sucesso. Confira seu Email: ${decoded?.email}`)
+      setOpenModal(false)
+    }
+  }
+
   const fetchTurmas = async (page: number) => {
     setLoading(true);
-    if (decoded?.tipo === "ADMIN") {
+    if (decoded?.tipo === 'ALUNO') {
       try {
-        const response = await apiGetData("academic", `/turmas?page=${page}`);
-        setTotalPages(response.totalPages);
+        const response = await apiGetData("academic", `/turmas/${decoded?.turma_id}`);
         setTurmas(response.data);
       } catch (error) {
         toast.error("Erro ao buscar turmas");
       }
-    } if (decoded?.tipo === 'ALUNO') {
+    }
+    else {
       try {
-        const response = await apiGetData("academic", `/turmas/${decoded?.turma_id}`);
-        setTurmas(response);
+        const response = await apiGetData("academic", `/turmas?page=${page}`);
+        setTotalPages(response.totalPages);
+        setTurmas(response.data);
       } catch (error) {
         toast.error("Erro ao buscar turmas");
       }
@@ -75,8 +134,8 @@ const TurmasPage = () => {
     setPage(value);
   };
 
-
   const dataRowAdmin = (row: Turma) => {
+    console.log('row', row.id)
     return (
       <TableRow
         key={row.nome}
@@ -92,37 +151,44 @@ const TurmasPage = () => {
         </TableCell>
         <TableCell align="left">{row.ano_formatura}</TableCell>
         <TableCell align="left">
-          {row.criado_em ? format(row.criado_em, "dd/MM/yyyy") : "N/As"}
+          {row?.criado_em ? format(parseISO(row?.criado_em), "dd/MM/yyyy") : "N/As"}
         </TableCell>
         <TableCell align="left">
-          <Stack direction={"row"}>
-            <Tooltip title="Editar Turma" arrow>
-              <IconButton onClick={() => {
+          <Tooltip title='Editar Turma'>
+            <IconButton
+              onClick={() => {
                 dispatchTurma({ type: "SET_TURMA_SELECIONADA", payload: row });
                 navigate(`/turmas/edit/${row.id}`)
               }}>
-                <MdModeEdit color="#2d1c63" size={22} />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Ver Estatuto">
-              <IconButton onClick={() => window.open(row.arquivo_url, "_blank")}>
-                <IoIosDocument color="#2d1c63" size={22} />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Visualizar Turma" arrow>
-              <IconButton
-                onClick={() => navigate(`/turmas/view/${row.id}/pagina-turma`)}
-              >
-                <FaEye color="#2d1c63" size={22} />
-              </IconButton>
-            </Tooltip>
-          </Stack>
+              <MdOutlineModeEdit />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title='Enviar para Assinatura'>
+            <IconButton
+              disabled={row.meltt_contrato_uuid === null}
+              onClick={() => {
+                setUuidContrato(row.meltt_contrato_uuid)
+                setOpenModal(true)
+              }}>
+              <PiSignature />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Visualizar Turma">
+            <IconButton
+              onClick={() => {
+                console.log('row', row.id)
+                navigate(`/turmas/view/${row.id}/pagina-turma`)
+              }}>
+              <FaEye />
+            </IconButton>
+          </Tooltip>
         </TableCell>
       </TableRow>
     );
   };
 
   const dataRowStudent = (row: Turma) => {
+
     return (
       <TableRow
         key={row.nome}
@@ -138,15 +204,15 @@ const TurmasPage = () => {
         </TableCell>
         <TableCell align="left">{row.ano_formatura}</TableCell>
         <TableCell align="left">
-          {row.criado_em ? format(row.criado_em, "dd/MM/yyyy") : "N/As"}
+          {row.criado_em ? format(parseISO(row.criado_em), "dd/MM/yyyy") : "N/A"}
         </TableCell>
         <TableCell align="left">
-          <Tooltip title="Ver Estatuto">
-            <IconButton onClick={() => window.open(row.arquivo_url, "_blank")}>
+          <Tooltip title="Assinar Estatuto">
+            <IconButton onClick={onSendToSignStudentEstatuto}>
               <IoIosDocument color="#2d1c63" size={22} />
             </IconButton>
           </Tooltip>
-          <Tooltip title="Ver página da turma" arrow>
+          <Tooltip title="Ver Página da Turma" arrow>
             <IconButton
               onClick={() => navigate(`/turmas/view/${row.id}/pagina-turma`)}
             >
@@ -216,14 +282,14 @@ const TurmasPage = () => {
           >
             {loading ? (
               <LoadingTable />
-            ) : turmas?.length > 0 ? (
+            ) : turmas.length > 0 ? (
               <BasicTable
                 totalPages={totalPages}
                 columns={turmasColumns}
                 rows={turmas}
                 loading={loading}
                 dataRow={
-                  decoded?.tipo === "ADMIN" ? dataRowAdmin : dataRowStudent
+                  decoded?.tipo === "ALUNO" ? dataRowStudent : dataRowAdmin
                 }
                 page={page}
                 handleChangePagination={handleChangePagination}
@@ -231,39 +297,31 @@ const TurmasPage = () => {
             ) : (
               <NoTableData
                 pronoum={"he"}
-                pageName="aluno"
+                pageName="turma"
                 disabledButton={false}
-                onClickAction={() => navigate("/turmas/edit")}
+                onClickAction={() => navigate("/turmas/new")}
               />
             )}
           </Paper>
         </Paper>
       </Slide>
-      <Modal
-        open={openModalDetails}
-        onClose={() => setOpenModalDetails(false)}
-        aria-labelledby="modal-modal-title"
-        aria-describedby="modal-modal-description"
+      <CustomModal
+        title="Enviar Contrato para Assinatura"
+        subHeader="preencha o email que receberá o contrato da turma para assinatura"
+        openModal={openModal}
+        handleCloseModal={() => setOpenModal(false)}
+        onSubmit={onSendToSign}
       >
-        <Box sx={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          width: 400,
-          bgcolor: 'background.paper',
-          borderRadius: 2,
-          boxShadow: 24,
-          p: 3,
-        }}>
-          <Typography color="textPrimary" variant="h6" component="h2">
-            Text in a modal
-          </Typography>
-          <Typography id="modal-modal-description" sx={{ mt: 2 }}>
-            Duis mollis, est non commodo luctus, nisi erat porttitor ligula.
-          </Typography>
+        <Box component={'form'} sx={{ width: '100%' }}>
+          <TextField
+            fullWidth
+            label="E-mail que receberá o contrato"
+            placeholder="email que receberá o contrato MELTT"
+            value={emailToSign}
+            onChange={(e) => setEmailToSign(e.target.value)}
+          />
         </Box>
-      </Modal>
+      </CustomModal>
     </Stack>
   );
 };

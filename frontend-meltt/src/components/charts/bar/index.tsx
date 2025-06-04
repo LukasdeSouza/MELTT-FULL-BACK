@@ -46,7 +46,7 @@ import {
     );
   };
   
-  const CustomBarChart = ({ data }: { data: FornecedorData[] }) => {
+  const CustomBarChart = ({ data }: { data: any[] }) => {
     const processedData = data.map(item => ({
       ...item,
       valor_cotado: parseFloat(item.valor_cotado) || 0

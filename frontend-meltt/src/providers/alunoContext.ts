@@ -1,16 +1,14 @@
 import React, { createContext, useContext } from "react";
 
 export interface Aluno {
-  id: number;
+  id: string;
   nome: string;
   email: string;
   telefone: string;
+  plano: string;
+  faculdade: string;
   turma: string;
-  tipo: string;
-  ativo: boolean;
-  documento: string;
-  senha: string;
-  [key: string]: string | boolean | number;
+  [key: string]: string;
 }
 
 export interface AlunoState {

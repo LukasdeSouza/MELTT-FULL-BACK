@@ -5,7 +5,7 @@ import {
   TextField,
   Autocomplete,
 } from "@mui/material";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { apiGetData } from "../../services/api";
 import BoxDashboardValues from "../../components/box/dashboardValues";
 import CustomLineChart from "../../components/charts/line";
@@ -23,7 +23,7 @@ interface ChartData {
 }
 
 const DashboardPagamentosPage = () => {
-  const [loading, setLoading] = useState(false);
+  // const [loading, setLoading] = useState(false);
   const [onLoad, setOnLoad] = useState(false);
 
   const [valorEmAberto, setValorEmAberto] = useState(0);
@@ -36,7 +36,8 @@ const DashboardPagamentosPage = () => {
 
   const [periodo, setPeriodo] = useState<any>(null);
 
-  const handleChange = (event, newValue) => {
+  const handleChange = (_: any, newValue: any) => {
+    console.log(newValue);
     setPeriodo(newValue);
   };
 
@@ -48,7 +49,7 @@ const DashboardPagamentosPage = () => {
     { label: "Últimos 60 dias", value: dayjs().subtract(60, "day").startOf("day") },
   ];
 
-  const fetchPagamentosBySituacao = useCallback(async (situacao: number) => {
+  const fetchPagamentosBySituacao = async (situacao: number) => {
     try {
       let response;
 
@@ -112,7 +113,7 @@ const DashboardPagamentosPage = () => {
       toast.error("Erro ao buscar pagamentos");
       throw error;
     }
-  }, [])
+  }
 
   useEffect(() => {
     Promise.all([
@@ -123,6 +124,7 @@ const DashboardPagamentosPage = () => {
   }, [periodo]);
 
   useEffect(() => {
+
     setOnLoad(true);
   }, []);
 
@@ -166,13 +168,13 @@ const DashboardPagamentosPage = () => {
                 renderInput={(params) => (
                   <TextField
                     {...params}
-                    label="Filtrar por Data"
+                    label="Filtrar por Período"
                     inputProps={{ ...params.inputProps, readOnly: true }} // Prevent typing
                   />
                 )}
               />
             </Stack>
-            <Stack direction={"row"} justifyContent={"space-between"}>
+            <Stack direction={"row"} gap={2} justifyContent={"space-between"}>
               <BoxDashboardValues title="Total Pago" valor={valorRecebido} />
               <BoxDashboardValues title="Total a receber" valor={valorEmAberto} />
               <BoxDashboardValues title="Total Cancelado" valor={valorCancelado} />
@@ -181,7 +183,7 @@ const DashboardPagamentosPage = () => {
         </Slide>
         <Slide direction="right" in={onLoad} mountOnEnter>
           <Stack direction={"column"}>
-            <Typography color="primary" fontFamily={'Poppins'}>Em Aberto</Typography>
+            <Typography color="primary" fontFamily={'Poppins'} sx={{fontWeight: 600}}>Em Aberto</Typography>
             <CustomLineChart
               data={listAbertos}
             />
@@ -191,7 +193,7 @@ const DashboardPagamentosPage = () => {
         </Slide>
         <Slide direction="right" in={onLoad} mountOnEnter>
           <Stack direction={"column"}>
-            <Typography color="primary" fontFamily={'Poppins'}>Pagamento efetuado</Typography>
+            <Typography color="primary" fontFamily={'Poppins'} sx={{fontWeight: 600}}>Pagamento efetuado</Typography>
             <CustomLineChart
               data={listRecebido}
             />

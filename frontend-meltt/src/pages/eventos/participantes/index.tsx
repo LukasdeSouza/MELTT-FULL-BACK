@@ -74,7 +74,10 @@ const EventosParticipantesPage = () => {
           {row.email}
         </TableCell>
         <TableCell align="left" sx={{ fontFamily: "Poppins" }}>
-          <Chip color={row.checked_in == 0 ? 'warning' : 'success'} label={row.checked_in == 0 ? 'Checkin Não efetuado' : 'Checkin efetuado'}/>
+          <Chip
+            color={row.checked_in == 0 ? 'warning' : 'success'}
+            label={row.checked_in == 0 ? 'Checkin Não efetuado' : 'Checkin efetuado'}
+          />
         </TableCell>
 
       </TableRow>
@@ -98,9 +101,9 @@ const EventosParticipantesPage = () => {
           <IconButton onClick={() => navigate(-1)}>
             <BiArrowBack />
           </IconButton>
-          <h2 className="text-2xl text-default font-extrabold">Participantes do evento</h2>
+          <h2 className="text-lg text-default font-extrabold">Participantes do evento</h2>
         </Stack>
-        
+
       </Stack>
       <Slide direction="right" in={onLoad} mountOnEnter>
         <Paper
@@ -145,7 +148,7 @@ const EventosParticipantesPage = () => {
               />
             ) : (
               <Stack width={'100%'} height={'100%'} alignItems={'center'}>
-                <h2 className="font-light">Não há eventos cadastrados</h2>
+                <h2 className="font-light">Não há participantes até o momento para este evento</h2>
               </Stack>
             )}
           </Paper>

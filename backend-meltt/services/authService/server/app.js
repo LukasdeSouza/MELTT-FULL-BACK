@@ -131,8 +131,8 @@ app.post("/api/users/reset-password/", authMiddleware, async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    const newPassword = await bcrypt.hash(senha, 10);
-    await pool.query("UPDATE usuarios SET senha = ? WHERE id = ?", [newPassword, user.id]);
+    // const newPassword = await bcrypt.hash(senha, 10);
+    await pool.query("UPDATE usuarios SET senha = ? WHERE id = ?", [senha, user.id]);
     res.json({ message: "Senha resetada com sucesso" });
   } catch (error) {
     res.status(500).json({ error: "Erro ao resetar senha" });

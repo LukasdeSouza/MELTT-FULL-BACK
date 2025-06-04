@@ -3,9 +3,9 @@ import React, { createContext, useContext } from "react";
 export interface Tarefa {
   id: string;
   nome: string;
-  responsavel: string;
+  responsaveis: string;
   atribuido_por: string;
-  criado_em: string;
+  criado_em: any;
   [key: string]: string;
 }
 

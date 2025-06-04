@@ -7,5 +7,15 @@ export default defineConfig({
     host: true,
     port: 9001
     },
-  plugins: [ react()]
+  plugins: [ react()],
+  optimizeDeps: {
+    include: [
+      'date-fns/format',
+      'date-fns/parse',
+      'date-fns/addDays',
+      'date-fns/startOfWeek',
+      'date-fns/getDay',
+      'date-fns/locale/pt-BR'
+    ]
+  }
 })

@@ -5,6 +5,7 @@ export interface Fornecedor {
   nome: string;
   status: string;
   telefone: string;
+  turma_id: string;
   tipo_servico: string;
   valor_cotado: string;
   [key: string]: string;

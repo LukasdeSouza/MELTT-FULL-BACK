@@ -71,10 +71,10 @@ class AdesaoController {
 
   async createAdesao(req, res) {
     try {
-      const { usuario_id, turma_id, status, data_assinatura, faculdade, observacoes } = req.body;
+      const { usuario_id, turma_id, status, data_assinatura, faculdade, file_uuid, observacoes } = req.body;
       const [result] = await db.query(
         "INSERT INTO adesoes SET ?", 
-        { usuario_id, turma_id, status, data_assinatura, faculdade, observacoes }
+        { usuario_id, turma_id, status, data_assinatura, faculdade, file_uuid, observacoes }
       );
       res.status(201).json({ id: result.insertId, ...req.body });
     } catch (err) {

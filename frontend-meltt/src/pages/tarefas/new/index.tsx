@@ -1,8 +1,6 @@
 import {
-  Autocomplete,
   Box,
   Button,
-  FormControl,
   Paper,
   Stack,
   TextField,
@@ -12,12 +10,12 @@ import { useNavigate } from "react-router-dom";
 import { Formik } from "formik";
 import { validateTarefaSchema } from "../../../utils/validationSchemas";
 import toast from "react-hot-toast";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import "dayjs/locale/pt-br";
 import LoadingBackdrop from "../../../components/loadingBackdrop";
-import { apiGetData, apiPostData } from "../../../services/api";
+import { apiPostData } from "../../../services/api";
 
-import { BiSave } from "react-icons/bi";
+import { BiArrowBack, BiSave } from "react-icons/bi";
 import { LoadingButton } from "@mui/lab";
 import { initialValuesTarefa } from "../../../initialValues";
 
@@ -28,19 +26,9 @@ const TarefasNewPage = () => {
   const [loadingSave, setLoadingSave] = useState(false);
   const [openLoadingBackdrop, setOpenLoadingBackdrop] = useState(false);
 
-  const [usuarios, setUsuarios] = useState([]);
-
-  const fetchResponsaveis = async () => {
-    try {
-      const response = await apiGetData("authentication", "/users/getByTipo?tipo=ADMIN");
-      setUsuarios(response.result)
-    } catch (error) {
-      toast.error("Erro ao buscar responsáveis");
-    }
-  }
 
   const onSubmitTarefa = async (values: any) => {
-    const {responsaveis, ...tarefaValues} = values;
+    const { responsaveis, ...tarefaValues } = values;
     console.log("responsaveis", responsaveis);
     setLoadingSave(true);
 
@@ -70,160 +58,167 @@ const TarefasNewPage = () => {
     setLoadingSave(false);
   };
 
-  useEffect(() => {
-    fetchResponsaveis();
-  }, [])
 
 
   return (
-    <Stack width={"100%"} height={"100%"} gap={10}>
-      <Stack width={"calc(100% - 28px)"} direction={"column"}>
+    <Stack width="100%" height="100%" gap={6} px={2}>
+      <Stack width="100%" direction="column">
         <Typography
-          color="primary"
-          variant="h5"
-          fontWeight={700}
-          ml={4}
-          mb={2}
-        ></Typography>
+          variant="h4"
+          fontWeight={800}
+          mb={3}
+          sx={{
+            fontFamily: 'Poppins',
+            background: 'linear-gradient(45deg, #2D1C63 30%, #4A3C8B 90%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            borderBottom: '2px solid',
+            borderColor: 'divider',
+            pb: 1.5
+          }}
+        >
+          Cadastrar Nova Tarefa
+          <Typography variant="body2" color="text.secondary" mt={1}>
+            Preencha os campos abaixo para criar uma nova tarefa
+          </Typography>
+        </Typography>
+
         <Paper
-          elevation={0}
-          style={{
-            fontFamily: "Poppins",
-            position: "relative",
-            padding: "12px",
-            height: "calc(100vh - 132px)",
-            overflowY: "auto",
-            borderRadius: "24px",
-            backgroundColor: "#fff",
+          elevation={4}
+          sx={{
+            position: 'relative',
+            p: 4,
+            height: 'calc(100vh - 160px)',
+            overflowY: 'auto',
+            borderRadius: 4,
+            bgcolor: 'background.paper',
+            '&::-webkit-scrollbar': { width: 10 },
+            '&::-webkit-scrollbar-thumb': {
+              bgcolor: 'primary.light',
+              borderRadius: 2
+            }
           }}
         >
           <Formik
-            initialValues={{
-              ...initialValuesTarefa,
-            }}
+            initialValues={{ ...initialValuesTarefa }}
             validationSchema={validateTarefaSchema}
             onSubmit={(values: any) => onSubmitTarefa(values)}
           >
-            {({ values, handleChange, handleSubmit, setFieldValue }) => (
-              <form
-                className="h-[100%]"
-                onSubmit={handleSubmit}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    handleSubmit(e);
-                    () => { };
-                  }
-                }}
-              >
-                <Stack height={"100%"} overflow={"auto"}>
+            {({ values, handleChange, handleSubmit }) => (
+              <form onSubmit={handleSubmit} onKeyDown={(e) => e.key === 'Enter' && e.preventDefault()}>
+                <Stack height="100%" spacing={4} pb={10}>
                   <Box
-                    display={"flex"}
-                    flexDirection={"column"}
-                    gap={3}
-                    p={2}
+                    display="flex"
+                    flexDirection="column"
+                    gap={4}
                     sx={{
-                      maxHeight: "calc(85vh - 132px)",
-                      overflowY: "auto",
+                      maxHeight: 'calc(85vh - 132px)',
+                      overflowY: 'auto',
+                      pr: 2
                     }}
                   >
-                    <Stack direction={"column"}>
-                      <Typography
-                        color="primary"
-                        fontWeight={600}
-                      >
-                        Cadastrar Nova Tarefa
-                      </Typography>
-                      <Typography
-                        variant="caption"
-                        color="primary"
-                      >
-                        preencha as informações abaixo.
-                      </Typography>
-                    </Stack>
-                    <Stack
-                      direction={"row"}
-                      justifyContent={"space-between"}
-                      gap={2}
-                    >
+                    <Stack direction="row" spacing={2}>
                       <TextField
                         fullWidth
-                        size="small"
+                        size="medium"
                         name="nome"
-                        variant="outlined"
                         label="Nome da Tarefa"
                         value={values.nome}
                         onChange={handleChange}
-                        placeholder="ex: preencher planilha ABC"
+                        placeholder="Ex: Atualização de planilha de custos"
+                        variant="filled"
+                        InputProps={{
+                          sx: {
+                            borderRadius: 2,
+                            '&:hover': { bgcolor: 'grey.50' },
+                            '&.Mui-focused': { bgcolor: 'grey.100' }
+                          }
+                        }}
                       />
+
                       <TextField
                         fullWidth
-                        size="small"
+                        size="medium"
                         name="atribuido_por"
-                        variant="outlined"
                         label="Atribuído por"
                         value={values.atribuido_por}
                         onChange={handleChange}
-                        placeholder="quem está criando essa tarefa ?"
+                        placeholder="Ex: Departamento Financeiro"
+                        variant="filled"
+                        InputProps={{
+                          sx: {
+                            borderRadius: 2,
+                            '&:hover': { bgcolor: 'grey.50' }
+                          }
+                        }}
                       />
                     </Stack>
-                    <FormControl fullWidth size="small">
-                      <Autocomplete
-                        multiple
-                        size="small"
-                        id="responsaveis"
-                        onKeyDown={(e) => { e.preventDefault() }}
-                        options={usuarios}
-                        getOptionLabel={(option) => option.nome}
-                        value={values.responsaveis} // Ensure this is an array
-                        onChange={(_, newValue) => {
-                          setFieldValue("responsaveis", newValue);
-                        }}
-                        renderInput={(params) => (
-                          <TextField
-                            {...params}
-                            label="Responsáveis"
-                            variant="outlined"
-                          />
-                        )}
-                      />
-                    </FormControl>
+
+                    <TextField
+                      fullWidth
+                      size="medium"
+                      name="responsaveis"
+                      label="Responsáveis"
+                      value={values.responsaveis}
+                      onChange={handleChange}
+                      placeholder="Separe os nomes por vírgula (Ex: João, Maria, Carlos)"
+                      variant="filled"
+                      multiline
+                      rows={2}
+                      InputProps={{
+                        sx: {
+                          borderRadius: 2,
+                          alignItems: 'flex-start',
+                          '& textarea': { lineHeight: 1.6 }
+                        }
+                      }}
+                      InputLabelProps={{ shrink: true }}
+                    />
                   </Box>
+
                   <Stack
-                    width="100%"
-                    justifyContent="flex-end"
                     direction="row"
-                    gap={2}
-                    px={2}
-                    mt={1}
+                    justifyContent="flex-end"
+                    spacing={2}
                     sx={{
-                      position: "absolute",
-                      bottom: 12,
-                      left: 0,
-                      right: 0,
-                      backgroundColor: "white",
-                      p: 2,
+                      position: 'sticky',
+                      bottom: 0,
+                      bgcolor: 'background.paper',
+                      pt: 2,
+                      pb: 1,
+                      borderTop: '1px solid',
+                      borderColor: 'divider',
+                      borderRadius: 2
                     }}
                   >
                     <Button
-                      color="primary"
                       variant="outlined"
-                      size="small"
-                      onClick={() => navigate("/tarefas")}
-                      sx={{ width: 120, borderRadius: 2 }}
+                      onClick={() => navigate("/processos-internos/tarefas")}
+                      startIcon={<BiArrowBack />}
+                      sx={{
+                        px: 4,
+                        borderRadius: 2,
+                        textTransform: 'none',
+                        '&:hover': { borderWidth: 2 }
+                      }}
                     >
                       Voltar
                     </Button>
                     <LoadingButton
                       type="submit"
-                      color="secondary"
                       variant="contained"
-                      size="small"
-                      endIcon={<BiSave />}
+                      color="primary"
                       loading={loadingSave}
-                      sx={{ width: 120, borderRadius: 2 }}
+                      endIcon={<BiSave />}
+                      sx={{
+                        px: 4,
+                        borderRadius: 2,
+                        textTransform: 'none',
+                        background: 'linear-gradient(45deg, #2D1C63 30%, #4A3C8B 90%)',
+                        '&:hover': { opacity: 0.9 }
+                      }}
                     >
-                      Salvar
+                      Salvar Tarefa
                     </LoadingButton>
                   </Stack>
                 </Stack>

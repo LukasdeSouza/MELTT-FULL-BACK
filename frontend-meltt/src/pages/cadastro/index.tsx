@@ -11,7 +11,6 @@ import * as Yup from "yup";
 import React from "react";
 import { BsEye, BsEyeSlash } from "react-icons/bs";
 import { useNavigate } from "react-router-dom";
-import MelttLogo from "../../assets/logo/melttLogo";
 import { Formik } from "formik";
 import toast from "react-hot-toast";
 import { LoadingButton } from "@mui/lab";
@@ -93,7 +92,8 @@ const CadastroPage = () => {
               onSubmit={handleSubmit}
             >
               <Stack alignItems={"center"} gap={2}>
-                <MelttLogo />
+              <img src="/images/logo.png"
+            alt="Logo" className="w-48" />
                 <small
                   style={{
                     fontWeight: 300,

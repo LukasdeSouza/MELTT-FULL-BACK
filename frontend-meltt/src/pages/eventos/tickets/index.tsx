@@ -16,6 +16,7 @@ import LoadingTable from "../../../components/loadingTable";
 import { apiGetData } from "../../../services/api";
 import { eventTicketsColumns } from "../table/columns/tickets";
 import { BiArrowBack } from "react-icons/bi";
+import { IoFemale, IoMale, IoTicketOutline } from "react-icons/io5";
 
 const EventosTicketsPage = () => {
   const navigate = useNavigate();
@@ -81,7 +82,12 @@ const EventosTicketsPage = () => {
           </Stack>
         </TableCell>
         <TableCell align="left" sx={{ fontFamily: "Poppins" }}>
-          {row.gender}
+          <Chip
+            color={row.gender === 'MALE' ? 'primary' : 'secondary'}
+            label={row.gender === 'MALE' ? 'Masculino' : 'Feminino'}
+            icon={row.gender === 'Masculino' ? <IoMale /> : <IoFemale />}
+            sx={{ fontFamily: 'Poppins', p: 1 }}
+          />
         </TableCell>
         <TableCell align="left" sx={{ fontFamily: "Poppins" }}>
           {row.lot_name}
@@ -90,7 +96,12 @@ const EventosTicketsPage = () => {
           {row.ticket_type}
         </TableCell>
         <TableCell align="left" sx={{ fontFamily: "Poppins" }}>
-          {row.ticket_code}
+          <Chip
+            color="secondary"
+            label={row.ticket_code}
+            icon={<IoTicketOutline size={20} />}
+            sx={{ fontFamily: 'Poppins', p: 1 }}
+          />
         </TableCell>
         <TableCell align="left" sx={{ fontFamily: "Poppins" }}>
           {row.email}
@@ -118,7 +129,12 @@ const EventosTicketsPage = () => {
           </IconButton>
           <h2 className="text-lg text-default font-bold">{eventTickets[0]?.event_name}</h2>
         </Stack>
-          <Chip label={`quantidade de tickets: ${eventTickets.length}`}/>
+        <Chip
+          color="secondary"
+          label={`Qtd. de tickets: ${eventTickets.length}`}
+          icon={<IoTicketOutline size={20}/>}
+          sx={{ fontFamily: "Poppins", p:1 }}
+        />
       </Stack>
       <Slide direction="right" in={onLoad} mountOnEnter>
         <Paper

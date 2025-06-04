@@ -20,7 +20,8 @@ import { apiGetData } from "../../services/api";
 import { contratosColumns } from "./columns";
 import LoadingTable from "../../components/loadingTable";
 import NoTableData from "../../components/noData";
-import { format } from "date-fns";
+import {format} from 'date-fns';
+
 import CustomModal from "../../components/modal";
 import { useDropzone } from "react-dropzone";
 import IconUpload from "../../assets/icons/upload";

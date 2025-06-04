@@ -1,0 +1,112 @@
+.fc {
+  font-family: 'Roboto', sans-serif;
+  /* Usando a fonte do Material-UI */
+  color: #333;
+  /* Cor principal do texto */
+}
+
+/* Cabeçalho */
+.fc-toolbar-title {
+  color: #333 !important;
+  /* Cor do título azul do MUI */
+  font-family: 'Poppins' !important;
+  /* Usando a fonte do Material-UI */
+  font-size: 16px !important;
+  /* Tamanho do título */
+  font-weight: 600 !important;
+  text-transform: capitalize !important;
+  /* Capitaliza o título */
+}
+
+/* Botões */
+.fc-button {
+  /* background-color: #21134c !important; */
+  border: 'none' !important;
+  color: white !important;
+  font-family: 'Poppins' !important;
+  font-size: 13px !important;
+  font-weight: 300 !important;
+  text-transform: capitalize !important;
+}
+
+.fc-button:hover {
+  background-color: #1565c0 !important;
+  color: #000 !important;
+  border: 1px solid #1565c0 !important;
+}
+
+/* Dias da semana */
+.fc-col-header-cell {
+  background-color: #f5f5f5;
+  color: #666;
+}
+
+/* Eventos */
+.fc-event {
+  background-color: #1976d2 !important;
+  /* Azul do Material UI */
+  border: none !important;
+  color: white !important;
+  padding: 2px 5px !important;
+  border-radius: 4px !important;
+}
+
+.fc-event-today {
+  background-color: #fff3e0 !important;
+  /* Laranja claro */
+  color: #bf360c !important;
+  /* Texto laranja escuro */
+  border: 1px solid #ffab91 !important;
+}
+
+/* Hover nos eventos */
+.fc-event:hover {
+  background-color: #bbdefb !important;
+}
+
+/* Data atual */
+.fc-day-today {
+  background-color: #fff8e1 !important;
+}
+
+.fc-day-today .fc-event {
+  background-color: #d32f2f !important;
+  /* Vermelho escuro */
+  color: #fff !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Melhora o hover */
+.fc-event:hover {
+  opacity: 0.9 !important;
+  transform: scale(1.02);
+}
+
+/* Corpo do calendário */
+.fc-scrollgrid {
+  border: 1px solid #e0e0e0 !important;
+}
+
+/* Células dos dias */
+.fc-daygrid-day {
+  border-color: #eee !important;
+}
+
+.fc .fc-daygrid-day.fc-day-today {
+  background-color: rgba(255, 241, 118, 0.15) !important;
+  /* Fundo amarelado suave */
+}
+
+/* Borda do dia atual */
+.fc .fc-daygrid-day.fc-day-today {
+  border-color: #eee !important;
+  /* Borda azul mais escura */
+  font-family: 'Poppins' !important;
+}
+
+/* Cor do número do dia atual */
+.fc .fc-daygrid-day.fc-day-today a {
+  color: #eee !important;
+  /* Azul escuro para contraste */
+  font-family: 'Poppins' !important;
+}

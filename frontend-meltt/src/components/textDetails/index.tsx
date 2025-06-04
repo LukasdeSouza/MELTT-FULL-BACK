@@ -1,8 +1,9 @@
 import { Stack, Typography } from "@mui/material";
 
-const TextDetails = ({ text, details }: { text: string; details: string | undefined }) => {
+const TextDetails = ({ text, details, icon }: { text: string; details: any; icon?:any }) => {
   return (
     <Stack sx={{ fontSize: 14, color: "grey"}} direction={"column"}>
+      {icon}
       <Typography variant="body2">
         {text}
       </Typography>

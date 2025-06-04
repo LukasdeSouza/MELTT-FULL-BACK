@@ -103,7 +103,7 @@ const DashboardFornecedoresPage = () => {
           unmountOnExit
           timeout={300}
         >
-          <Stack direction={"row"} justifyContent={"space-between"}>
+          <Stack direction={"row"} gap={2} justifyContent={"space-between"}>
             <BoxDashboardValues title="Valor Pago a Fornecedores" valor={totalPagamentosEfetuados} />
             <BoxDashboardValues title="Valor em Aberto" valor={totalPagamentosNaoEfetuados}/>
           </Stack>
@@ -187,7 +187,7 @@ const DashboardFornecedoresPage = () => {
                         color="textSecondary"
                         variant="subtitle2"
                       >
-                        Desculpe, nenhum aluno encontrado 🙈
+                        Desculpe, nenhum fornecedor foi encontrado
                       </Typography>
                     </Stack>
                   )}

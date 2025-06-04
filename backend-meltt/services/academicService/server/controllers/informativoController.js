@@ -51,10 +51,10 @@ class InformativosController {
 
   async createInformativo(req, res) {
     try {
-      const { url_arquivo, turma_id } = req.body;
+      const { url_arquivo, file_name, turma_id } = req.body;
       const [result] = await db.query(
         "INSERT INTO informativos SET ?", 
-        { url_arquivo, turma_id }
+        { url_arquivo, file_name, turma_id }
       );
       res.status(201).json({ id: result.insertId, ...req.body });
     } catch (err) {

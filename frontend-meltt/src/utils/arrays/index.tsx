@@ -1,103 +1,237 @@
-import { LuNetwork, LuPartyPopper } from "react-icons/lu";
-import { FaChartSimple, FaGraduationCap, FaMoneyBill1Wave, FaRegHandshake, FaUsers } from "react-icons/fa6";
+import { LuGraduationCap, LuNetwork, LuPartyPopper } from "react-icons/lu";
+import { FaGraduationCap, FaMoneyBill1Wave, FaRegHandshake } from "react-icons/fa6";
 import { FaCircle } from "react-icons/fa";
-import { BiSupport } from "react-icons/bi";
-import { IoContract } from "react-icons/io5";
-import { MdBookmarkAdded, MdEmojiEvents, MdOutlinePayments } from "react-icons/md";
-import { HiDocumentCheck } from "react-icons/hi2";
+import { IoBarChartOutline, IoContract } from "react-icons/io5";
+import { MdBookmarkAdded, MdOutlinePayments, MdOutlineWorkOutline } from "react-icons/md";
+import { LiaSchoolSolid } from "react-icons/lia";
+import { RiContactsBook2Line } from "react-icons/ri";
+import { PiUsersFourLight } from "react-icons/pi";
+import { BsTrophy } from "react-icons/bs";
 
 export const menuListAdmin = [
   {
-    title: "Pré-Contratos",
-    route: '/pre-contratos',
-    icon: <IoContract />
-  },
-  {
-    title: "Adesões",
-    route: "/adesoes",
-    icon: <MdBookmarkAdded size={22} />,
-  },
-  {
-    title: "Tarefas",
-    route: "/tarefas",
-    icon: <LuNetwork size={22} />,
+    title: "Gestão de Contratos",
+    route: "/processos-internos",
+    icon: <MdOutlineWorkOutline size={22} className="text-white" />,
+    subRoutes: [
+      {
+        title: "Pré-Contrato",
+        route: '/processos-internos/pre-contratos',
+        icon: <IoContract size={14} color={'white'} />
+      },
+      {
+        title: "Propostas",
+        route: '/processos-internos/propostas',
+        icon: <IoContract size={14} color={'white'} />
+      },
+      {
+        title: "Planos de Formatura",
+        route: "/processos-internos/planos-formatura",
+        icon: <LuGraduationCap size={14} color={'white'} />,
+      },
+      {
+        title: "Adesões",
+        route: "/processos-internos/adesoes",
+        icon: <MdBookmarkAdded size={14} color={'white'} />,
+      },
+      {
+        title: "Tarefas da Equipe",
+        route: "/processos-internos/tarefas",
+        icon: <LuNetwork size={14} color={'white'} />,
+      },
+      {
+        title: "Agenda Interna",
+        route: "/processos-internos/agenda",
+        icon: <LuPartyPopper size={
+          14} color="white" />,
+      }
+    ]
   },
   {
     title: "Turmas",
     route: "/turmas",
-    icon: <FaGraduationCap size={22} />,
+    icon: <LiaSchoolSolid size={22} />,
   },
-  {
-    title: "Planos Formatura",
-    route: "/planos-formatura",
-    icon: <FaGraduationCap size={22} />,
-  },
-  {
-    title: "Usuários",
-    route: "/usuarios",
-    icon: <FaUsers size={22} />,
-  },
-  {
-    title: "Pagamentos",
-    route: "/pagamentos",
-    icon: <MdOutlinePayments size={22} />,
-  },
-  {
-    title: "Eventos",
-    route: "/eventos",
-    icon: <MdEmojiEvents size={22} />,
-    subRoutes: [
-      {title: "Fornecedores", route: "/fornecedores/servico", icon: <FaCircle size={8} className="text-white" />},
-    ]
-  },
-  // {
-  //   title: "Contratos e eventos",
-  //   route: "/fornecedores",
-  //   icon: <MdEmojiEvents size={22} />,
-  // },
   {
     title: "Fornecedores",
     route: "/fornecedores",
     icon: <FaRegHandshake size={22} />,
   },
   {
-    title: "Relatórios",
+    title: "Eventos (Uniticket)",
+    route: "/eventos",
+    icon: <BsTrophy size={20} />,
+  },
+  {
+    title: "Contatos (Bling)",
+    route: "/contatos",
+    icon: <RiContactsBook2Line size={22} />,
+  },
+  {
+    title: "Pagamentos (Bling)",
+    route: "/pagamentos",
+    icon: <MdOutlinePayments size={22} />,
+  },
+  {
+    title: "Relatórios Gerais",
     route: "/dashboard",
-    icon: <FaChartSimple size={22} />,
+    icon: <IoBarChartOutline size={22} />,
     subRoutes: [
+      { title: "Pré-Contratos", route: "/dashboard/pre-contrato", icon: <FaCircle size={8} className="text-white" /> },
+      { title: "Propostas", route: "/dashboard/propostas", icon: <FaCircle size={8} className="text-white" /> },
+      { title: "Adesões", route: "/dashboard/adesoes", icon: <FaCircle size={8} className="text-white" /> },
       { title: "Fornecedores", route: "/dashboard/fornecedor", icon: <FaCircle size={8} className="text-white" /> },
     ],
   },
-  // {
-  //   title: "Pagamentos",
-  //   route: "/pagamentos",
-  //   icon: <FaMoneyBill1Wave size={22} />,
-  // },
-  // {
-  //   title: "Eventos",
-  //   route: "/eventos",
-  //   icon: <BiSolidParty size={22} />,
-  // },
-  // {
-  //   title: "Contratos",
-  //   route: "/contratos-envio",
-  //   icon: <FaFileSignature size={22} />,
-  // },
+  {
+    title: "Gestão de Usuários",
+    route: "/usuarios",
+    icon: <PiUsersFourLight size={22} />,
+  },
 ];
 
 export const menuListAssociacao = [
   {
-    title: "Contratos",
+    title: "Contrato da Turma",
     route: "/contratos",
     icon: <FaGraduationCap size={22} />,
   },
+];
+
+export const menuListComercial = [
   {
-    title: "Suporte",
-    route: "/suporte",
-    icon: <BiSupport size={22} />,
+    title: "Gestão de Contratos",
+    route: "/processos-internos",
+    icon: <MdOutlineWorkOutline size={22} className="text-white" />,
+    subRoutes: [
+      {
+        title: "Pré-Contratos",
+        route: '/processos-internos/pre-contratos',
+        icon: <IoContract size={14} color={'white'} />
+      },
+      {
+        title: "Propostas",
+        route: '/processos-internos/propostas',
+        icon: <IoContract size={14} color={'white'} />
+      },
+      {
+        title: "Planos de Formatura",
+        route: "/processos-internos/planos-formatura",
+        icon: <FaGraduationCap size={14} color={'white'} />,
+      },
+      {
+        title: "Adesões",
+        route: "/processos-internos/adesoes",
+        icon: <MdBookmarkAdded size={14} color={'white'} />,
+      },
+      {
+        title: "Tarefas da Equipe",
+        route: "/processos-internos/tarefas",
+        icon: <LuNetwork size={14} color={'white'} />,
+      },
+      {
+        title: "Agenda Interna",
+        route: "/processos-internos/agenda",
+        icon: <LuPartyPopper size={
+          14} color="white" />,
+      }
+    ]
+  },
+  {
+    title: "Turmas",
+    route: "/turmas",
+    icon: <LiaSchoolSolid size={22} />,
   },
 ];
 
+export const menuListGestaoProducao = [
+  {
+    title: "Gestão de Contratos",
+    route: "/processos-internos",
+    icon: <MdOutlineWorkOutline size={22} className="text-white" />,
+    subRoutes: [
+      {
+        title: "Planos de Formatura",
+        route: "/processos-internos/planos-formatura",
+        icon: <FaGraduationCap size={14} color={'white'} />,
+      },
+      {
+        title: "Tarefas da Equipe",
+        route: "/processos-internos/tarefas",
+        icon: <LuNetwork size={14} color={'white'} />,
+      },
+      {
+        title: "Agenda Interna",
+        route: "/processos-internos/agenda",
+        icon: <LuPartyPopper size={
+          14} color="white" />,
+      }
+    ]
+  },
+  {
+    title: "Turmas",
+    route: "/turmas",
+    icon: <LiaSchoolSolid size={22} />,
+  },
+  {
+    title: "Fornecedores",
+    route: "/fornecedores",
+    icon: <FaRegHandshake size={22} />,
+  },
+  {
+    title: "Eventos",
+    route: "/eventos",
+    icon: <LuPartyPopper size={22} />,
+  },
+];
+
+export const menuListAdesoes = [
+  {
+    title: "Gestão de Contratos",
+    route: "/processos-internos",
+    icon: <MdOutlineWorkOutline size={22} className="text-white" />,
+    subRoutes: [
+      {
+        title: "Planos de Formatura",
+        route: "/processos-internos/planos-formatura",
+        icon: <FaGraduationCap size={14} color={'white'} />,
+      },
+      {
+        title: "Adesões",
+        route: "/processos-internos/adesoes",
+        icon: <MdBookmarkAdded size={14} color={'white'} />,
+      },
+    ]
+  },
+  {
+    title: "Gestão de Usuários",
+    route: "/usuarios",
+    icon: <PiUsersFourLight size={22} />,
+  },
+];
+
+export const menuListFinanceiro = [
+  {
+    title: "Turmas",
+    route: "/turmas",
+    icon: <LiaSchoolSolid size={22} />,
+  },
+  {
+    title: "Eventos",
+    route: "/eventos",
+    icon: <LuPartyPopper size={22} />,
+  },
+  {
+    title: "Contatos (Bling)",
+    route: "/contatos",
+    icon: <RiContactsBook2Line size={22} />,
+  },
+  {
+    title: "Pagamentos (Bling)",
+    route: "/pagamentos",
+    icon: <MdOutlinePayments size={22} />,
+  },
+];
 
 export const menuListAluno = [
   {
@@ -115,11 +249,6 @@ export const menuListAluno = [
     route: "/eventos",
     icon: <LuPartyPopper size={22} />,
   },
-  {
-    title: "Estatuto",
-    route: "/estatuto",
-    icon: <HiDocumentCheck size={22} />,
-  }
 ];
 
 
@@ -246,5 +375,56 @@ export const graduationYearsList = [
   {
     value: "2039",
     label: "2039"
+  },
+  {
+    value: "2040",
+    label: "2040"
+  },
+  {
+    value: "2041",
+    label: "2041"
+  },
+  {
+    value: "2042",
+    label: "2042"
+  },
+  {
+    value: "2043",
+    label: "2043"
+  },
+  {
+    value: "2044",
+    label: "2044"
   }
 ]
+
+export const tiposUsuario = [
+  {
+    value: "ALUNO",
+    label: "Formando"
+  },
+  {
+    value: 'ADMIN',
+    label: "Membro da Equipe - Administrador"
+  },
+  {
+    value: "ASSOCIACAO",
+    label: "Representante da Associação"
+  },
+  {
+    value: "COMERCIAL",
+    label: "Comercial MELTT"
+  },
+  {
+    value: "GESTAO_PRODUCAO",
+    label: "Gestão de Produção MELTT"
+  },
+  {
+    value: "ADESOES",
+    label: "Adesões MELTT"
+  },
+  {
+    value: "FINANCEIRO",
+    label: "Financeiro MELTT"
+  },
+];

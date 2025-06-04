@@ -28,6 +28,7 @@ interface Fornecedor {
   tipo_servico: string;
   telefone: string;
   valor_cotado: string;
+  turma_nome: string;
   status: string;
 }
 
@@ -64,7 +65,7 @@ const FornecedoresPage = () => {
         "academic",
         `/fornecedores/${row.id}`
       );
-      if (response.message.includes("deletada")) {
+      if (response.message.includes("deletadO")) {
         fetchFornecedores();
         toast.success("Fornecedor excluído com sucesso");
       }
@@ -97,6 +98,7 @@ const FornecedoresPage = () => {
             sx={{ padding: 1 }}
           />
         </TableCell>
+        <TableCell align="left">{row.turma_nome}</TableCell>
         <TableCell align="left">
           <Chip
             label={`R$ ${row.valor_cotado}`}
@@ -185,14 +187,14 @@ const FornecedoresPage = () => {
           >
             {loading ? (
               <LoadingTable />
-            ) : fornecedores.length > 0 ? (
+            ) : fornecedores?.length > 0 ? (
               <BasicTable
                 columns={fornecedoresColumns}
                 rows={fornecedores}
                 loading={loading}
                 dataRow={dataRow}
                 page={1}
-                totalPages={1}
+                totalPages={fornecedores?.length}
                 handleChangePagination={() => {}}
               />
             ) : (

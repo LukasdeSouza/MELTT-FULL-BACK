@@ -2,6 +2,7 @@ import {
   Autocomplete,
   Box,
   Button,
+  Chip,
   FormControl,
   InputLabel,
   MenuItem,
@@ -15,15 +16,14 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Formik, FormikProps } from "formik";
 import { validateTurmaSchema } from "../../../utils/validationSchemas";
 import toast from "react-hot-toast";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import "dayjs/locale/pt-br";
 import LoadingBackdrop from "../../../components/loadingBackdrop";
 import { apiGetData, apiPatchData, apiPutData } from "../../../services/api";
 
-import { BiSave } from "react-icons/bi";
+import { BiArrowBack, BiSave } from "react-icons/bi";
 import { LoadingButton } from "@mui/lab";
 import { initialValuesTurma } from "../../../initialValues";
-import { useDropzone } from "react-dropzone";
 import { graduationYearsList } from "../../../utils/arrays";
 import { useTurmaContext } from "../../../providers/turmaContext";
 
@@ -128,94 +128,108 @@ const TurmasEditPage = () => {
   }, [planosTurma, formikRef]);
 
   return (
-    <Stack width={"100%"} height={"100%"} gap={10}>
-      <Stack width={"calc(100% - 28px)"} direction={"column"}>
+    <Stack width="100%" height="100%" gap={4} px={1}>
+      <Stack width="100%" direction="column">
         <Typography
           color="primary"
-          variant="h5"
-          fontWeight={700}
-          ml={4}
-          mb={2}
-        ></Typography>
+          variant="h4"
+          fontWeight={800}
+          mb={1}
+          sx={{
+            fontFamily: 'Poppins',
+            background: 'linear-gradient(45deg, #2D1C63 30%, #4A3C8B 90%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            pb: 1,
+            borderBottom: '2px solid',
+            borderColor: 'primary.main'
+          }}
+        >
+          Editar Turma
+          <Typography variant="body2" color="text.secondary" mt={0.5}>
+            Preencha as informações abaixo para criar uma nova associação
+          </Typography>
+        </Typography>
+
         <Paper
-          elevation={0}
-          style={{
-            fontFamily: "Poppins",
-            position: "relative",
-            padding: "12px",
-            height: "calc(100vh - 132px)",
-            overflowY: "auto",
-            borderRadius: "24px",
-            backgroundColor: "#fff",
+          elevation={4}
+          sx={{
+            position: 'relative',
+            p: 3,
+            height: 'calc(100vh - 160px)',
+            overflowY: 'auto',
+            borderRadius: 4,
+            bgcolor: 'background.paper',
+            '&::-webkit-scrollbar': { width: 10 },
+            '&::-webkit-scrollbar-thumb': {
+              bgcolor: 'primary.light',
+              borderRadius: 2
+            }
           }}
         >
           <Formik
-            innerRef={formikRef} // Captura a referência do Formik
+            innerRef={formikRef}
             initialValues={{ ...getTurmasInitialValue, planos_formatura: planosTurma }}
             validationSchema={validateTurmaSchema}
             onSubmit={(values: any) => onSubmitTurma(values)}
           >
             {({ values, handleChange, handleSubmit, setFieldValue }) => (
               <form
-                className="h-[100%]"
                 onSubmit={handleSubmit}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    handleSubmit(e);
-                  }
-                }}
+                onKeyDown={(e) => e.key === 'Enter' && e.preventDefault()}
               >
-                <Stack height={"100%"} overflow={"auto"}>
+                <Stack height="100%" spacing={3} pb={10}>
                   <Box
-                    display={"flex"}
-                    flexDirection={"column"}
-                    gap={3}
-                    p={2}
+                    display="flex"
+                    flexDirection="column"
+                    gap={4}
                     sx={{
-                      maxHeight: "calc(85vh - 132px)",
-                      overflowY: "auto",
+                      maxHeight: 'calc(85vh - 132px)',
+                      overflowY: 'auto',
+                      pr: 2
                     }}
                   >
-                    <Stack direction={"column"}>
-                      <Typography
-                        color="primary"
-                        fontWeight={600}
-                      >
-                        Cadastrar Nova Turma (NOVA ASSOCIAÇÃO)
-                      </Typography>
-                      <Typography
-                        variant="caption"
-                        color="primary"
-                      >
-                        preencha as informações abaixo.
-                      </Typography>
-                    </Stack>
-                    <Stack
-                      direction={"row"}
-                      justifyContent={"space-between"}
-                      gap={2}
-                    >
+                    <Stack direction="row" spacing={2} alignItems="center">
                       <TextField
                         fullWidth
-                        size="small"
+                        size="medium"
                         name="nome"
-                        variant="outlined"
                         label="Nome da Turma"
                         value={values.nome}
                         onChange={handleChange}
-                        placeholder="Qual o nome da sua turma ?"
+                        placeholder="Ex: Turma 2024 - Engenharia Civil"
+                        variant="filled"
+                        InputProps={{
+                          sx: {
+                            borderRadius: 2,
+                            '&:hover': { bgcolor: 'grey.50' },
+                            '&.Mui-focused': { bgcolor: 'grey.100' }
+                          }
+                        }}
                       />
-                      <FormControl fullWidth size="small">
+
+                      <FormControl fullWidth>
                         <InputLabel id="ano_formatura">Ano de Formatura</InputLabel>
                         <Select
                           name="ano_formatura"
-                          variant="outlined"
-                          label="Data de Formatura da Turma"
+                          label="Ano de Formatura"
                           value={values.ano_formatura}
                           onChange={handleChange}
+                          variant="filled"
+                          MenuProps={{
+                            PaperProps: {
+                              sx: {
+                                borderRadius: 2,
+                                mt: 1,
+                                '& .MuiMenuItem-root': {
+                                  py: 1.5,
+                                  '&:hover': { bgcolor: 'primary.light', color: 'white' }
+                                }
+                              }
+                            }
+                          }}
                         >
-                          {graduationYearsList.map((option: any) => (
+                          {graduationYearsList.map((option) => (
                             <MenuItem key={option.value} value={option.value}>
                               {option.label}
                             </MenuItem>
@@ -223,108 +237,130 @@ const TurmasEditPage = () => {
                         </Select>
                       </FormControl>
                     </Stack>
-                    <Stack direction={"row"}
-                      justifyContent={"space-between"}
-                      gap={2}>
+
+                    <Stack direction="row" spacing={2}>
                       <TextField
                         fullWidth
-                        size="small"
+                        size="medium"
                         name="identificador"
-                        variant="outlined"
-                        label="Identificador da turma"
+                        label="Identificador da Turma"
                         value={values.identificador}
                         onChange={handleChange}
-                        placeholder="código único identificador da turma ?"
+                        placeholder="Ex: ENG-CIV-2024"
+                        variant="filled"
+                        InputProps={{
+                          sx: {
+                            borderRadius: 2,
+                            '&:hover': { bgcolor: 'grey.50' }
+                          }
+                        }}
                       />
-                      <FormControl fullWidth size="small">
+
+                      <FormControl fullWidth>
                         <Autocomplete
                           multiple
-                          size="small"
+                          size="medium"
                           id="planos_formatura"
-                          options={planos} // Os planos disponíveis
+                          options={planos}
                           getOptionLabel={(option) => option.nome}
-                          value={planosTurma || []} // Mantém a lista de selecionados atualizada
+                          value={planosTurma || []}
                           onChange={(_, newValue) => {
-                            console.log("newValue", newValue);
-                            setPlanosTurma(newValue);
-                            setFieldValue("planos_formatura", newValue);
+                            setPlanosTurma(newValue)
+                            setFieldValue('planos_formatura', newValue)
                           }}
                           isOptionEqualToValue={(option, value) => option.id === value.id}
                           renderInput={(params) => (
-                            <TextField {...params} label="Planos de Formatura" variant="outlined" />
+                            <TextField
+                              {...params}
+                              label="Planos de Formatura"
+                              variant="filled"
+                              placeholder="Selecione os planos"
+                            />
                           )}
+                          renderTags={(value, getTagProps) =>
+                            value.map((option, index) => (
+                              <Chip
+                                {...getTagProps({ index })}
+                                label={option.nome}
+                                size="small"
+                                sx={{
+                                  borderRadius: 1,
+                                  bgcolor: 'primary.light',
+                                  color: 'white',
+                                  mr: 0.5
+                                }}
+                              />
+                            ))
+                          }
                         />
                       </FormControl>
                     </Stack>
-                    <TextField
-                      fullWidth
-                      name="regras_adesao"
-                      variant="outlined"
-                      label="Regras de Adesão"
-                      multiline
-                      rows={3}
-                      value={values.regras_adesao}
-                      onChange={handleChange}
-                      placeholder="descreva detalhamente as regras de adesão"
-                    />
-                    <TextField
-                      fullWidth
-                      name="regras_rescisao"
-                      variant="outlined"
-                      label="Regras de Rescisão"
-                      multiline
-                      rows={3}
-                      value={values.regras_rescisao}
-                      onChange={handleChange}
-                      placeholder="descreva detalhadamento as regras de rescisão"
-                    />
-                    <TextField
-                      fullWidth
-                      name="regras_renegociacao"
-                      variant="outlined"
-                      label="Regras de Renegociação"
-                      multiline
-                      rows={3}
-                      value={values.regras_renegociacao}
-                      onChange={handleChange}
-                      placeholder="descreva detalhadamente as regras de renegociação"
-                    />
+
+                    {['regras_adesao', 'regras_rescisao', 'regras_renegociacao'].map((field) => (
+                      <TextField
+                        key={field}
+                        fullWidth
+                        name={field}
+                        label={field.split('_')[1].toUpperCase()}
+                        multiline
+                        rows={4}
+                        value={values[field]}
+                        onChange={handleChange}
+                        variant="filled"
+                        InputProps={{
+                          sx: {
+                            borderRadius: 2,
+                            alignItems: 'flex-start',
+                            '& textarea': { lineHeight: 1.6 }
+                          }
+                        }}
+                        InputLabelProps={{ shrink: true }}
+                      />
+                    ))}
                   </Box>
+
                   <Stack
-                    width="100%"
-                    justifyContent="flex-end"
                     direction="row"
-                    gap={2}
-                    px={2}
-                    mt={1}
+                    justifyContent="flex-end"
+                    spacing={2}
                     sx={{
-                      position: "absolute",
-                      bottom: 12,
-                      left: 0,
-                      right: 0,
-                      backgroundColor: "white",
-                      p: 2,
+                      position: 'sticky',
+                      bottom: 0,
+                      bgcolor: 'background.paper',
+                      pt: 2,
+                      pb: 1,
+                      borderTop: '1px solid',
+                      borderColor: 'divider',
+                      borderRadius: 2
                     }}
                   >
                     <Button
-                      color="primary"
                       variant="outlined"
-                      size="small"
-                      onClick={() => navigate("/turmas")}
-                      sx={{ width: 120, borderRadius: 2 }}
+                      onClick={() => navigate('/turmas')}
+                      startIcon={<BiArrowBack />}
+                      sx={{
+                        px: 4,
+                        borderRadius: 2,
+                        textTransform: 'none',
+                        '&:hover': { borderWidth: 2 }
+                      }}
                     >
                       Voltar
                     </Button>
                     <LoadingButton
                       type="submit"
-                      color="secondary"
                       variant="contained"
-                      size="small"
-                      endIcon={<BiSave />}
                       loading={loadingSave}
-                      sx={{ width: 120, borderRadius: 2 }}
+                      endIcon={<BiSave />}
+                      sx={{
+                        px: 4,
+                        borderRadius: 2,
+                        textTransform: 'none',
+                        background: 'linear-gradient(45deg, #2D1C63 30%, #4A3C8B 90%)',
+                        '&:hover': { opacity: 0.9 }
+                      }}
                     >
-                      Salvar
+                      Salvar Turma
                     </LoadingButton>
                   </Stack>
                 </Stack>

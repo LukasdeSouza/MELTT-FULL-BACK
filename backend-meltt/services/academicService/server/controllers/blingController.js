@@ -9,30 +9,46 @@ class BlingController {
       const { authorization } = req.headers;
       const { pagina = 1, situacoes, dataInicial, dataFinal } = req.query;
       const token = authorization.replace(/^Bearer\s+/i, "");
-       fs.writeFileSync('.temp_bling_token', token); 
+      fs.writeFileSync('.temp_bling_token', token);
 
       const params = new URLSearchParams();
       params.append("limite", "20");
       params.append("pagina", String(pagina));
       params.append("tipoFiltroData", "V");
 
-      const dataInicialCalculada = subMonths(new Date(), 1);
-      const dataFinalCalculada = addMonths(new Date(), 1);
+      const isValidDate = (dateStr) => /^\d{4}-\d{2}-\d{2}$/.test(dateStr);
 
-      params.append("dataInicial", format(dataInicialCalculada, 'yyyy-MM-dd'));
-      params.append("dataFinal", format(dataFinalCalculada, 'yyyy-MM-dd'));
+      const finalDataInicial = isValidDate(dataInicial)
+        ? dataInicial
+        : format(subMonths(new Date(), 1), 'yyyy-MM-dd');
 
-      if (situacoes) params.append("situacoes[]", situacoes);
-      if (dataInicial) params.append("dataInicial", dataInicial);
-      if (dataFinal) params.append("dataFinal", dataFinal);
+      const finalDataFinal = isValidDate(dataFinal)
+        ? dataFinal
+        : format(addMonths(new Date(), 1), 'yyyy-MM-dd');
+
+      params.append("dataInicial", finalDataInicial);
+      params.append("dataFinal", finalDataFinal);
+
+      if (situacoes) {
+        if (typeof situacoes === 'string') {
+          params.append("situacoes[]", situacoes);
+        }
+
+        if (Array.isArray(situacoes)) {
+          situacoes.forEach((sit) => params.append("situacoes[]", sit));
+        }
+      }
 
       const response = await axios.get(
         `https://www.bling.com.br/Api/v3/contas/receber?${params.toString()}`,
-        { headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } }
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json"
+          }
+        }
       );
 
-      console.log('response', response)
-      console.log('response.data', response.data)
       const contasReceber = response.data.data;
       let insertedCount = 0;
       let duplicateCount = 0;
@@ -44,23 +60,23 @@ class BlingController {
         try {
           const [result] = await pool.promise().query(
             `INSERT INTO pagamentos (
-              bling_payment_id, id_bling, valor, vencimento, situacao, dataEmissao, linkBoleto, numeroDocumento
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?) 
-            ON DUPLICATE KEY UPDATE 
-              valor = VALUES(valor), vencimento = VALUES(vencimento), situacao = VALUES(situacao),
-              dataEmissao = VALUES(dataEmissao), linkBoleto = VALUES(linkBoleto), numeroDocumento = VALUES(numeroDocumento)`,
+            bling_payment_id, id_bling, valor, vencimento, situacao, dataEmissao, linkBoleto, numeroDocumento
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?) 
+          ON DUPLICATE KEY UPDATE 
+            valor = VALUES(valor), vencimento = VALUES(vencimento), situacao = VALUES(situacao),
+            dataEmissao = VALUES(dataEmissao), linkBoleto = VALUES(linkBoleto), numeroDocumento = VALUES(numeroDocumento)`,
             [blingPaymentId, blingContactId, valor, vencimento, situacao, dataEmissao, linkBoleto || null, numeroDocumento]
           );
 
           if (result.affectedRows === 1) insertedCount++;
           else duplicateCount++;
-          
+
         } catch (queryErr) {
           console.error("Erro no banco:", queryErr);
         }
       }
 
-      res.json({ 
+      res.json({
         message: "Dados salvos com sucesso",
         data: contasReceber,
         inserted: insertedCount,
@@ -94,7 +110,7 @@ class BlingController {
         }
       );
 
-      return res.json({ 
+      return res.json({
         message: "Requisição realizada com sucesso",
         data: response.data.data,
         success: true

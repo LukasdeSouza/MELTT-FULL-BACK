@@ -7,7 +7,6 @@ import {
   Typography,
 } from "@mui/material";
 import { PulsingMovingSVG } from "../../../animations";
-import MelttLogo from "../../../assets/logo/melttLogo";
 import { useEffect, useState } from "react";
 import { apiPostData } from "../../../services/api";
 import toast from "react-hot-toast";
@@ -67,7 +66,8 @@ const SplashGetBlingInfo = () => {
       <Slide direction="up" in={show} mountOnEnter unmountOnExit timeout={1000}>
         <Box display={"flex"} flexDirection={"column"} alignItems={"center"}>
           <PulsingMovingSVG>
-            <MelttLogo />
+          <img src="/images/logo.png"
+            alt="Logo" className="w-48" />
           </PulsingMovingSVG>
           <Stack direction={"column"} alignItems={"center"} mt={3}>
             <Typography

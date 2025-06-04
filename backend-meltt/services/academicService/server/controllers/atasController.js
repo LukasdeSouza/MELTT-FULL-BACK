@@ -29,7 +29,6 @@ class AtasController {
       res.status(500).json({ error: err.message });
     }
   }
-  
 
   async getAtaById(req, res) {
     try {
@@ -51,10 +50,10 @@ class AtasController {
 
   async createAta(req, res) {
     try {
-      const { url_arquivo, turma_id } = req.body;
+      const { url_arquivo, file_name, turma_id } = req.body;
       const [result] = await db.query(
         "INSERT INTO atas SET ?", 
-        { url_arquivo, turma_id }
+        { url_arquivo, file_name, turma_id }
       );
       res.status(201).json({ id: result.insertId, ...req.body });
     } catch (err) {

@@ -1,6 +1,8 @@
 import {
   Box,
   Button,
+  Grid,
+  InputAdornment,
   Paper,
   Stack,
   TextField,
@@ -50,143 +52,176 @@ const PlanosFormaturaNewPage = () => {
 
 
   return (
-    <Stack width={"100%"} height={"100%"} gap={10}>
-      <Stack width={"calc(100% - 28px)"} direction={"column"}>
+    <Stack width="100%" height="100%" gap={6} px={2}>
+      <Stack width="100%" direction="column">
         <Typography
-          color="primary"
-          variant="h5"
-          fontWeight={700}
-          ml={4}
-          mb={2}
-        ></Typography>
+          variant="h4"
+          fontWeight={800}
+          mb={3}
+          sx={{
+            fontFamily: 'Poppins',
+            background: 'linear-gradient(45deg, #2D1C63 30%, #4A3C8B 90%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            borderBottom: '2px solid',
+            borderColor: 'divider',
+            pb: 1.5
+          }}
+        >
+          Novo Plano de Formatura
+          <Typography variant="body2" color="text.secondary" mt={1}>
+            Defina os detalhes do novo plano de formatura
+          </Typography>
+        </Typography>
+
         <Paper
-          elevation={0}
-          style={{
-            fontFamily: "Poppins",
-            position: "relative",
-            padding: "12px",
-            height: "calc(100vh - 132px)",
-            overflowY: "auto",
-            borderRadius: "24px",
-            backgroundColor: "#fff",
+          elevation={4}
+          sx={{
+            position: 'relative',
+            p: 4,
+            height: 'calc(100vh - 160px)',
+            overflowY: 'auto',
+            borderRadius: 4,
+            bgcolor: 'background.paper',
+            '&::-webkit-scrollbar': { width: 10 },
+            '&::-webkit-scrollbar-thumb': {
+              bgcolor: 'primary.light',
+              borderRadius: 2
+            }
           }}
         >
           <Formik
-            initialValues={{
-              ...initialValuesPlano,
-            }}
+            initialValues={{ ...initialValuesPlano }}
             validationSchema={validatePlanoSchema}
             onSubmit={(values: any) => onSubmitPlano(values)}
           >
             {({ values, handleChange, handleSubmit }) => (
-              <form
-                className="h-[100%]"
-                onSubmit={handleSubmit}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    handleSubmit(e);
-                    () => { };
-                  }
-                }}
-              >
-                <Stack height={"100%"} overflow={"auto"}>
+              <form onSubmit={handleSubmit} onKeyDown={(e) => e.key === 'Enter' && e.preventDefault()}>
+                <Stack height="100%" spacing={4} pb={10}>
                   <Box
-                    display={"flex"}
-                    flexDirection={"column"}
-                    gap={3}
-                    p={2}
+                    display="flex"
+                    flexDirection="column"
+                    gap={4}
                     sx={{
-                      maxHeight: "calc(85vh - 132px)",
-                      overflowY: "auto",
+                      maxHeight: 'calc(85vh - 132px)',
+                      overflowY: 'auto',
+                      pr: 2
                     }}
                   >
-                    <Stack direction={"column"}>
-                      <Typography
-                        color="primary"
-                        fontWeight={600}
-                      >
-                        Cadastrar Novo Plano de Formatura
-                      </Typography>
-                      <Typography
-                        variant="caption"
-                        color="primary"
-                      >
-                        preencha as informações abaixo.
-                      </Typography>
-                    </Stack>
-                    <Stack
-                      direction={"row"}
-                      justifyContent={"space-between"}
-                      gap={2}
-                    >
-                      <TextField
-                        fullWidth
-                        size="small"
-                        name="nome"
-                        variant="outlined"
-                        label="Nome do Plano"
-                        value={values.nome}
-                        onChange={handleChange}
-                        placeholder="ex: plano formatura abc"
-                      />
-                      <TextField
-                        fullWidth
-                        size="small"
-                        name="valor"
-                        variant="outlined"
-                        label="Valor do Plano"
-                        value={values.valor}
-                        onChange={handleChange}
-                        placeholder="R$..."
-                      />
-                    </Stack>
-                    <TextField
-                      fullWidth
-                      size="small"
-                      name="incluso"
-                      variant="outlined"
-                      label="O que está incluso no plano?"
-                      value={values.incluso}
-                      onChange={handleChange}
-                      placeholder="O que está incluso no plano"
-                    />
+                    <Grid container spacing={3}>
+                      {/* Linha Superior */}
+                      <Grid item xs={12} md={6}>
+                        <TextField
+                          fullWidth
+                          variant="filled"
+                          label="Nome do Plano"
+                          name="nome"
+                          value={values.nome}
+                          onChange={handleChange}
+                          placeholder="Ex: Plano Premium 2024"
+                          InputProps={{
+                            sx: {
+                              borderRadius: 2,
+                              '&:hover': { bgcolor: 'grey.50' },
+                              '&.Mui-focused': { bgcolor: 'grey.100' }
+                            }
+                          }}
+                        />
+                      </Grid>
+
+                      <Grid item xs={12} md={6}>
+                        <TextField
+                          fullWidth
+                          variant="filled"
+                          label="Valor do Plano"
+                          name="valor"
+                          value={values.valor}
+                          onChange={handleChange}
+                          InputProps={{
+                            startAdornment: <InputAdornment position="start">R$</InputAdornment>,
+                            sx: {
+                              borderRadius: 2,
+                              '& input': { textAlign: 'right' },
+                              '&:hover': { bgcolor: 'grey.50' }
+                            }
+                          }}
+                        />
+                      </Grid>
+
+                      {/* Descrição do Plano */}
+                      <Grid item xs={12}>
+                        <TextField
+                          fullWidth
+                          variant="filled"
+                          label="Detalhes do Plano"
+                          name="incluso"
+                          value={values.incluso}
+                          onChange={handleChange}
+                          multiline
+                          rows={6}
+                          placeholder="Liste todos os benefícios inclusos no plano"
+                          InputProps={{
+                            sx: {
+                              borderRadius: 2,
+                              alignItems: 'flex-start',
+                              bgcolor: 'grey.50',
+                              '& textarea': {
+                                lineHeight: 1.6,
+                                py: 1.5,
+                                '&::placeholder': {
+                                  fontStyle: 'italic'
+                                }
+                              }
+                            }
+                          }}
+                        />
+                      </Grid>
+                    </Grid>
                   </Box>
+
+                  {/* Ações */}
                   <Stack
-                    width="100%"
-                    justifyContent="flex-end"
                     direction="row"
-                    gap={2}
-                    px={2}
-                    mt={1}
+                    justifyContent="flex-end"
+                    spacing={2}
                     sx={{
-                      position: "absolute",
-                      bottom: 12,
-                      left: 0,
-                      right: 0,
-                      backgroundColor: "white",
-                      p: 2,
+                      position: 'sticky',
+                      bottom: 0,
+                      bgcolor: 'background.paper',
+                      pt: 2,
+                      pb: 1,
+                      borderTop: '2px solid',
+                      borderColor: 'divider',
+                      borderRadius: 2
                     }}
                   >
                     <Button
-                      color="primary"
                       variant="outlined"
-                      size="small"
-                      onClick={() => navigate("/tarefas")}
-                      sx={{ width: 120, borderRadius: 2 }}
+                      onClick={() => navigate("/processos-internos/tarefas")}
+                      sx={{
+                        px: 4,
+                        borderRadius: 2,
+                        textTransform: 'none',
+                        '&:hover': { borderWidth: 2 }
+                      }}
                     >
                       Voltar
                     </Button>
                     <LoadingButton
                       type="submit"
-                      color="secondary"
                       variant="contained"
-                      size="small"
-                      endIcon={<BiSave />}
+                      color="primary"
                       loading={loadingSave}
-                      sx={{ width: 120, borderRadius: 2 }}
+                      endIcon={<BiSave />}
+                      sx={{
+                        px: 4,
+                        borderRadius: 2,
+                        textTransform: 'none',
+                        background: 'linear-gradient(45deg, #2D1C63 30%, #4A3C8B 90%)',
+                        '&:hover': { opacity: 0.9 }
+                      }}
                     >
-                      Salvar
+                      Salvar Plano
                     </LoadingButton>
                   </Stack>
                 </Stack>

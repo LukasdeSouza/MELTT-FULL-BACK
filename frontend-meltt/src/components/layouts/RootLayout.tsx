@@ -26,8 +26,6 @@ import {
 import { AlunoContext, alunoInitialState, alunoReducer } from "../../providers/alunoContext";
 import { TarefaContext, tarefaInitialState, tarefaReducer } from "../../providers/tarefaContext";
 import { AdesaoContext, adesaoInitialState, adesaoReducer } from "../../providers/adesaoContext";
-import { LocalizationProvider } from '@mui/x-date-pickers';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
 
 const RootLayout = () => {
   const navigate = useNavigate();
@@ -79,44 +77,41 @@ const RootLayout = () => {
   return (
     <FaculdadeContext.Provider value={{ stateFaculdade, dispatchFaculdade }}>
       <TurmaContext.Provider value={{ stateTurma, dispatchTurma }}>
-        <AdesaoContext.Provider value={{ stateAdesao, dispatchAdesao }}>
-          <AlunoContext.Provider value={{ stateAluno, dispatchAluno }}>
-            <FornecedorContext.Provider
-              value={{ stateFornecedor, dispatchFornecedor }}
-            >
-              <TarefaContext.Provider value={{ stateTarefa, dispatchTarefa }}>
-                <ThemeProvider theme={theme}>
-                  <LocalizationProvider dateAdapter={AdapterDayjs}>
-                    <Stack
-                      width={"100%"}
-                      height={"100vh"}
-                      bgcolor={"#F2F2F2"}
-                      direction={"column"}
-                    >
-                      {isDesktopOrLaptop && (
-                        <DesktopLayout>
-                          <Outlet />
-                        </DesktopLayout>
-                      )}
-                      {isBigScreen && (
-                        <DesktopLayout>
-                          <Outlet />
-                        </DesktopLayout>
-                      )}
-                      {isTabletOrMobile && (
-                        <MobileLayout>
-                          <p className="text-default font-medium p-3 flex items-center justify-center h-screen w-full">
-                            Ops! Versão para celulares e tablets ainda não está
-                            disponível, acesse por um computador.
-                          </p>
-                        </MobileLayout>
-                      )}
-                    </Stack>
-                  </LocalizationProvider>
-                </ThemeProvider>
-              </TarefaContext.Provider>
-            </FornecedorContext.Provider>
-          </AlunoContext.Provider>
+        <AdesaoContext.Provider value={{stateAdesao, dispatchAdesao}}>
+        <AlunoContext.Provider value={{ stateAluno, dispatchAluno }}>
+          <FornecedorContext.Provider
+            value={{ stateFornecedor, dispatchFornecedor }}
+          >
+            <TarefaContext.Provider value={{stateTarefa, dispatchTarefa}}>
+              <ThemeProvider theme={theme}>
+                <Stack
+                  width={"100%"}
+                  height={"100vh"}
+                  bgcolor={"#F2F2F2"}
+                  direction={"column"}
+                >
+                  {isDesktopOrLaptop && (
+                    <DesktopLayout>
+                      <Outlet />
+                    </DesktopLayout>
+                  )}
+                  {isBigScreen && (
+                    <DesktopLayout>
+                      <Outlet />
+                    </DesktopLayout>
+                  )}
+                  {isTabletOrMobile && (
+                    <MobileLayout>
+                      <p className="text-default font-medium p-3 flex items-center justify-center h-screen w-full">
+                        Ops! Estamos trabalhando na versão para celulares e tablets, acesse por um computador ou notebook.
+                      </p>
+                    </MobileLayout>
+                  )}
+                </Stack>
+              </ThemeProvider>
+            </TarefaContext.Provider>
+          </FornecedorContext.Provider>
+        </AlunoContext.Provider>
         </AdesaoContext.Provider>
 
         <Toaster />

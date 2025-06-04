@@ -1,34 +1,29 @@
-import { LoadingButton } from "@mui/lab";
-import { Button, Paper, Stack, Typography } from "@mui/material";
+import { IconButton, Paper, Stack, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
-import { FaSignature } from "react-icons/fa6";
-import { useNavigate } from "react-router-dom";
 import { apiGetData } from "../../services/api";
 import { getToken } from "../../utils/token";
 import { jwtDecode } from "jwt-decode";
 import { CustomJwtPayload } from "../../components/customDrawer";
 import toast from "react-hot-toast";
+import { BiDownload } from "react-icons/bi";
 
 const ContratosPage = () => {
-  const navigate = useNavigate();
   const token = getToken();
   const decoded = token ? jwtDecode<CustomJwtPayload>(token) : null;
-  const [contratos, setContrato] = useState();
+  const [turma, setTurma] = useState<any>();
 
-  const fetchContrato = async () => {
+  const fetchTurmaById = async () => {
     try {
-      const result = await apiGetData("academic", `/contratos/associacao/${decoded?.id}`)
-      setContrato(result);
+      const result = await apiGetData("academic", `/turmas/${decoded?.turma_id}`)
+      setTurma(result[0]);
     } catch (error) {
-      toast.error("Erro ao buscar contrato");
+      toast.error("Erro ao buscar turma");
     }
   }
 
   useEffect(() => {
-    fetchContrato();
+    fetchTurmaById();
   }, [])
-
-  console.log(contratos);
 
   return (
     <Stack
@@ -68,21 +63,40 @@ const ContratosPage = () => {
           <Stack
             height={"100%"}
             direction={"column"}
-            justifyContent={"space-between"}
             p={2}
           >
             <Typography
-              color="textSecondary"
-              variant={"body2"}
+              color="secondary"
+              variant={"body1"}
+              fontWeight={600}
+              fontFamily={"Poppins"}
             >
-              Leia o Contrato e estando de acordo, <b>assine clicando no botão abaixo</b>:
+              Tenha acesso ao CONTRATO MELTT vinculado a sua Turma:
             </Typography>
-            <iframe
+            <Stack className="h-full flex-col items-center border-slate-400 rounded-md p-4">
+              {turma?.meltt_contrato_url ? (
+                <Stack className="flex-col">
+                  <IconButton onClick={() => { }}>
+                    <BiDownload />
+                  </IconButton>
+                  <Typography>Download do Contrato</Typography>
+                </Stack>
+              ) : (
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  sx={{ fontFamily: 'Poppins', mt:20 }}
+                >
+                  nenhum contrato MELTT vinculado a essa turma, até o momento.
+                </Typography>
+              )}
+            </Stack>
+            {/* <iframe
               src="https://drive.google.com/file/d/1f2a4P6JX7Z7uQ4g3Z6JwHvQ1b7Nk6z9x/preview"
               width="100%"
               height="100%"
-            ></iframe>
-            <Stack
+            ></iframe> */}
+            {/* <Stack
               direction={"row"}
               alignItems={"center"}
               justifyContent={"end"}
@@ -104,7 +118,7 @@ const ContratosPage = () => {
               >
                 Assinar
               </LoadingButton>
-            </Stack>
+            </Stack> */}
           </Stack>
         </Paper>
       </Paper>

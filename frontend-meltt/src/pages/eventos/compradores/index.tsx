@@ -1,12 +1,15 @@
 import {
+  // Box,
   Chip,
   IconButton,
   Link,
   Paper,
   Slide,
   Stack,
+  Tab,
   TableCell,
   TableRow,
+  // Tabs,
 } from "@mui/material";
 import { useNavigate, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
@@ -16,6 +19,11 @@ import LoadingTable from "../../../components/loadingTable";
 import { apiGetData } from "../../../services/api";
 import { eventBuyersColumns } from "../table/columns/buyers";
 import { BiArrowBack } from "react-icons/bi";
+// import { TbPigMoney } from "react-icons/tb";
+// import { formatCurrency } from "../../../utils/functions";
+import { MdOutlineMotionPhotosOn } from "react-icons/md";
+import EventDetails from "../../../components/eventDetails";
+import { TabContext, TabList, TabPanel } from "@mui/lab";
 
 const EventosCompradoresPage = () => {
   const navigate = useNavigate();
@@ -25,10 +33,13 @@ const EventosCompradoresPage = () => {
 
   const [loading, setLoading] = useState(false);
   const [eventBuyers, setEventBuyers] = useState([]);
-  const [totalAmount, setTotalAmount] = useState("");
-  const [totalPaidAmount, setTotalPaidAmount] = useState("");
+  // const [totalAmount, setTotalAmount] = useState("");
+  // const [totalPaidAmount, setTotalPaidAmount] = useState("");
+  // const [uniticketFee, setUniticketFee] = useState("");
 
   const [onLoad, setOnLoad] = useState(false);
+
+  const [tabValue, setTabValue] = useState<string>("1");
 
 
   const fetchEventBuyers = async (_: number) => {
@@ -36,42 +47,46 @@ const EventosCompradoresPage = () => {
     try {
       const response = await apiGetData("academic", `/uniticket/buyers?access_token=${id}`);
       if (response && response.data && Array.isArray(response.data)) {
-        const totalAmount = response.data.reduce((sum: number, item: any) => {
-          if (item.order && item.order.total_amount) {
-            const amount = parseFloat(item.order.total_amount);
-            if (!isNaN(amount)) {
-              return sum + amount;
-            }
-          }
-          return sum;
-        }, 0);
+        // const totalAmount = response.data.reduce((sum: number, item: any) => {
+        //   if (item.order && item.order.total_amount) {
+        //     const amount = parseFloat(item.order.total_amount);
+        //     if (!isNaN(amount)) {
+        //       return sum + amount;
+        //     }
+        //   }
+        //   return sum;
+        // }, 0);
 
-        const totalPaidAmount = response.data.reduce((sum: number, item: any) => {
-          if (item.order && item.order.total_amount && item.order.status === 'finalizado') {
-            const amount = parseFloat(item.order.total_amount);
-            if (!isNaN(amount)) {
-              return sum + amount;
-            }
-          }
-          return sum;
-        }, 0);
+        // const totalPaidAmount = response.data.reduce((sum: number, item: any) => {
+        //   if (item.order && item.order.total_amount && item.order.status === 'finalizado') {
+        //     const amount = parseFloat(item.order.total_amount);
+        //     if (!isNaN(amount)) {
+        //       return sum + amount;
+        //     }
+        //   }
+        //   return sum;
+        // }, 0);
+        // const uniticketFee = totalPaidAmount * 0.05;
 
-        const formattedTotalAmount = new Intl.NumberFormat('pt-BR', {
-          style: 'currency',
-          currency: 'BRL',
-        }).format(totalAmount);
+        // const formattedTotalAmount = new Intl.NumberFormat('pt-BR', {
+        //   style: 'currency',
+        //   currency: 'BRL',
+        // }).format(totalAmount);
 
-        const formattedTotalPaidAmount = new Intl.NumberFormat('pt-BR', {
-          style: 'currency',
-          currency: 'BRL',
-        }).format(totalPaidAmount);
+        // const formattedTotalPaidAmount = new Intl.NumberFormat('pt-BR', {
+        //   style: 'currency',
+        //   currency: 'BRL',
+        // }).format(totalPaidAmount);
 
-        console.log('Total adquirido com vendas de ingressos:', formattedTotalAmount);
-        console.log('Valor pago com status finalizado:', formattedTotalPaidAmount);
+        // const formattedUniticketFee = formatCurrency(uniticketFee)
+
+        // console.log('Total adquirido com vendas de ingressos:', formattedTotalAmount);
+        // console.log('Valor pago com status finalizado:', formattedTotalPaidAmount);
 
         setEventBuyers(response.data);
-        setTotalAmount(formattedTotalAmount);
-        setTotalPaidAmount(formattedTotalPaidAmount);
+        // setTotalAmount(formattedTotalAmount);
+        // setTotalPaidAmount(formattedTotalPaidAmount);
+        // setUniticketFee(formattedUniticketFee);
       } else {
         toast.error("Estrutura inesperada em response.data");
       }
@@ -116,12 +131,24 @@ const EventosCompradoresPage = () => {
           {row.cpf}
         </TableCell>
         <TableCell align="left" sx={{ fontFamily: "Poppins" }}>
-          {row.phone}
+          {row.phone ?? 'Não informado'}
         </TableCell>
         <TableCell align="left" sx={{ fontFamily: "Poppins" }}>
-          <Chip color={row.order.status === 'finalizado' ? 'success' : 'secondary'} label={row.order.status} />
+          <Chip
+            color={row.order.status === 'finalizado' ? 'success' : 'secondary'}
+            label={row.order.status}
+            icon={<MdOutlineMotionPhotosOn size={18} />}
+            sx={{ fontFamily: "Poppins" }}
+          />
         </TableCell>
         <TableCell align="left" sx={{ fontFamily: "Poppins" }}>
+          <Chip
+            label={row.order.payment_method}
+            icon={<MdOutlineMotionPhotosOn size={18} />}
+            sx={{ fontFamily: "Poppins" }}
+          />
+        </TableCell>
+        <TableCell align="center" sx={{ fontFamily: "Poppins" }}>
           R$ {row.order.total_amount}
         </TableCell>
       </TableRow>
@@ -135,74 +162,78 @@ const EventosCompradoresPage = () => {
   }, []);
 
   return (
-    <Stack width={"calc(100% - 28px)"}>
-      <Stack
-        direction={"row"}
-        alignItems={"center"}
-        justifyContent={"space-between"}
-        my={2}
-      >
-        <Stack direction={'row'} alignItems={'center'} gap={1}>
-          <IconButton size="small" onClick={() => navigate('/eventos')}>
-            <BiArrowBack />
-          </IconButton>
-          <h2 className="text-lg text-default font-extrabold">Quantidade de Compradores: {eventBuyers.length}</h2>
-        </Stack>
-        <Stack direction={'row'} gap={1}>
-          <Chip color="secondary" label={`Valor Movimentado: ${totalAmount}`} />
-          <Chip color="success" label={`Valor Total Pago: ${totalPaidAmount}`} />
-        </Stack>
+    <Stack width={"calc(100% - 28px)"}
+      sx={{
+        overflow: "auto",
+        flexDirection: "column",
+        height: "100vh",
+      }}
+    >
+
+      <Stack direction={'row'} alignItems={'center'} gap={1}>
+        <IconButton color="primary" size="small" onClick={() => navigate('/eventos')}>
+          <BiArrowBack />
+        </IconButton>
       </Stack>
-      <Slide direction="right" in={onLoad} mountOnEnter>
-        <Paper
-          elevation={0}
-          sx={{
-            p: 1,
-            flexGrow: 1,
-            width: "100%",
-            height: "calc(100vh - 170px)",
-            borderRadius: 4,
-          }}
-        >
-          <Paper
-            elevation={0}
+      <TabContext value={tabValue}>
+        <TabList onChange={(_, newValue) => setTabValue(newValue)}>
+          <Tab label="Dashboard" value={"1"} />
+          <Tab label="Registros" value={"2"} />
+        </TabList>
+        <TabPanel value="1">
+          <EventDetails />
+        </TabPanel>
+        <TabPanel value="2">
+          <Slide direction="right" in={onLoad} mountOnEnter>
+            <Paper
+              elevation={0}
+              sx={{
+                flex: 1,
+                overflow: 'hidden',
+                borderRadius: 4,
+                mb: 2
+              }}
+            >
+              {/* <Box
             sx={{
-              height: "100%",
-              overflow: "auto",
-              "&::-webkit-scrollbar": {
-                width: "8px",
-                height: "12px",
+              height: '100%',
+              overflow: 'auto',
+              '&::-webkit-scrollbar': {
+                width: '8px',
+                height: '12px',
               },
-              "&::-webkit-scrollbar-thumb": {
-                backgroundColor: "#ddd",
-                borderRadius: "12px",
+              '&::-webkit-scrollbar-thumb': {
+                backgroundColor: '#111',
+                borderRadius: '12px',
               },
-              "&::-webkit-scrollbar-track": {
-                background: "#EFEFEF",
+              '&::-webkit-scrollbar-track': {
+                background: '#EFEFEF',
               },
             }}
-          >
-            {loading ? (
-              <LoadingTable />
-            ) : eventBuyers.length > 0 ? (
-              <BasicTable
-                columns={eventBuyersColumns}
-                rows={eventBuyers}
-                loading={loading}
-                dataRow={dataRow}
-                page={page}
-                totalPages={1}
-                handleChangePagination={handleChangePagination}
-              />
-            ) : (
-              <Stack width={'100%'} mt={20} alignItems={'center'} textAlign={'center'}>
-                <h2 className="font-light">nenhuma informação de compradores para este evento.</h2>
-              </Stack>
-            )}
-          </Paper>
-        </Paper>
-      </Slide>
-    </Stack>
+          > */}
+              {loading ? (
+                <LoadingTable />
+              ) : eventBuyers.length > 0 ? (
+                <BasicTable
+                  columns={eventBuyersColumns}
+                  rows={eventBuyers}
+                  loading={loading}
+                  dataRow={dataRow}
+                  page={page}
+                  totalPages={1}
+                  handleChangePagination={handleChangePagination}
+                />
+              ) : (
+                <Stack width={'100%'} mt={20} alignItems={'center'} textAlign={'center'}>
+                  <h2 className="font-light">nenhuma informação de compradores para este evento.</h2>
+                </Stack>
+              )}
+              {/* </Box> */}
+            </Paper>
+          </Slide>
+        </TabPanel>
+      </TabContext>
+    </Stack >
   );
 };
 

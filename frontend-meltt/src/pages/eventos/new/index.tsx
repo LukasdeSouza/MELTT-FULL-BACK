@@ -79,13 +79,19 @@ const EventosNewPage = () => {
               p={2}
             >
               <Stack direction={"column"} gap={3}>
-                <Stack direction={"row"} alignItems={"center"} gap={2}>
+                <Stack direction={"column"}>
                   <Typography
                     color="primary"
                     fontWeight={600}
                     sx={{ fontSize: 18 }}
                   >
                     Dados do Evento
+                  </Typography>
+                  <Typography
+                    color="primary"
+                    sx={{ fontSize: 12 }}
+                  >
+                    preencha as informações do evento conforme cadastrado na Uniticket
                   </Typography>
                 </Stack>
 
@@ -142,7 +148,7 @@ const EventosNewPage = () => {
                   variant="outlined"
                   size="small"
                   name="data_formatura"
-                  label="Data da formatura"
+                  label="Data do Evento"
                   placeholder='dd/mm/aaaa'
                   value={values.data_formatura}
                   onChange={(e) => setValues({ ...values, data_formatura: e.target.value })}

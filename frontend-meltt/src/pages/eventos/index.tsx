@@ -24,7 +24,6 @@ import { FaCheckCircle } from "react-icons/fa";
 import { getToken } from "../../utils/token";
 import { jwtDecode } from "jwt-decode";
 import { CustomJwtPayload } from "../../components/customDrawer";
-import MelttLogo from "../../assets/logo/melttLogo";
 
 const EventosPage = () => {
   const navigate = useNavigate();
@@ -42,7 +41,14 @@ const EventosPage = () => {
 
   const fetchEventos = async (page: number) => {
     setLoading(true);
-    if (decoded?.tipo === 'ADMIN') {
+    if (decoded?.tipo === 'ALUNO') {
+      try {
+        const response = await apiGetData("academic", `/eventos/turma/${decoded.turma_id}`);
+        setEventos(response);
+      } catch (error) {
+        toast.error("Nenhuma informação encontrada para eventos desta TURMA");
+      }
+    } else {
       try {
         const response = await apiGetData("academic", `/eventos?page=${page}`);
         setTotalPages(response.totalPages);
@@ -50,14 +56,7 @@ const EventosPage = () => {
       } catch (error) {
         toast.error("Nenhuma informação encontrada para eventos");
       }
-    } if (decoded?.tipo === 'ALUNO') {
-      try {
-        const response = await apiGetData("academic", `/eventos/turma/${decoded.turma_id}`);
-        setEventos(response);
-      } catch (error) {
-        toast.error("Nenhuma informação encontrada para eventos");
-      }
-    }
+    } 
     setLoading(false);
   };
 
@@ -101,14 +100,14 @@ const EventosPage = () => {
         </TableCell>
         <TableCell align="left" sx={{ fontFamily: "Poppins" }}>
           <Stack direction={'row'} gap={1}>
-            {decoded?.tipo === 'ADMIN' && (
+            {(decoded?.tipo === 'ADMIN' || decoded?.tipo === 'GESTAO_PRODUCAO') && (
               <Tooltip title="Ver compradores" arrow>
                 <IconButton size="small" onClick={() => onClickRowView(row, 'compradores')}>
                   <FaMoneyBillWave color="#2d1c63" size={22} />
                 </IconButton>
               </Tooltip>
             )}
-            {decoded?.tipo === 'ADMIN' && (
+            {(decoded?.tipo === 'ADMIN' || decoded?.tipo === 'GESTAO_PRODUCAO') && (
               <Tooltip title="Ver Tickets" arrow>
                 <IconButton size="small" onClick={() => onClickRowView(row, 'tickets')}>
                   <IoTicket color="#2d1c63" size={22} />
@@ -145,14 +144,16 @@ const EventosPage = () => {
         my={2}
       >
         <h2 className="text-2xl text-default font-extrabold"></h2>
-        <Button
-          variant="contained"
-          color="secondary"
-          endIcon={<IoAdd />}
-          onClick={() => navigate('/eventos/new')}
-        >
-          Novo Evento
-        </Button>
+        {(decoded?.tipo === 'ADMIN' || decoded?.tipo === 'GESTAO_PRODUCAO') && (
+          <Button
+            variant="contained"
+            color="secondary"
+            endIcon={<IoAdd />}
+            onClick={() => navigate('/eventos/new')}
+          >
+            Novo Evento
+          </Button>
+        )}
       </Stack>
       <Slide direction="right" in={onLoad} mountOnEnter>
         <Paper
@@ -185,7 +186,7 @@ const EventosPage = () => {
           >
             {loading ? (
               <LoadingTable />
-            ) : eventos.length > 0 ? (
+            ) : eventos?.length > 0 ? (
               <BasicTable
                 columns={eventsColumns}
                 rows={eventos}
@@ -197,9 +198,9 @@ const EventosPage = () => {
               />
             ) : (
               <Stack width={'100%'} alignItems={'center'} sx={{ mt: 20 }}>
-                <MelttLogo />
-                <Typography color="primary" variant="body2" sx={{ fontFamily: "Poppins" }}>Não há eventos para mostrar...</Typography>
-                <Typography color="textSecondary" variant="caption" sx={{ fontFamily: "Poppins" }}>tente novamente mais tarde</Typography>
+                          <img src="/images/logo.png"
+            alt="Logo" className="w-48" />
+                <Typography color="textSecondary" variant="body2" sx={{ fontFamily: "Poppins", mt: 2 }}>Não há dados de eventos para mostrar</Typography>
               </Stack>
             )}
           </Paper>

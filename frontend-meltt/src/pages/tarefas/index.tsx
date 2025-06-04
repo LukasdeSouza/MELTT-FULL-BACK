@@ -1,11 +1,7 @@
 import {
   Button,
-  Chip,
   IconButton,
-  List,
-  ListItem,
   Paper,
-  Popover,
   Slide,
   Stack,
   TableCell,
@@ -21,7 +17,8 @@ import { IoMdAdd } from "react-icons/io";
 import toast from "react-hot-toast";
 import NoTableData from "../../components/noData";
 import LoadingTable from "../../components/loadingTable";
-import { format } from "date-fns";
+import { format, parseISO } from 'date-fns';
+
 import { MdModeEdit } from "react-icons/md";
 import { tarefasColumns } from "./table/columns";
 import { useTarefaContext } from "../../providers/tarefaContext";
@@ -32,51 +29,40 @@ const TarefasPage = () => {
   const [page, setPage] = useState(1);
   const [onLoad, setOnLoad] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [turmas, setTurmas] = useState([]);
+  const [tarefas, setTarefas] = useState([]);
   const [totalPages, setTotalPages] = useState(0);
-  const [responsaveis, setResponsaveis] = useState<{ tarefa_id: number; usuario_nome: string }[]>([]);
-  const [usuarios, setUsuarios] = useState([]);
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [selectedRowId, setSelectedRowId] = useState<number | null>(null);
+  // const [responsaveis, setResponsaveis] = useState<{ tarefa_id: number; usuario_nome: string }[]>([]);
+  // const [usuarios, setUsuarios] = useState([]);
 
-  const handleClick = (event: React.MouseEvent, rowId: number) => {
-    setAnchorEl(event.currentTarget as HTMLElement);
-    setSelectedRowId(rowId);
-  };
 
-  const handleClose = () => {
-    setAnchorEl(null);
-    setSelectedRowId(null);
-  };
+  // const fetchResponsaveis = async () => {
+  //   try {
+  //     const response = await apiGetData("academic", "/tarefas/responsaveis");
+  //     // setResponsaveis(response);
+  //   } catch (error) {
+  //     toast.error("Erro ao buscar responsáveis");
+  //   }
+  // }
 
-  const fetchResponsaveis = async () => {
-    try {
-      const response = await apiGetData("academic", "/tarefas/responsaveis");
-      setResponsaveis(response);
-    } catch (error) {
-      toast.error("Erro ao buscar responsáveis");
-    }
-  }
+  // useEffect(() => {
+  //   fetchResponsaveis();
+  // }, []);
 
-  useEffect(() => {
-    fetchResponsaveis();
-  }, []);
-
-  const fetchUsuarios = async () => {
-    try {
-      const response = await apiGetData("academic", "/usuarios");
-      setUsuarios(response.data)
-    } catch (error) {
-      toast.error("Erro ao buscar responsáveis");
-    }
-  }
+  // const fetchUsuarios = async () => {
+  //   try {
+  //     const response = await apiGetData("academic", "/usuarios");
+  //     setUsuarios(response.data)
+  //   } catch (error) {
+  //     toast.error("Erro ao buscar responsáveis");
+  //   }
+  // }
 
   const fetchTarefas = async (page: number) => {
     setLoading(true);
     try {
       const response = await apiGetData("academic", `/tarefas?page=${page}`);
       setTotalPages(response.totalPages);
-      setTurmas(response.data);
+      setTarefas(response.data);
     } catch (error) {
       toast.error("Erro ao buscar tarefas");
     }
@@ -84,11 +70,10 @@ const TarefasPage = () => {
     setLoading(false);
   };
 
-  useEffect(() => {
-    fetchUsuarios();
-    fetchResponsaveis();
-  }, [])
-
+  // useEffect(() => {
+  //   fetchUsuarios();
+  //   fetchResponsaveis();
+  // }, [])
 
   const handleChangePagination = (_: React.ChangeEvent<unknown>, value: number) => {
     try {
@@ -101,7 +86,6 @@ const TarefasPage = () => {
 
 
   const dataRow = (row: Tarefa) => {
-    const responsaveisFiltrados = responsaveis.filter((r) => r.tarefa_id === Number(row.id));
     return (
       <TableRow
         key={row.id}
@@ -116,41 +100,20 @@ const TarefasPage = () => {
           </Stack>
         </TableCell>
         <TableCell align="left">
-          <Chip
-            label={responsaveisFiltrados[0]?.usuario_nome || "Nenhum disponível"}
-            onClick={(event) => handleClick(event, Number(row.id))}
-            variant="outlined"
-            icon={<IoMdAdd />}
-            sx={{ flexDirection: "row-reverse", paddingRight: 2 }}
-          />
-          {anchorEl && (selectedRowId === Number(row.id)) && (
-            <Popover
-              open={Boolean(anchorEl)}
-              anchorEl={anchorEl}
-              onClose={handleClose}
-              anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-            >
-              <List>
-                {responsaveisFiltrados.slice(1).map((r, index) => (
-                  <ListItem key={index}>{r.usuario_nome}</ListItem>
-                ))}
-              </List>
-            </Popover>
-          )}
+          {row.responsaveis}
         </TableCell>
-
         <TableCell align="left">
           {row.atribuido_por}
         </TableCell>
         <TableCell align="left">
-          {row.criado_em ? format(row.criado_em, "dd/MM/yyyy") : "N/As"}
+          {row?.criado_em ? format(parseISO(row?.criado_em), "dd/MM/yyyy") : "N/As"}
         </TableCell>
         <TableCell align="left">
           <Stack direction={"row"}>
             <Tooltip title="Editar Tarefa" arrow>
               <IconButton onClick={() => {
                 dispatchTarefa({ type: "SET_TAREFA_SELECIONADA", payload: row });
-                navigate(`/tarefas/edit/${row.id}`)
+                navigate(`/processos-internos/tarefas/edit/${row.id}`)
               }}>
                 <MdModeEdit color="#2d1c63" size={22} />
               </IconButton>
@@ -182,7 +145,7 @@ const TarefasPage = () => {
           endIcon={<IoMdAdd />}
           onClick={() => {
             dispatchTarefa({ type: "SET_TAREFA_SELECIONADA", payload: null });
-            navigate("/tarefas/new");
+            navigate("/processos-internos/tarefas/new");
           }}
           sx={{ borderRadius: 2 }}
         >
@@ -220,11 +183,11 @@ const TarefasPage = () => {
           >
             {loading ? (
               <LoadingTable />
-            ) : turmas.length > 0 ? (
+            ) : tarefas?.length > 0 ? (
               <BasicTable
                 totalPages={totalPages}
                 columns={tarefasColumns}
-                rows={turmas}
+                rows={tarefas}
                 loading={loading}
                 dataRow={dataRow}
                 page={page}
@@ -235,7 +198,7 @@ const TarefasPage = () => {
                 pronoum={"he"}
                 pageName="tarefas"
                 disabledButton={false}
-                onClickAction={() => navigate("/tarefas/new")}
+                onClickAction={() => navigate("/processos-internos/tarefas/new")}
               />
             )}
           </Paper>

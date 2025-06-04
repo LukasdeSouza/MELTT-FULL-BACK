@@ -14,6 +14,7 @@ import {
   TableRow,
   TextField,
   Tooltip,
+  Typography,
 } from "@mui/material";
 import BasicTable from "../../components/table";
 import { Key, useEffect, useState } from "react";
@@ -25,7 +26,8 @@ import LoadingTable from "../../components/loadingTable";
 import { MdOutlinePayments } from "react-icons/md";
 import { FaEye, FaUserGraduate } from "react-icons/fa6";
 import { pagamentosColumns, pagamentosStudentColumns } from "./table/columns";
-import { format } from "date-fns";
+import { format } from 'date-fns';
+
 import { BiSearch } from "react-icons/bi";
 import { getToken } from "../../utils/token";
 import { jwtDecode } from "jwt-decode";
@@ -36,7 +38,11 @@ import { Turma } from "../../types";
 interface Student {
   id: number;
   name: Key | null | undefined;
-  numeroDocumento: string;
+  contato: {
+    nome: string;
+    numeroDocumento: string;
+    id: string;
+  };
   valor: string;
   vencimento: string;
   situacao: number;
@@ -57,6 +63,9 @@ const PagamentosPage = () => {
   const [payment, setPayment] = useState<Student | null>(null);
   const [turmas, setTurmas] = useState([]);
 
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+
   const [turmaId, setTurmaId] = useState<number | null>(null);
 
   const [onLoad, setOnLoad] = useState(false);
@@ -64,15 +73,20 @@ const PagamentosPage = () => {
 
   const [page, setPage] = useState(1);
   const [filterSituation, setFilterSituation] = useState<string | null>(null);
+  // const [filterDate, setFilterDate] = useState<string | null>(null);
 
   const fetchPagamentos = async (page: number) => {
     setLoading(true);
     if (decoded?.tipo === 'ADMIN') {
       try {
         const params = new URLSearchParams();
-        params.append("page", page.toString());
 
-        const response = await apiGetData("academic", `/pagamentos?${params.toString()}`);
+        params.append("pagina", page.toString());
+        if (filterSituation) {
+          params.append("situacoes", filterSituation);
+        }
+
+        const response = await apiGetData("academic", `/bling/contas/receber?${params.toString()}`);
         setPayments(response.data);
       } catch (error) {
         toast.error("Erro ao buscar Pagamento");
@@ -84,11 +98,14 @@ const PagamentosPage = () => {
         if (filterSituation) {
           params.append("situacoes", filterSituation);
         }
+        // if (filterDate) {
+        //   params.append("dataInicial", filterDate);
+        // }
 
-        const response = await apiGetData("academic", `/pagamentos/idBling/${decoded?.id_bling}`);
+        const response = await apiGetData("academic", `/pagamentos/documentos?documentos=${decoded?.documento}`);
         setPayments(response);
       } catch (error) {
-        toast.error("Erro ao buscar Pagamento");
+        toast.error("Erro ao buscar Pagamentos no Bling, se necessário saia da conta Bling e autentique-se novamente");
       }
     }
     setLoading(false);
@@ -96,7 +113,7 @@ const PagamentosPage = () => {
 
   const fetchTurmas = async () => {
     try {
-      let response = await apiGetData("academic", "/turmas");
+      const response = await apiGetData("academic", "/turmas");
       setTurmas(response.data);
     } catch (error) {
       toast.error("Erro ao buscar Turmas");
@@ -105,10 +122,24 @@ const PagamentosPage = () => {
 
   const fetchWithFilters = async () => {
     setLoading(true);
+    console.log("Data Inicial:", startDate);
+    console.log("Data Final:", endDate);
     try {
-      let situacao = filterSituation
+      const params = new URLSearchParams();
 
-      const response = await apiGetData("academic", `/pagamentos/situacao/${situacao}`);
+      if (filterSituation) {
+        params.append("situacoes", filterSituation);
+      }
+      if (startDate) {
+        params.append("dataInicial", startDate);
+      }
+      if (endDate) {
+        params.append("dataFinal", endDate);
+      }
+      
+      console.log("Params:", params.toString());
+
+      const response = await apiGetData("academic", `/bling/contas/receber?${params.toString()}`);
       setPayments(response.data);
     } catch (error) {
       toast.error("Erro ao aplicar filtro");
@@ -129,13 +160,13 @@ const PagamentosPage = () => {
   const onSubmitNewUser = async (_: Student) => {
     setLoadingSaveNewUser(true);
 
-    let dataObj = {
-      email: `${payment?.numeroDocumento}@meltt.com.br`,
-      senha: payment?.id.toString(),
+    const dataObj = {
+      email: `${payment?.contato.numeroDocumento}@meltt.com.br`,
+      senha: payment?.contato.id.toString(),
       tipo: "ALUNO",
-      documento: payment?.numeroDocumento,
-      nome: decoded?.nome,
-      id_bling: payment?.id.toString(),
+      documento: payment?.contato.numeroDocumento,
+      nome: payment?.contato.nome,
+      id_bling: payment?.contato.id.toString(),
       ativo: 1,
       telefone: null,
       turma_id: turmaId,
@@ -144,7 +175,7 @@ const PagamentosPage = () => {
     try {
       const response = await apiPostData("academic", "/usuarios", { ...dataObj });
       if (response.id) {
-        toast.success(`Usuário criado com sucesso. E-mail: ${payment?.numeroDocumento}@meltt.com.br  | Senha: ${payment?.id}`, {
+        toast.success(`Usuário criado com sucesso. E-mail: ${payment?.contato.numeroDocumento}@meltt.com.br  | Senha: ${payment?.contato.id}`, {
           duration: 20000,
           icon: "👏",
         });
@@ -167,7 +198,16 @@ const PagamentosPage = () => {
         }}
       >
         <TableCell component="th" scope="row">
-          {row.numeroDocumento}
+          <Link
+            color="primary"
+            underline="always"
+            sx={{ fontFamily: "Poppins" }}
+          >
+            {row.contato.nome}
+          </Link>
+        </TableCell>
+        <TableCell component="th" scope="row">
+          {row.contato.numeroDocumento}
         </TableCell>
         <TableCell align="left" sx={{ fontFamily: "Poppins" }}>
           R$ {row.valor}
@@ -287,6 +327,7 @@ const PagamentosPage = () => {
               <FormControl sx={{ width: '20%' }}>
                 <InputLabel sx={{ p: 0.3, bgcolor: '#fff' }}>filtrar por Status</InputLabel>
                 <Select
+                  size="small"
                   value={filterSituation}
                   label="status"
                   onChange={(e) => setFilterSituation(e.target.value)}
@@ -296,6 +337,23 @@ const PagamentosPage = () => {
                   <MenuItem value={5}>Cancelado</MenuItem>
                 </Select>
               </FormControl>
+              <TextField
+                label="Data Inicial"
+                type="date"
+                size="small"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                InputLabelProps={{ shrink: true }}
+              />
+
+              <TextField
+                label="Data Final"
+                type="date"
+                size="small"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                InputLabelProps={{ shrink: true }}
+              />
               <Button color="primary" size="small" startIcon={<BiSearch />} onClick={fetchWithFilters}>
                 Buscar
               </Button>
@@ -328,16 +386,21 @@ const PagamentosPage = () => {
                 loading={loading}
                 dataRow={decoded?.tipo === 'ADMIN' ? dataRow : dataRowStudent}
                 page={page}
-                totalPages={80}
+                totalPages={payments?.length}
                 handleChangePagination={handleChangePagination}
               />
-            ) : (
+            ) : decoded?.tipo === 'ADMIN' ? (
               <NoTableData
                 pronoum={"he"}
                 pageName="pagamento"
                 disabledButton={false}
                 onClickAction={() => { }}
               />
+            ) : (
+              <Stack className="flex-col h-full justify-center items-center">
+                <Typography variant="h5" color="textSecondary">Desculpe,</Typography>
+                <Typography color="textSecondary">não há nenhuma informação sobre pagamentos para mostrar</Typography>
+              </Stack>
             )}
           </Paper>
         </Paper>
@@ -356,7 +419,7 @@ const PagamentosPage = () => {
             variant="outlined"
             focused
             fullWidth
-            value={payment?.nome ?? ""}
+            value={payment?.contato.nome}
             size="small"
             disabled
           />
@@ -365,7 +428,7 @@ const PagamentosPage = () => {
             variant="outlined"
             fullWidth
             size="small"
-            value={payment?.numeroDocumento}
+            value={payment?.contato.numeroDocumento}
             disabled
           />
           <FormControl fullWidth>
@@ -383,7 +446,7 @@ const PagamentosPage = () => {
             variant="outlined"
             fullWidth
             size="small"
-            value={payment?.numeroDocumento}
+            value={payment?.contato.numeroDocumento}
             disabled
           />
           <TextField
@@ -391,7 +454,7 @@ const PagamentosPage = () => {
             variant="outlined"
             fullWidth
             size="small"
-            value={`${payment?.numeroDocumento}@meltt.com.br`}
+            value={`${payment?.contato.numeroDocumento}@meltt.com.br`}
             disabled
           />
           <TextField

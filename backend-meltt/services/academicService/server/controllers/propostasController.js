@@ -50,10 +50,10 @@ class PropostaController {
 
   async createProposta(req, res) {
     try {
-      const { nome_proposta, turma_id, enviado_por, valor_proposta, observacoes } = req.body;
+      const { nome_proposta, turma_id, enviado_por, valor_proposta, file_uuid, observacoes } = req.body;
       const [result] = await db.query(
         "INSERT INTO propostas SET ?", 
-        { nome_proposta, turma_id, enviado_por, valor_proposta, observacoes }
+        { nome_proposta, turma_id, enviado_por, valor_proposta, file_uuid, observacoes }
       );
       res.status(201).json({ id: result.insertId, ...req.body });
     } catch (err) {

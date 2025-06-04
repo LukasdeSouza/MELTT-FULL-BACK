@@ -16,6 +16,9 @@ import LoadingTable from "../../../components/loadingTable";
 import { apiGetData } from "../../../services/api";
 import { BiArrowBack } from "react-icons/bi";
 import { eventCheckinsColumns } from "../table/columns/checkins";
+import { IoTicketOutline } from "react-icons/io5";
+import { MdOutlineDateRange } from "react-icons/md";
+import { TbClockHour4 } from "react-icons/tb";
 
 const EventosCheckinsPage = () => {
   const navigate = useNavigate();
@@ -34,7 +37,7 @@ const EventosCheckinsPage = () => {
     try {
       const response = await apiGetData("academic", `/uniticket/checkins?access_token=${id}`);
       if (response && response.data && Array.isArray(response.data)) {
-        
+
         setEventCheckins(response.data);
       } else {
         toast.error("Estrutura inesperada em response.data");
@@ -77,17 +80,39 @@ const EventosCheckinsPage = () => {
           </Stack>
         </TableCell>
         <TableCell align="left" sx={{ fontFamily: "Poppins" }}>
-          {row.cpf}
+          {row.email}
         </TableCell>
         <TableCell align="left" sx={{ fontFamily: "Poppins" }}>
-          {row.phone}
+          {row.lot_name}
         </TableCell>
         <TableCell align="left" sx={{ fontFamily: "Poppins" }}>
-          <Chip color={row.order.status === 'finalizado' ? 'success' : 'secondary'} label={row.order.status} />
+          {row.sector_name}
         </TableCell>
         <TableCell align="left" sx={{ fontFamily: "Poppins" }}>
-          R$ {row.order.total_amount}
+          <Chip
+            color="secondary"
+            label={row.ticket_code}
+            icon={<IoTicketOutline size={20} />}
+            sx={{ fontFamily: "Poppins", p: 1 }}
+          />
         </TableCell>
+        <TableCell align="left" sx={{ fontFamily: "Poppins" }}>
+          <Chip
+            color="default"
+            label={row.checkin_date}
+            icon={<MdOutlineDateRange size={20} />}
+            sx={{ fontFamily: "Poppins", p: 1 }}
+          />
+        </TableCell>
+        <TableCell align="left" sx={{ fontFamily: "Poppins" }}>
+          <Chip
+            color="default"
+            label={row.checkin_hour}
+            icon={<TbClockHour4 size={20} />}
+            sx={{ fontFamily: "Poppins", p: 1 }}
+          />
+        </TableCell>
+
       </TableRow>
     );
   };

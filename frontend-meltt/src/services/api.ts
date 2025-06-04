@@ -13,8 +13,6 @@ const getBaseURL = (serviceType: string): string => {
   }
 };
 
-// let isBlingRefreshing = false;
-// let blingRefreshSubscribers: ((token: string) => void)[] = [];
 const createApiInstance = (serviceType: string): AxiosInstance => {
   const api = axios.create({
     baseURL: getBaseURL(serviceType),
@@ -29,19 +27,10 @@ const createApiInstance = (serviceType: string): AxiosInstance => {
       const melttToken = localStorage.getItem("@meltt-user-token");
       const blingToken = localStorage.getItem("bling-access-token");
 
-      // Se for uma requisição para o Bling, usa o token do Bling
-      if (config.url?.includes("bling")) {
-        if (blingToken) {
-          config.headers["Authorization"] = `Bearer ${blingToken}`;
-        } else {
-          toast.error("Sessão do Bling expirada. Faça login novamente.");
-          // window.location.href = "/splash";
-        }
-      } else {
-        // Senão, usa o token da aplicação
-        if (melttToken) {
-          config.headers["Authorization"] = `Bearer ${melttToken}`;
-        }
+      if (config.url?.includes("bling") && blingToken) {
+        config.headers.Authorization = `Bearer ${blingToken}`;
+      } else if (melttToken) {
+        config.headers.Authorization = `Bearer ${melttToken}`;
       }
 
       return config;
@@ -49,90 +38,53 @@ const createApiInstance = (serviceType: string): AxiosInstance => {
     (error) => Promise.reject(error)
   );
 
-  api.interceptors.response.use((response) => response, (error) => {
-    console.log('error', error.response.data.status)
-    if(error.response.data.status === 401) {
-      toast.error("Sessão do Bling expirada. Faça Login Novamente. Se necessário, deslogue do Bling e logue novamente!", {
-        duration: 10000,
-        icon: '🔒'
-      });
-      localStorage.removeItem("@meltt-user-token");
-      localStorage.removeItem("bling-access-token");
-      localStorage.removeItem("bling-refresh-token");
-      window.location.href = "/login";
-      // window.location.reload();
-      // alert('Faça Login no Bling NOVAMENTE para acessar a plataforma, se necessário saia do Bling e faça Login novamente.')
-      // let refreshRequest =  apiPostData("authentication", `/external/bling/refresh`, {
-      //   refresh_token: refreshToken
-      // })
-      // console.log('refreshRequest', refreshRequest.then((res) => res))
-      // refreshRequest.then((res) => {
-      //   localStorage.setItem("bling-access-token", res.data.access_token)
-      //   localStorage.setItem("bling-refresh-token", res.data.refresh_token)
-      // })
+  api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+      // Trata erros de rede
+      if (!error.response) {
+        toast.error("Erro de conexão com o servidor");
+        return Promise.reject(error);
+      }
+
+      const status = error.response.status;
+      const isBlingRequest = error.config.url.includes("bling");
+
+      // Tratamento específico para Bling
+      if (status === 401 && isBlingRequest) {
+        localStorage.removeItem("bling-access-token");
+        localStorage.removeItem("bling-refresh-token");
+        
+        toast.error("Sessão do Bling expirada. Faça login novamente no Bling!", {
+          duration: 10000,
+          icon: '🔒'
+        });
+        
+        window.location.href = "/configuracoes-bling"; // Ajuste para sua rota
+        return Promise.reject(error);
+      }
+
+      // Tratamento geral para 401
+      if (status === 401) {
+        localStorage.removeItem("@meltt-user-token");
+        
+        toast.error("Sessão expirada. Redirecionando para login...", {
+          duration: 4000,
+          icon: "🔒"
+        });
+
+        setTimeout(() => {
+          window.location.href = "/login";
+        }, 2000);
+      }
+
+      return Promise.reject(error);
     }
-  })
-
-  // api.interceptors.response.use(
-  //   (response) => response,
-  //   async (error) => {
-  //     const originalRequest = error.config;
-  //     console.log("error", error.response?.status, originalRequest.url);
-  //     if (error.response && originalRequest.url.includes("bling")) {
-  //       if (!originalRequest._retry) {
-  //         originalRequest._retry = true;
-
-  //         if (!isBlingRefreshing) {
-  //           isBlingRefreshing = true;
-
-  //           try {
-  //             const newToken = await refreshBlingAccessToken();
-  //             localStorage.setItem("bling-access-token", newToken);
-  //             isBlingRefreshing = false;
-
-  //             // Refaz as requisições pendentes
-  //             blingRefreshSubscribers.forEach((callback) => callback(newToken));
-  //             blingRefreshSubscribers = [];
-
-  //             originalRequest.headers["Authorization"] = `Bearer ${newToken}`;
-  //             return api(originalRequest);
-  //           } catch (refreshError) {
-  //             isBlingRefreshing = false;
-  //             toast.error("Sessão do Bling expirada. Faça login novamente.");
-  //             localStorage.removeItem("bling-access-token");
-  //             localStorage.removeItem("bling-refresh-token");
-  //             return Promise.reject(refreshError);
-  //           }
-  //         }
-
-  //         return new Promise((resolve) => {
-  //           blingRefreshSubscribers.push((token: string) => {
-  //             originalRequest.headers["Authorization"] = `Bearer ${token}`;
-  //             resolve(api(originalRequest));
-  //           });
-  //         });
-  //       }
-  //     }
-
-  //     return Promise.reject(error);
-  //   }
-  // );
+  );
 
   return api;
 };
 
-// const refreshBlingAccessToken = async (): Promise<string> => {
-//   try {
-//     const refreshToken = localStorage.getItem("bling-refresh-token");
-//     if (!refreshToken) throw new Error("No Bling refresh token available");
-
-//     const response = await apiPostData("authentication", `/external/bling/refresh?code=${refreshToken}`, {})
-
-//     return response.data.access_token;
-//   } catch (error) {
-//     throw new Error("Failed to refresh Bling token");
-//   }
-// };
 
 export const apiRequest = async (
   serviceType: string,

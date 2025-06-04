@@ -93,7 +93,7 @@ router.post('/forgot-password', async (req, res) => {
   }
 });
 
-router.post('/reset-password/', authMiddleware, async (req, res) => {
+router.post('/reset-password', authMiddleware, async (req, res) => {
   const { email, senha } = req.body;
   console.log('email', email)
   console.log('senha', senha)

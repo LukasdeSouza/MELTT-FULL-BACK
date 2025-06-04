@@ -100,7 +100,7 @@ const PlanosFormaturaPage = () => {
           variant="contained"
           endIcon={<IoMdAdd />}
           onClick={() => {
-            navigate("/planos-formatura/new");
+            navigate("/processos-internos/planos-formatura/new");
           }}
           sx={{ borderRadius: 2 }}
         >

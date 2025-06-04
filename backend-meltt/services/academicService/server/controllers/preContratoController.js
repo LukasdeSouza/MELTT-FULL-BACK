@@ -57,18 +57,20 @@ class PreContratoController {
       content,
       createdBy,
       contactedBy,
+      turmaName,
       studentName,
       agreedValue,
       packageInterest,
       status,
     } = req.body;
     const query =
-      "INSERT INTO pre_contratos (content, createdBy, contactedBy, studentName, agreedValue, packageInterest, status) VALUES (?, ?, ?, ?, ?, ?, ?)";
+      "INSERT INTO pre_contratos (content, createdBy, contactedBy, turmaName, studentName, agreedValue, packageInterest, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
     try {
       const [result] = await pool.query(query, [
         content,
         createdBy,
         contactedBy,
+        turmaName,
         studentName,
         agreedValue,
         packageInterest,
@@ -86,18 +88,20 @@ class PreContratoController {
       content,
       createdBy,
       contactedBy,
+      turmaName,
       studentName,
       agreedValue,
       packageInterest,
       status,
     } = req.body;
     const updateQuery =
-      "UPDATE pre_contratos SET content = ?, createdBy = ?, contactedBy = ?, studentName = ?, agreedValue = ?, packageInterest = ?, status = ? WHERE id = ?";
+      "UPDATE pre_contratos SET content = ?, createdBy = ?, contactedBy = ?, turmaName = ?, studentName = ?, agreedValue = ?, packageInterest = ?, status = ? WHERE id = ?";
     try {
       await pool.query(updateQuery, [
         content,
         createdBy,
         contactedBy,
+        turmaName,
         studentName,
         agreedValue,
         packageInterest,

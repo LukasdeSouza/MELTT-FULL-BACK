@@ -52,7 +52,7 @@ const AgendaPage = () => {
   const handleDelete = async (id: number) => {
     try {
       await apiDeleteData("academic", `/agenda/${id}`, {});
-      await fetchEvents();
+      await fetchAgenda();
       toast.success('Evento excluído com sucesso');
     } catch (error) {
       console.error('Erro ao excluir evento:', error);
@@ -168,8 +168,8 @@ const NewEventModal = ({ open, onClose, onRefresh }: NewEventProps) => {
     nome: '',
     descricao: '',
     data: new Date().toISOString().slice(0, 16),
-    nome_turma: '',
-    turma_id: ''
+    nome_turma: null,
+    turma_id: null
   });
   const [turmas, setTurmas] = useState([]);
   const [loadingSave, setLoadingSave] = useState(false);

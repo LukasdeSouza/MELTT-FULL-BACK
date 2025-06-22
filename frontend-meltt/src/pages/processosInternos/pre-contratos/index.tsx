@@ -145,15 +145,21 @@ const PreContratoPage = () => {
       !newCard.content.trim() ||
       !newCard.createdBy ||
       !newCard.studentName ||
-      !newCard.turmaName || 
-      !newCard.agreedValue
+      !newCard.turmaName 
+      // !newCard.agreedValue
     ) {
       return toast.error("Preencha todos os campos para salvar!");
     }
 
     const newCardData = {
       created_at: new Date().toISOString(),
-      ...newCard,
+      content: newCard.content ?? '',
+      createdBy: newCard.createdBy,
+      contactedBy: newCard.contactedBy,
+      turmaName: newCard.turmaName ?? '',
+      studentName: newCard.studentName ?? '',
+      agreedValue: newCard.agreedValue ?? '',
+      packageInterest: newCard.packageInterest,
       status: Status.PARADO,
     };
 
@@ -273,19 +279,14 @@ const PreContratoPage = () => {
                                     : "Data inválida"}
                                 </Typography>
 
-                                <Stack direction="column" spacing={0.5}>
-                                  <Typography variant="caption" color="textSecondary">Criado por:</Typography>
-                                  <Typography variant="body2">{item.createdBy}</Typography>
-                                </Stack>
-
-                                <Stack direction="column" spacing={0.5}>
-                                  <Typography variant="caption" color="textSecondary">Turma:</Typography>
+                                <Stack direction="column">
+                                  <Typography variant="caption" color="textSecondary">Nome do Aluno:</Typography>
                                   <Typography variant="body2">{item.studentName}</Typography>
                                 </Stack>
 
-                                <Stack direction="column" spacing={0.5}>
-                                  <Typography variant="caption" color="textSecondary">Valor Acordado:</Typography>
-                                  <Typography variant="body2">R$ {item.agreedValue}</Typography>
+                                <Stack direction="column">
+                                  <Typography variant="caption" color="textSecondary">Turma:</Typography>
+                                  <Typography variant="body2">{item.turmaName ?? 'N/A'}</Typography>
                                 </Stack>
 
                                 <Button

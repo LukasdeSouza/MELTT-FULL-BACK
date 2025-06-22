@@ -29,7 +29,6 @@ const TarefasNewPage = () => {
 
   const onSubmitTarefa = async (values: any) => {
     const { responsaveis, ...tarefaValues } = values;
-    console.log("responsaveis", responsaveis);
     setLoadingSave(true);
 
     toast.loading("Salvando Tarefa...");

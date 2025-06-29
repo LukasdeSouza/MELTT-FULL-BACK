@@ -5,15 +5,26 @@ class TurmaController {
     const page = parseInt(req.query.page) || 1; // Página atual (default: 1)
     const limit = parseInt(req.query.limit) || 10; // Itens por página (default: 10)
     const offset = (page - 1) * limit; // Calcula o deslocamento
+    const nome = req.query.nome || null; // Filtro opcional pelo nome
 
     try {
-      const [results] = await pool.query(
-        "SELECT * FROM turmas LIMIT ? OFFSET ?",
-        [limit, offset]
-      );
-      const [countResult] = await pool.query(
-        "SELECT COUNT(*) AS total FROM turmas"
-      );
+      let query = "SELECT * FROM turmas";
+      let countQuery = "SELECT COUNT(*) AS total FROM turmas";
+      let queryParams = [];
+      let countParams = [];
+
+      if (nome) {
+        query += " WHERE nome LIKE ?";
+        countQuery += " WHERE nome LIKE ?";
+        queryParams.push(`%${nome}%`);
+        countParams.push(`%${nome}%`);
+      }
+
+      query += " LIMIT ? OFFSET ?";
+      queryParams.push(limit, offset);
+
+      const [results] = await pool.query(query, queryParams);
+      const [countResult] = await pool.query(countQuery, countParams);
       const total = countResult[0].total;
       const totalPages = Math.ceil(total / limit);
 

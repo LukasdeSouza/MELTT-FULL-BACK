@@ -109,8 +109,8 @@ class TarefasController {
     const id = req.params.id;
     console.log(`Tentando deletar tarefa com ID: ${id}`);
     try {
-      await pool.query("DELETE FROM tarefas WHERE id = ?", [id]);
-      res.status(200).json({ message: "Tarefa deletada com sucesso!" });
+      await pool.query("UPDATE tarefas SET status = 0 WHERE id = ?", [id]);
+      res.status(200).json({ message: "Tarefa Inativada com sucesso!" });
     } catch (err) {
       res.status(500).json({ error: err.message });
     }

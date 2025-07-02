@@ -65,7 +65,7 @@ const FornecedoresPage = () => {
         "academic",
         `/fornecedores/${row.id}`
       );
-      if (response.message.includes("deletadO")) {
+      if (response.message.includes("deletad0")) {
         fetchFornecedores();
         toast.success("Fornecedor excluído com sucesso");
       }

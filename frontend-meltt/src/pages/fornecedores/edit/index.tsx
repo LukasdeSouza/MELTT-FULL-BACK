@@ -192,7 +192,7 @@ const FornecedoresEditPage = () => {
                         label="Turma"
                       >
                         {turmas?.map((item: { nome: string; id: number }) => (
-                          <MenuItem key={item.id} value={item.nome}>
+                          <MenuItem key={item.id} value={item.id}>
                             {item.nome}
                           </MenuItem>
                         ))}

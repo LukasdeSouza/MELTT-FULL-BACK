@@ -1,7 +1,5 @@
 import {
-  // Box,
   Chip,
-  IconButton,
   Link,
   Paper,
   Slide,
@@ -9,33 +7,24 @@ import {
   Tab,
   TableCell,
   TableRow,
-  // Tabs,
 } from "@mui/material";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import BasicTable from "../../../components/table";
 import LoadingTable from "../../../components/loadingTable";
 import { apiGetData } from "../../../services/api";
 import { eventBuyersColumns } from "../table/columns/buyers";
-import { BiArrowBack } from "react-icons/bi";
-// import { TbPigMoney } from "react-icons/tb";
-// import { formatCurrency } from "../../../utils/functions";
 import { MdOutlineMotionPhotosOn } from "react-icons/md";
-import EventDetails from "../../../components/eventDetails";
 import { TabContext, TabList, TabPanel } from "@mui/lab";
 
 const EventosCompradoresPage = () => {
-  const navigate = useNavigate();
   const { id } = useParams();
 
   const [page, setPage] = useState(1);
 
   const [loading, setLoading] = useState(false);
   const [eventBuyers, setEventBuyers] = useState([]);
-  // const [totalAmount, setTotalAmount] = useState("");
-  // const [totalPaidAmount, setTotalPaidAmount] = useState("");
-  // const [uniticketFee, setUniticketFee] = useState("");
 
   const [onLoad, setOnLoad] = useState(false);
 
@@ -170,20 +159,20 @@ const EventosCompradoresPage = () => {
       }}
     >
 
-      <Stack direction={'row'} alignItems={'center'} gap={1}>
+      {/* <Stack direction={'row'} alignItems={'center'} gap={1}>
         <IconButton color="primary" size="small" onClick={() => navigate('/eventos')}>
           <BiArrowBack />
         </IconButton>
-      </Stack>
+      </Stack> */}
       <TabContext value={tabValue}>
         <TabList onChange={(_, newValue) => setTabValue(newValue)}>
-          <Tab label="Dashboard" value={"1"} />
-          <Tab label="Registros" value={"2"} />
+          {/* <Tab label="Dashboard" value={"1"} /> */}
+          <Tab label="Registros" value={"1"} />
         </TabList>
-        <TabPanel value="1">
+        {/* <TabPanel value="1">
           <EventDetails />
-        </TabPanel>
-        <TabPanel value="2">
+        </TabPanel> */}
+        <TabPanel value="1">
           <Slide direction="right" in={onLoad} mountOnEnter>
             <Paper
               elevation={0}

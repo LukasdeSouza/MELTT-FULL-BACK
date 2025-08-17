@@ -157,117 +157,119 @@ export default function CustomDrawer(props: Props) {
         transition: 'width 0.3s ease',
       }}
     >
-      <Stack direction="column" gap={4} ml={2}>
-        {isDrawerOpen && (
-          <Stack pt={6} px={3} mb={2}>
-            <img
-              src="/images/logo.png"
-              alt="Logo"
-              style={{ width: '160px', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }}
-            />
-          </Stack>
-        )}
+      <Box sx={{ flexGrow: 1, overflowY: 'auto', minHeight: 0 }}>
+        <Stack direction="column" gap={4} ml={2}>
+          {isDrawerOpen && (
+            <Stack pt={6} px={3} mb={2}>
+              <img
+                src="/images/logo.png"
+                alt="Logo"
+                style={{ width: '160px', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }}
+              />
+            </Stack>
+          )}
 
-        <List sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, px: 1 }}>
-          {menuList.map((item: DrawerMenuListType, index) => (
-            <React.Fragment key={index}>
-              <ListItem disablePadding>
-                <ListItemButton
-                  selected={location.pathname.includes(item.route)}
-                  sx={{
-                    borderRadius: '12px',
-                    mb: 0.5,
-                    py: 1.5,
-                    transition: 'all 0.3s ease',
-                    justifyContent: isDrawerOpen ? 'flex-start' : 'center',
-                    '&.Mui-selected': {
-                      backgroundColor: 'rgba(255,255,255,0.95)',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                      '&:hover': { backgroundColor: 'rgba(255,255,255,0.95)' }
-                    }
-                  }}
-                  onClick={() => navigate(item.route)}
-                >
-                  <ListItemIcon sx={{
-                    minWidth: isDrawerOpen ? '40px' : '0px',
-                    justifyContent: 'center',
-                  }}>
-                    {React.cloneElement(item.icon, {
-                      style: {
-                        color: location.pathname.includes(item.route)
-                          ? '#DB1F8D'
-                          : '#F1F5F9',
-                        fontSize: '1.4rem'
+          <List sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, px: 1 }}>
+            {menuList.map((item: DrawerMenuListType, index) => (
+              <React.Fragment key={index}>
+                <ListItem disablePadding>
+                  <ListItemButton
+                    selected={location.pathname.includes(item.route)}
+                    sx={{
+                      borderRadius: '12px',
+                      mb: 0.5,
+                      py: 1.5,
+                      transition: 'all 0.3s ease',
+                      justifyContent: isDrawerOpen ? 'flex-start' : 'center',
+                      '&.Mui-selected': {
+                        backgroundColor: 'rgba(255,255,255,0.95)',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                        '&:hover': { backgroundColor: 'rgba(255,255,255,0.95)' }
                       }
-                    })}
-                  </ListItemIcon>
-                  {isDrawerOpen && (
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        fontSize: '0.95rem',
-                        fontWeight: 600,
-                        color: location.pathname.includes(item.route) ? '#2D1C63' : 'rgba(255,255,255,0.9)'
-                      }}
-                    >
-                      {item.title}
-                    </Typography>
-                  )}
-                </ListItemButton>
-              </ListItem>
+                    }}
+                    onClick={() => navigate(item.route)}
+                  >
+                    <ListItemIcon sx={{
+                      minWidth: isDrawerOpen ? '40px' : '0px',
+                      justifyContent: 'center',
+                    }}>
+                      {React.cloneElement(item.icon, {
+                        style: {
+                          color: location.pathname.includes(item.route)
+                            ? '#DB1F8D'
+                            : '#F1F5F9',
+                          fontSize: '1.4rem'
+                        }
+                      })}
+                    </ListItemIcon>
+                    {isDrawerOpen && (
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          fontSize: '0.95rem',
+                          fontWeight: 600,
+                          color: location.pathname.includes(item.route) ? '#2D1C63' : 'rgba(255,255,255,0.9)'
+                        }}
+                      >
+                        {item.title}
+                      </Typography>
+                    )}
+                  </ListItemButton>
+                </ListItem>
 
-              {/* Subitens */}
-              {isDrawerOpen && item.subRoutes && item.subRoutes.length > 0 && (
-                <Collapse in={location.pathname.includes(item.route)}>
-                  <List component="div" disablePadding sx={{ pl: 4 }}>
-                    {item.subRoutes.map((subItem, subIndex) => (
-                      <ListItem key={`${index}-${subIndex}`} disablePadding>
-                        <ListItemButton
-                          selected={location.pathname.includes(subItem.route)}
-                          sx={{
-                            borderRadius: '8px',
-                            py: 1,
-                            transition: 'all 0.3s ease',
-                            '&.Mui-selected': {
-                              backgroundColor: 'rgba(219,31,141,0.15)'
-                            }
-                          }}
-                          onClick={() => navigate(subItem.route)}
-                        >
-                          <ListItemIcon sx={{ minWidth: '36px' }}>
-                            {subItem.icon ? React.cloneElement(subItem.icon, {
-                              style: {
-                                color: location.pathname.includes(subItem.route)
-                                  ? '#DB1F8D'
-                                  : 'rgba(255,255,255,0.7)',
-                                fontSize: '1.2rem'
-                              }
-                            }) : <></>}
-                          </ListItemIcon>
-                          <Typography
-                            variant="body2"
+                {/* Subitens */}
+                {isDrawerOpen && item.subRoutes && item.subRoutes.length > 0 && (
+                  <Collapse in={location.pathname.includes(item.route)}>
+                    <List component="div" disablePadding sx={{ pl: 4 }}>
+                      {item.subRoutes.map((subItem, subIndex) => (
+                        <ListItem key={`${index}-${subIndex}`} disablePadding>
+                          <ListItemButton
+                            selected={location.pathname.includes(subItem.route)}
                             sx={{
-                              fontSize: '0.9rem',
-                              color: location.pathname.includes(subItem.route)
-                                ? '#FFF'
-                                : 'rgba(255,255,255,0.7)',
-                              fontWeight: location.pathname.includes(subItem.route)
-                                ? 600
-                                : 400
+                              borderRadius: '8px',
+                              py: 1,
+                              transition: 'all 0.3s ease',
+                              '&.Mui-selected': {
+                                backgroundColor: 'rgba(219,31,141,0.15)'
+                              }
                             }}
+                            onClick={() => navigate(subItem.route)}
                           >
-                            {subItem.title}
-                          </Typography>
-                        </ListItemButton>
-                      </ListItem>
-                    ))}
-                  </List>
-                </Collapse>
-              )}
-            </React.Fragment>
-          ))}
-        </List>
-      </Stack>
+                            <ListItemIcon sx={{ minWidth: '36px' }}>
+                              {subItem.icon ? React.cloneElement(subItem.icon, {
+                                style: {
+                                  color: location.pathname.includes(subItem.route)
+                                    ? '#DB1F8D'
+                                    : 'rgba(255,255,255,0.7)',
+                                  fontSize: '1.2rem'
+                                }
+                              }) : <></>}
+                            </ListItemIcon>
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                fontSize: '0.9rem',
+                                color: location.pathname.includes(subItem.route)
+                                  ? '#FFF'
+                                  : 'rgba(255,255,255,0.7)',
+                                fontWeight: location.pathname.includes(subItem.route)
+                                  ? 600
+                                  : 400
+                              }}
+                            >
+                              {subItem.title}
+                            </Typography>
+                          </ListItemButton>
+                        </ListItem>
+                      ))}
+                    </List>
+                  </Collapse>
+                )}
+              </React.Fragment>
+            ))}
+          </List>
+        </Stack>
+      </Box>
       <List sx={{ pb: 2 }}>
         <ListItem disablePadding>
           <ListItemButton
@@ -344,7 +346,7 @@ export default function CustomDrawer(props: Props) {
                 letterSpacing: '-0.5px',
               }}
             >
-              {props.pageTitle}
+              {props.pageTitle.toUpperCase()}
             </Typography>
             <Typography
               variant="body2"
@@ -360,7 +362,6 @@ export default function CustomDrawer(props: Props) {
             </Typography>
           </Stack>
 
-          {/* Notificações e Perfil */}
           <Stack direction="row" alignItems="center" gap={4}>
             <IconButton
               onClick={handleClickOpenPopoverNotifications}

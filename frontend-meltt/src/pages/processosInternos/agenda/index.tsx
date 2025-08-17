@@ -18,10 +18,18 @@ interface NewEventProps {
   onRefresh: () => void;
 }
 
+// Definição do tipo para o formulário
+type FormDataType = {
+  nome: string;
+  descricao: string;
+  data: string;
+  nome_turma: string | null;
+  turma_id: string | null;
+};
+
 const AgendaPage = () => {
   const [eventos, setEventos] = useState<any[]>([]);
   const [openModal, setOpenModal] = useState(false);
-  const [showDelete, setShowDelete] = useState(false);
 
   useEffect(() => {
     fetchAgenda();
@@ -164,7 +172,7 @@ const AgendaPage = () => {
 };
 
 const NewEventModal = ({ open, onClose, onRefresh }: NewEventProps) => {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormDataType>({
     nome: '',
     descricao: '',
     data: new Date().toISOString().slice(0, 16),
@@ -235,8 +243,8 @@ const NewEventModal = ({ open, onClose, onRefresh }: NewEventProps) => {
           />
           <TextField
             label="Nome da Turma"
-            value={formData.nome_turma}
-            onChange={(e) => setFormData({ ...formData, nome_turma: e.target.value })}
+            value={formData.nome_turma ?? ''}
+            onChange={(e) => setFormData({ ...formData, nome_turma: e.target.value || null })}
           />
           <FormControl >
             <InputLabel
@@ -251,8 +259,8 @@ const NewEventModal = ({ open, onClose, onRefresh }: NewEventProps) => {
             <Select
               labelId="tipo"
               name="tipo"
-              value={formData.turma_id ?? ""}
-              onChange={(e) => setFormData({ ...formData, turma_id: e.target.value })}
+              value={formData.turma_id ?? ''}
+              onChange={(e) => setFormData({ ...formData, turma_id: e.target.value || null })}
             >
               {turmas.map((turma: { id: string, nome: string }) => (
                 <MenuItem key={turma.id} value={turma.id}>

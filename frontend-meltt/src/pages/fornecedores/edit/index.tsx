@@ -66,7 +66,7 @@ const FornecedoresEditPage = () => {
     setLoadingSave(true);
     let dataObj = {
       ...values,
-      valor_cotado: parseFloat(values.valor_cotado),
+      valor_cotado: parseFloat(values.valor_cotado.replace(/\./g, '').replace(',', '.')),
     };
 
     try {

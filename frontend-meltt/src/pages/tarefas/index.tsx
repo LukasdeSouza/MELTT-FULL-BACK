@@ -1,6 +1,7 @@
 import {
   Box,
   Button,
+  Chip,
   IconButton,
   Paper,
   Slide,
@@ -20,7 +21,6 @@ import NoTableData from "../../components/noData";
 import LoadingTable from "../../components/loadingTable";
 import { format, parseISO } from 'date-fns';
 
-import { MdModeEdit } from "react-icons/md";
 import { tarefasColumns } from "./table/columns";
 import { useTarefaContext } from "../../providers/tarefaContext";
 import { getToken } from "../../utils/token";
@@ -96,7 +96,7 @@ const TarefasPage = () => {
         tarefa_id: id,
         usuario_id: decoded?.id
       });
-      await apiDeleteData("academic", `/tarefas/${id}`, {});
+      await apiDeleteData("academic", `/tarefas/${id}`);
       await fetchTarefas(page);
       toast.success("Tarefa excluída com sucesso");
     } catch (error) {
@@ -120,7 +120,14 @@ const TarefasPage = () => {
           </Stack>
         </TableCell>
         <TableCell align="left">
-          {row.responsaveis}
+          <Chip
+            label={row.status === 1 ? 'Ativa' : 'Inativa'}
+            color={row.status === 1 ? 'success' : 'warning'}
+            sx={{
+              mt: 0.5,
+              fontWeight: 500,
+            }}
+          />
         </TableCell>
         <TableCell align="left">
           {row.atribuido_por}
@@ -131,17 +138,17 @@ const TarefasPage = () => {
         <TableCell align="left">
           <Stack direction={"row"}>
             <Box sx={{ display: "flex", gap: 1 }}>
-              <Tooltip title="Editar Tarefa" arrow>
+              {/* <Tooltip title="Editar Tarefa" arrow>
                 <IconButton onClick={() => {
                   dispatchTarefa({ type: "SET_TAREFA_SELECIONADA", payload: row });
                   navigate(`/processos-internos/tarefas/edit/${row.id}`)
                 }}>
                   <MdModeEdit color="#2d1c63" size={22} />
                 </IconButton>
-              </Tooltip>
-              <Tooltip title="Excluir Tarefa" arrow>
+              </Tooltip> */}
+              <Tooltip title="Desativar Tarefa" arrow>
                 <IconButton onClick={() => handleDelete(row.id)}>
-                  <IoMdTrash color="#2d1c63" size={22} />
+                  <IoMdTrash className="text-red-600" size={22} />
                 </IconButton>
               </Tooltip>
             </Box>

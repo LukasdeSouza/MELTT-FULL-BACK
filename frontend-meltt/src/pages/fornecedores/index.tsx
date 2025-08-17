@@ -37,15 +37,19 @@ const FornecedoresPage = () => {
   const { dispatchFornecedor } = useFornecedorContext();
   const [loading, setLoading] = useState(false);
   const [loadingDelete, setLoadingDelete] = useState(false);
+
+  const [pages, setPages] = useState<number>(1);
+  const [totalPages, setTotalPages] = useState<number>(1);
+
   const [fornecedores, setFornecedores] = useState([]);
   const [onLoad, setOnLoad] = useState(false);
-  //   const token = getToken();
-  //   const decoded = token ? jwtDecode<CustomJwtPayload>(token) : null;
 
-  const fetchFornecedores = async () => {
+  const fetchFornecedores = async (page: number) => {
     setLoading(true);
     try {
-      const response = await apiGetData("academic", "/fornecedores");
+      const response = await apiGetData("academic", `${page > 1 ? `/fornecedores?page=${page}` : '/fornecedores' }`);
+      setTotalPages(response.totalPages)
+      setPages(response.page)
       setFornecedores(response.data);
     } catch (error) {
       toast.error("Erro ao buscar fornecedores");
@@ -65,11 +69,10 @@ const FornecedoresPage = () => {
         "academic",
         `/fornecedores/${row.id}`
       );
-      if (response.message.includes("deletad0")) {
-        fetchFornecedores();
+      if (response.message.includes("deletado")) {
+        fetchFornecedores(1);
         toast.success("Fornecedor excluído com sucesso");
       }
-      console.log("response", response);
     } catch (error) {
       toast.error("Erro ao excluir fornecedor");
     }
@@ -127,7 +130,7 @@ const FornecedoresPage = () => {
   };
 
   useEffect(() => {
-    fetchFornecedores();
+    fetchFornecedores(1);
     setOnLoad(true);
   }, []);
 
@@ -193,9 +196,12 @@ const FornecedoresPage = () => {
                 rows={fornecedores}
                 loading={loading}
                 dataRow={dataRow}
-                page={1}
-                totalPages={fornecedores?.length}
-                handleChangePagination={() => {}}
+                page={pages}
+                totalPages={totalPages}
+                handleChangePagination={(_, page) => {
+                  setPages(page)
+                  fetchFornecedores(page)
+                }}
               />
             ) : (
               <NoTableData

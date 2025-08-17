@@ -29,6 +29,7 @@ import { FaEye } from "react-icons/fa6";
 import CustomModal from "../../components/modal";
 import { PiSignature } from "react-icons/pi";
 import { MdOutlineModeEdit } from "react-icons/md";
+import { BiSearch } from "react-icons/bi";
 
 
 const TurmasPage = () => {
@@ -50,10 +51,11 @@ const TurmasPage = () => {
   const [uuidContrato, setUuidContrato] = useState("")
   const [emailToSign, setEmailToSign] = useState<string>("")
 
+  const [filterValueName, setFilterValueName] = useState<string>("");
+
 
   const onSendToSign = async () => {
     toast.loading("Enviando documento para Assinatura");
-    console.log('emailToSign', emailToSign)
     let createListObj = {
       signers: [{ email: emailToSign, act: "1", foreign: "0", certificadoicpbr: "1" }],
       uuid_document: uuidContrato
@@ -135,7 +137,6 @@ const TurmasPage = () => {
   };
 
   const dataRowAdmin = (row: Turma) => {
-    console.log('row', row.id)
     return (
       <TableRow
         key={row.nome}
@@ -176,7 +177,6 @@ const TurmasPage = () => {
           <Tooltip title="Visualizar Turma">
             <IconButton
               onClick={() => {
-                console.log('row', row.id)
                 navigate(`/turmas/view/${row.id}/pagina-turma`)
               }}>
               <FaEye />
@@ -224,6 +224,24 @@ const TurmasPage = () => {
     );
   };
 
+  const searchWithFilter = async () => {
+    setLoading(true);
+    if (decoded?.tipo === 'ALUNO') {
+     toast.error('filtro não aplicável')
+    }
+    else {
+      try {
+        const response = await apiGetData("academic", `/turmas?page=${page}&nome=${filterValueName}`);
+        setTotalPages(response.totalPages);
+        setTurmas(response.data);
+      } catch (error) {
+        toast.error("Erro ao filtrar turmas");
+      }
+    }
+
+    setLoading(false);
+  }
+
   useEffect(() => {
     fetchTurmas(1);
     setOnLoad(true);
@@ -258,7 +276,7 @@ const TurmasPage = () => {
             p: 1,
             flexGrow: 1,
             width: "100%",
-            height: "calc(100vh - 170px)",
+            height: "calc(100vh - 200px)",
             borderRadius: 4,
           }}
         >
@@ -280,9 +298,21 @@ const TurmasPage = () => {
               },
             }}
           >
+            <Stack direction={'row'} alignItems={'center'} gap={2} width={'100%'} mb={1}>
+              <TextField
+                size="small"
+                placeholder="filtro por nome ou id. da turma"
+                value={filterValueName}
+                onChange={(e) => setFilterValueName(e.target.value)}
+                sx={{width: '300px'}}
+              />
+              <IconButton size="large" onClick={searchWithFilter}>
+                <BiSearch size={22} className="text-sm"/>
+              </IconButton>
+            </Stack>
             {loading ? (
               <LoadingTable />
-            ) : turmas.length > 0 ? (
+            ) : turmas?.length > 0 ? (
               <BasicTable
                 totalPages={totalPages}
                 columns={turmasColumns}

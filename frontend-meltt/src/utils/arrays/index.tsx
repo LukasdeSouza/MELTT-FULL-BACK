@@ -2,7 +2,7 @@ import { LuGraduationCap, LuNetwork, LuPartyPopper } from "react-icons/lu";
 import { FaGraduationCap, FaMoneyBill1Wave, FaRegHandshake } from "react-icons/fa6";
 import { FaCircle } from "react-icons/fa";
 import { IoBarChartOutline, IoContract } from "react-icons/io5";
-import { MdBookmarkAdded, MdOutlinePayments, MdOutlineWorkOutline } from "react-icons/md";
+import { MdBookmarkAdded, MdMoneyOff, MdOutlinePayments, MdOutlineWorkOutline, MdPayments, MdPreview } from "react-icons/md";
 import { LiaSchoolSolid } from "react-icons/lia";
 import { RiContactsBook2Line } from "react-icons/ri";
 import { PiUsersFourLight } from "react-icons/pi";
@@ -71,6 +71,28 @@ export const menuListAdmin = [
     title: "Pagamentos (Bling)",
     route: "/pagamentos",
     icon: <MdOutlinePayments size={22} />,
+  },
+  {
+    title: "Custos",
+    route: "/custos",
+    icon: <MdMoneyOff size={22} />,
+        subRoutes: [
+      {
+        title: "Pré-Eventos",
+        route: '/custos/pre-eventos',
+        icon: <MdPreview size={14} color={'white'} />
+      },
+      {
+        title: "Temporada",
+        route: '/custos/temporada',
+        icon: <MdPreview size={14} color={'white'} />
+      },
+      {
+        title: "Fixos",
+        route: "/custos/fixos",
+        icon: <MdPreview size={14} color={'white'} />,
+      }
+    ]
   },
   {
     title: "Relatórios Gerais",

@@ -23,7 +23,9 @@ import propostasRoutes from './propostasRoutes.js';
 import atasRoutes from './atasRoutes.js';
 import musicasRoutes from './musicasRoutes.js';
 import informativosRoutes from './informativosRoutes.js';
+import custosRoutes from './custosRoutes.js';
 import d4SignRoutes from './d4SignRoutes.js';
+
 
 
 const router = express.Router();
@@ -51,6 +53,7 @@ router.use("/propostas", propostasRoutes);
 router.use("/atas", atasRoutes);
 router.use("/musicas", musicasRoutes);
 router.use("/informativos", informativosRoutes);
+router.use("/custos", custosRoutes);
 router.use("/d4sign", d4SignRoutes);
 
 

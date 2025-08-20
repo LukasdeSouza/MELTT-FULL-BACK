@@ -5,21 +5,54 @@ class CustosController {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const offset = (page - 1) * limit;
-  
-    try {
-      const [results] = await pool.query(`
-        SELECT 
-          custos.*,
-          turmas.nome AS turma_nome,
-          turmas.identificador AS turma_identificador,
-          fornecedores.nome AS fornecedor_nome
-        FROM custos
-        LEFT JOIN turmas ON custos.turma_id = turmas.id
-        LEFT JOIN fornecedores ON custos.fornecedor_id = fornecedores.id
-        LIMIT ? OFFSET ?
-      `, [limit, offset]);
 
-      const [countResult] = await pool.query("SELECT COUNT(*) AS total FROM custos");
+    const situacao = req.query.situacao;
+    const tipoCusto = req.query.tipo_custo;
+
+    const situacoesValidas = ["Pendente", "Pago", "Parcialmente Pago", "Vencido"];
+    const tiposValidos = ["Fixo", "Pre-evento", "Temporada"];
+
+    try {
+      let query = `
+      SELECT 
+        custos.*,
+        turmas.nome AS turma_nome,
+        turmas.identificador AS turma_identificador,
+        fornecedores.nome AS fornecedor_nome
+      FROM custos
+      LEFT JOIN turmas ON custos.turma_id = turmas.id
+      LEFT JOIN fornecedores ON custos.fornecedor_id = fornecedores.id
+    `;
+
+      let countQuery = `SELECT COUNT(*) AS total FROM custos`;
+
+      const conditions = [];
+      const params = [];
+      const countParams = [];
+
+      if (situacao && situacoesValidas.includes(situacao)) {
+        conditions.push("custos.situacao = ?");
+        params.push(situacao);
+        countParams.push(situacao);
+      }
+
+      if (tipoCusto && tiposValidos.includes(tipoCusto)) {
+        conditions.push("custos.tipo_custo = ?");
+        params.push(tipoCusto);
+        countParams.push(tipoCusto);
+      }
+
+      if (conditions.length > 0) {
+        const whereClause = " WHERE " + conditions.join(" AND ");
+        query += whereClause;
+        countQuery += whereClause;
+      }
+
+      query += ` LIMIT ? OFFSET ?`;
+      params.push(limit, offset);
+
+      const [results] = await pool.query(query, params);
+      const [countResult] = await pool.query(countQuery, countParams);
       const total = countResult[0].total;
       const totalPages = Math.ceil(total / limit);
 
@@ -47,6 +80,27 @@ class CustosController {
         [id]
       );
       res.status(200).json(result);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+
+  async getTotalCustos(req, res) {
+    try {
+      const [result] = await pool.query(
+        `SELECT SUM(valor) AS total FROM custos`
+      );
+
+      const totalCentavos = result[0].total || 0;
+
+      const totalReais = totalCentavos / 100;
+
+      const formattedTotal = totalReais.toLocaleString('pt-BR', {
+        style: 'currency',
+        currency: 'BRL',
+      });
+
+      res.status(200).json({ total: formattedTotal });
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
@@ -81,7 +135,7 @@ class CustosController {
         vencimento,
         situacao
       ]);
-      res.status(201).json({ id_custo: result.insertId, ...req.body });
+      res.status(201).json(result);
     } catch (err) {
       res.status(500).json({ error: err.message });
     }

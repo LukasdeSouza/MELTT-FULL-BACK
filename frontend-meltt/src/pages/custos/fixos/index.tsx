@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Box,
   Stack,
@@ -17,40 +17,38 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import { BiArrowBack } from 'react-icons/bi';
 import { useNavigate } from 'react-router-dom';
-
-// Mock de custos fixos
-const mockCustosFixos = [
-  {
-    id: 1,
-    nome: 'Aluguel',
-    valor: 3500,
-    vencimento: '10/08/2025',
-    detalhes: 'Aluguel do escritório central, contrato anual.'
-  },
-  {
-    id: 2,
-    nome: 'Internet',
-    valor: 250,
-    vencimento: '05/08/2025',
-    detalhes: 'Plano empresarial fibra 500mb.'
-  },
-  {
-    id: 3,
-    nome: 'Contabilidade',
-    valor: 1200,
-    vencimento: '15/08/2025',
-    detalhes: 'Serviço mensal de contabilidade.'
-  },
-];
+import { apiGetData } from '../../../services/api';
+import formatDateToDDMMYYYY from '../../../utils/functions/formatDate';
+import formatCentavosToBRL from '../../../utils/functions/formatCentavosToBRL';
 
 const CustosFixosPage = () => {
   const navigate = useNavigate();
   const [filtro, setFiltro] = useState('');
   const [expandido, setExpandido] = useState<number | null>(null);
+  const [custosFixo, setCustosFixo] = useState([]);
 
-  const custosFiltrados = mockCustosFixos.filter(custo =>
-    custo.nome.toLowerCase().includes(filtro.toLowerCase())
-  );
+  const fetchCustosFixo = async (searchTerm = '') => {
+    const url = searchTerm
+      ? `/custos?tipo_custo=Fixo&evento=${encodeURIComponent(searchTerm)}`
+      : '/custos?tipo_custo=Fixo';
+
+    const response = await apiGetData('academic', url);
+    setCustosFixo(response.data || []);
+  };
+
+  useEffect(() => {
+    fetchCustosFixo();
+  }, []);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      fetchCustosFixo(filtro);
+    }, 500);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [filtro]);
 
   return (
     <Box sx={{ width: '100%', mx: 'auto', mt: 4 }}>
@@ -71,33 +69,33 @@ const CustosFixosPage = () => {
       />
       <Paper elevation={2}>
         <List>
-          {custosFiltrados.map(custo => (
-            <React.Fragment key={custo.id}>
+          {custosFixo.map(custo => (
+            <React.Fragment key={custo.id_custo}>
               <ListItem
                 secondaryAction={
-                  <IconButton edge="end" onClick={() => setExpandido(expandido === custo.id ? null : custo.id)}>
-                    {expandido === custo.id ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                  <IconButton edge="end" onClick={() => setExpandido(expandido === custo.id_custo ? null : custo.id_custo)}>
+                    {expandido === custo.id_custo ? <ExpandLessIcon /> : <ExpandMoreIcon />}
                   </IconButton>
                 }
                 sx={{ cursor: 'pointer' }}
-                onClick={() => setExpandido(expandido === custo.id ? null : custo.id)}
+                onClick={() => setExpandido(expandido === custo.id_custo ? null : custo.id_custo)}
               >
                 <ListItemText
-                  primary={custo.nome}
-                  secondary={`Valor: R$ ${custo.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} | Vencimento: ${custo.vencimento}`}
+                  primary={custo.evento}
+                  secondary={`Valor: R$ ${formatCentavosToBRL(custo.valor)} | Vencimento: ${formatDateToDDMMYYYY(custo.vencimento)}`}
                 />
               </ListItem>
-              <Collapse in={expandido === custo.id} timeout="auto" unmountOnExit>
+              <Collapse in={expandido === custo.id_custo} timeout="auto" unmountOnExit>
                 <Box sx={{ px: 3, py: 2, bgcolor: '#F6F7FB' }}>
                   <Typography variant="body2" color="text.secondary">
-                    {custo.detalhes}
+                    {custo.situacao}
                   </Typography>
                 </Box>
               </Collapse>
               <Divider />
             </React.Fragment>
           ))}
-          {custosFiltrados.length === 0 && (
+          {custosFixo.length === 0 && (
             <ListItem>
               <ListItemText primary="Nenhum custo fixo encontrado." />
             </ListItem>

@@ -8,6 +8,7 @@ class CustosController {
 
     const situacao = req.query.situacao;
     const tipoCusto = req.query.tipo_custo;
+    const evento = req.query.evento;
 
     const situacoesValidas = ["Pendente", "Pago", "Parcialmente Pago", "Vencido"];
     const tiposValidos = ["Fixo", "Pre-evento", "Temporada"];
@@ -40,6 +41,12 @@ class CustosController {
         conditions.push("custos.tipo_custo = ?");
         params.push(tipoCusto);
         countParams.push(tipoCusto);
+      }
+
+      if (evento) {
+        conditions.push("custos.evento LIKE ?");
+        params.push(`%${evento}%`);
+        countParams.push(`%${evento}%`);
       }
 
       if (conditions.length > 0) {

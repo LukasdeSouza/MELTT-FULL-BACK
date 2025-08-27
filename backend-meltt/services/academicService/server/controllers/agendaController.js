@@ -63,6 +63,7 @@ class AgendaController {
         ...req.body,
       });
     } catch (err) {
+      console.log('err', err)
       res.status(500).json({ error: err.message });
     }
   }

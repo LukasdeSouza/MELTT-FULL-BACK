@@ -124,7 +124,7 @@ const EventosCheckinsPage = () => {
   }, []);
 
   return (
-    <Stack width={"calc(100% - 28px)"}>
+    <Stack width={"calc(100% - 64px)"}>
       <Stack
         direction={"row"}
         alignItems={"center"}

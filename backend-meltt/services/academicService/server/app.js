@@ -50,7 +50,8 @@ app.post("/api/d4sign/upload", uploadMiddleware.single('file'), async (req, res)
         headers: {
           ...formData.getHeaders(),
           "Content-Length": formData.getLengthSync()
-        }
+        },
+        timeout: 30000 // 30 segundos
       }
     );
 
@@ -84,7 +85,8 @@ app.post("/api/d4sign/upload/adesao", uploadMiddleware.single('file'), async (re
         headers: {
           ...formData.getHeaders(),
           "Content-Length": formData.getLengthSync()
-        }
+        },
+        timeout: 30000 // 30 segundos
       }
     );
 
@@ -119,7 +121,8 @@ app.post("/api/d4sign/contrato-meltt", uploadMiddleware.single('file'), async (r
         headers: {
           ...formData.getHeaders(),
           "Content-Length": formData.getLengthSync()
-        }
+        },
+        timeout: 30000 // 30 segundos
       }
     );
 

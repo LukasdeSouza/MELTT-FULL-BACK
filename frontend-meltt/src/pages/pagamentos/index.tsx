@@ -77,7 +77,7 @@ const PagamentosPage = () => {
 
   const fetchPagamentos = async (page: number) => {
     setLoading(true);
-    if (decoded?.tipo === 'ADMIN') {
+    if (decoded?.tipo === 'ADMIN' || decoded?.tipo === 'FINANCEIRO') {
       try {
         const params = new URLSearchParams();
 
@@ -122,8 +122,6 @@ const PagamentosPage = () => {
 
   const fetchWithFilters = async () => {
     setLoading(true);
-    console.log("Data Inicial:", startDate);
-    console.log("Data Final:", endDate);
     try {
       const params = new URLSearchParams();
 
@@ -136,8 +134,6 @@ const PagamentosPage = () => {
       if (endDate) {
         params.append("dataFinal", endDate);
       }
-      
-      console.log("Params:", params.toString());
 
       const response = await apiGetData("academic", `/bling/contas/receber?${params.toString()}`);
       setPayments(response.data);
@@ -302,15 +298,7 @@ const PagamentosPage = () => {
   }, []);
 
   return (
-    <Stack width={"calc(100% - 28px)"}>
-      <Stack
-        direction={"row"}
-        alignItems={"center"}
-        justifyContent={"space-between"}
-        my={2}
-      >
-        <h2 className="text-2xl text-default font-extrabold"></h2>
-      </Stack>
+    <Stack width={"calc(100% - 64px)"}>
       <Slide direction="right" in={onLoad} mountOnEnter>
         <Paper
           elevation={0}
@@ -384,7 +372,7 @@ const PagamentosPage = () => {
                 columns={decoded?.tipo === 'ADMIN' ? pagamentosColumns : pagamentosStudentColumns}
                 rows={payments}
                 loading={loading}
-                dataRow={decoded?.tipo === 'ADMIN' ? dataRow : dataRowStudent}
+                dataRow={decoded?.tipo === 'ALUNO' ? dataRowStudent : dataRow}
                 page={page}
                 totalPages={payments?.length}
                 handleChangePagination={handleChangePagination}

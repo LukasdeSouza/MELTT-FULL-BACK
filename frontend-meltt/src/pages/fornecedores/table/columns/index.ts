@@ -1,9 +1,8 @@
 export const fornecedoresColumns = [
   { label: "Nome", key: "nome" },
-  { label: "Tipo de Serviço", key: "tipo_servico" },
-  { label: "Status Pagamento", key: "status" },
-  { label: "Turma", key: "turma_nome" },
-  { label: "Valor Contado", key: "valor_cotado" },
+  { label: "Responsável", key: "responsavel" },
+  { label: "Telefone", key: "telefone" },
+  { label: "CNPJ", key: "cnpj" },
   { label: "Ações", key: "acoes" }
 ];
 

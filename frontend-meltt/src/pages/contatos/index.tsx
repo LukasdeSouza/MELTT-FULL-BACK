@@ -112,15 +112,7 @@ const ContatosPage = () => {
   }, [searchTerm]);
 
   return (
-    <Stack width={"calc(100% - 28px)"}>
-      <Stack
-        direction={"row"}
-        alignItems={"center"}
-        justifyContent={"space-between"}
-        my={2}
-      >
-        <h2 className="text-2xl text-default font-extrabold"></h2>
-      </Stack>
+    <Stack width={"calc(100% - 64px)"}>
       <Slide direction="right" in={onLoad} mountOnEnter>
         <Paper
           elevation={0}

@@ -6,22 +6,29 @@ import { useNavigate } from 'react-router-dom';
 import { apiGetData, apiPostData } from '../../../services/api';
 import toast from 'react-hot-toast';
 
+interface FormValues {
+  nome: string;
+  token: string;
+  turma_id: string | null;
+  data_formatura: any
+}
+
 const EventosNewPage = () => {
   const navigate = useNavigate();
   const [loadingSave, setLoadingSave] = useState(false);
 
   const [turmas, setTurmas] = useState([]);
 
-  const [values, setValues] = useState({
+  const [values, setValues] = useState<FormValues>({
     nome: "",
     token: "",
-    turma_id: "",
+    turma_id: null,
     data_formatura: ""
   })
 
   const fetchTurmas = async () => {
     try {
-      const response = await apiGetData("academic", "/turmas");
+      const response = await apiGetData("academic", "/turmas?limit=100");
       setTurmas(response.data);
     } catch (error) {
       toast.error("Erro ao buscar turmas");
@@ -49,7 +56,7 @@ const EventosNewPage = () => {
 
   return (
     <Stack width={"100%"} height={"100%"} gap={10}>
-      <Stack width={"calc(100% - 28px)"} direction={"column"}>
+      <Stack width={"calc(100% - 64px)"} direction={"column"}>
         <Typography
           color="primary"
           variant="h5"
@@ -130,10 +137,17 @@ const EventosNewPage = () => {
                       Turma
                     </InputLabel>
                     <Select
-                      value={values.turma_id}
-                      onChange={(e) => setValues({ ...values, turma_id: e.target.value })}
+                      value={values.turma_id ?? ""}
+                      onChange={(e) => setValues({ ...values, turma_id: e.target.value})}
                       variant="outlined"
                       sx={{ width: "100%" }}
+                      MenuProps={{
+                        PaperProps: {
+                          style: {
+                            maxHeight: 250,
+                          },
+                        },
+                      }}
                     >
                       {turmas.map((turma: {id: string, nome: string}) => (
                         <MenuItem key={turma.id} value={turma.id}>

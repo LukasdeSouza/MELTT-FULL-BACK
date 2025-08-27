@@ -87,7 +87,7 @@ const EstatutosPage = () => {
       direction={"column"}
       alignItems={"center"}
       justifyContent={"center"}
-      width={"calc(100% - 28px)"}
+      width={"calc(100% - 64px)"}
     >
       <Paper
         elevation={0}

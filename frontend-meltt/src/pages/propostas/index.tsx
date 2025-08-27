@@ -20,7 +20,6 @@ import NoTableData from "../../components/noData";
 import LoadingTable from "../../components/loadingTable";
 import { format, parseISO } from 'date-fns';
 import { propostasColumns } from "./table/columns";
-// import { FaEye } from "react-icons/fa6";
 import { PiSignature } from "react-icons/pi";
 import CustomModal from "../../components/modal";
 import { IoAdd, IoRemove } from "react-icons/io5";
@@ -152,7 +151,7 @@ const PropostasPage = () => {
 
 
   return (
-    <Stack width={"calc(100% - 28px)"}>
+    <Stack width={"calc(100% - 64px)"}>
       <Stack
         direction={"row"}
         alignItems={"center"}
@@ -243,8 +242,8 @@ const PropostasPage = () => {
                   fullWidth
                   type="email"
                   required
-                  label="E-mail que receberá o contrato"
-                  placeholder="email que receberá o contrato MELTT"
+                  label="E-mail que receberá a proposta"
+                  placeholder="email que receberá a proposta"
                   value={signer}
                   onChange={(e) =>
                     setSignersList(prev =>

@@ -100,7 +100,7 @@ const TopicoViewPage = () => {
   }, []);
 
   return (
-    <Stack width={"calc(100% - 28px)"}>
+    <Stack width={"calc(100% - 64px)"}>
       <Paper
         elevation={0}
         sx={{

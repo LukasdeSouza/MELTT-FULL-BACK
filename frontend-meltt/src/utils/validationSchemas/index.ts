@@ -42,8 +42,6 @@ export const validateAdesaoSchema = Yup.object({
 
 export const validateTarefaSchema = Yup.object({
   nome: Yup.string().required("o campo nome é obrigatório."),
-  responsaveis: Yup.array().required("o campo responsáveis é obrigatório."),
-  enviado_por: Yup.string().required("o campo atribuído por é obrigatório."),
 })
 
 export const validatePropostaSchema = Yup.object({
@@ -79,10 +77,9 @@ export const validateActivitiesSchema = Yup.object({
 
 export const validateFornecedorSchema = Yup.object({
   nome: Yup.string().required("o campo nome da empresa é obrigatório."),
-  tipo_servico: Yup.string().required("o campo tipo de serviço é obrigatório."),
   telefone: Yup.string().required("o campo telefone é obrigatório."),
-  valor_cotado: Yup.string().required("o campo atividade adequada é obrigatório."),
-  status: Yup.string().required("o campo status é obrigatório."),
+  cnpj: Yup.string().required("o campo CNPJ é obrigatório."),
+  responsavel: Yup.string().required("o campo nome do responsável é obrigatório."),
 });
 
 export const validateEventoSchema = Yup.object({

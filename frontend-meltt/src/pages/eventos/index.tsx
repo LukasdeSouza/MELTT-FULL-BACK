@@ -16,7 +16,7 @@ import LoadingTable from "../../components/loadingTable";
 import BasicTable from "../../components/table";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { apiGetData } from "../../services/api";
+import { apiDeleteData, apiGetData } from "../../services/api";
 import { FaMoneyBillWave, FaPeopleGroup } from "react-icons/fa6";
 import { eventsColumns } from "./table/columns";
 import { IoAdd, IoTicket } from "react-icons/io5";
@@ -24,6 +24,7 @@ import { FaCheckCircle } from "react-icons/fa";
 import { getToken } from "../../utils/token";
 import { jwtDecode } from "jwt-decode";
 import { CustomJwtPayload } from "../../components/customDrawer";
+import { MdDelete } from "react-icons/md";
 
 const EventosPage = () => {
   const navigate = useNavigate();
@@ -56,7 +57,7 @@ const EventosPage = () => {
       } catch (error) {
         toast.error("Nenhuma informação encontrada para eventos");
       }
-    } 
+    }
     setLoading(false);
   };
 
@@ -72,6 +73,23 @@ const EventosPage = () => {
   const onClickRowView = (row: any, route: string) => {
     navigate(`/eventos/${route}/${row.token}`);
   };
+
+  const onClickDelete = async (row: { id: string }) => {
+    toast.loading('Apagando evento');
+    try {
+      const response = await apiDeleteData("academic", `/eventos/${row.id}`)
+      if (response.includes('deletado')) {
+        toast.dismiss();
+        toast.success('Evento removido com sucesso');
+        fetchEventos(1)
+      }
+    } catch (error) {
+      toast.dismiss();
+      toast.error('erro ao remover evento')
+    } finally {
+      toast.dismiss();
+    }
+  }
 
   const dataRow = (row: any) => {
     return (
@@ -114,6 +132,13 @@ const EventosPage = () => {
                 </IconButton>
               </Tooltip>
             )}
+            {(decoded?.tipo === 'ADMIN' || decoded?.tipo === 'GESTAO_PRODUCAO') && (
+              <Tooltip title="Apagar Registro" arrow>
+                <IconButton size="small" onClick={() => onClickDelete(row)}>
+                  <MdDelete color="red" size={22} />
+                </IconButton>
+              </Tooltip>
+            )}
             <Tooltip title="Ver Participantes" arrow>
               <IconButton size="small" onClick={() => onClickRowView(row, 'participantes')}>
                 <FaPeopleGroup color="#2d1c63" size={22} />
@@ -136,7 +161,7 @@ const EventosPage = () => {
   }, []);
 
   return (
-    <Stack width={"calc(100% - 28px)"}>
+    <Stack width={"calc(100% - 64px)"}>
       <Stack
         direction={"row"}
         alignItems={"center"}
@@ -144,7 +169,7 @@ const EventosPage = () => {
         my={2}
       >
         <h2 className="text-2xl text-default font-extrabold"></h2>
-        {(decoded?.tipo === 'ADMIN' || decoded?.tipo === 'GESTAO_PRODUCAO') && (
+        {(decoded?.tipo === 'ADMIN' || decoded?.tipo === 'GESTAO_PRODUCAO' || decoded?.tipo === 'FINANCEIRO') && (
           <Button
             variant="contained"
             color="secondary"
@@ -198,8 +223,8 @@ const EventosPage = () => {
               />
             ) : (
               <Stack width={'100%'} alignItems={'center'} sx={{ mt: 20 }}>
-                          <img src="/images/logo.png"
-            alt="Logo" className="w-48" />
+                <img src="/images/logo.png"
+                  alt="Logo" className="w-48" />
                 <Typography color="textSecondary" variant="body2" sx={{ fontFamily: "Poppins", mt: 2 }}>Não há dados de eventos para mostrar</Typography>
               </Stack>
             )}

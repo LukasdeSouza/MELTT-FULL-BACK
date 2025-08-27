@@ -16,7 +16,7 @@ const getBaseURL = (serviceType: string): string => {
 const createApiInstance = (serviceType: string): AxiosInstance => {
   const api = axios.create({
     baseURL: getBaseURL(serviceType),
-    timeout: 10000,
+    timeout: 60000,
     headers: {
       "Content-Type": "application/json",
     }

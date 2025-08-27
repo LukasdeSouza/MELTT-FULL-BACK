@@ -41,14 +41,20 @@ const CustomCard = ({
             </Typography>
             <Typography
               color="textSecondary"
-              sx={{ fontSize: 12, fontWeight:'light' }}
+              sx={{ fontSize: 12, fontWeight: 'light' }}
             >
               {subtitle}
             </Typography>
           </Stack>
           {headerActionContent}
         </Stack>
-        <Stack direction={"column"}>{children}</Stack>
+        <Stack
+          direction="column"
+          maxHeight={"400px"}
+          sx={{ p: 1, overflowY: "auto" }}
+        >
+          {children}
+        </Stack>
       </Stack>
     </Stack>
   );

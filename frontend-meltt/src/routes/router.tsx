@@ -51,6 +51,10 @@ import DashboardPropostasPage from "../pages/dashboards/propostas";
 import UsuariosPage from "../pages/usuarios";
 import UsuariosPageEdit from "../pages/usuarios/edit";
 import UsuariosPageView from "../pages/usuarios/view";
+import CustosPage from "../pages/custos";
+import CustosFixosPage from "../pages/custos/fixos";
+import CustosPreEventosPage from "../pages/custos/pre-eventos";
+import CustosTemporadaPage from "../pages/custos/temporada";
 
 export const router = createBrowserRouter([
   {
@@ -264,6 +268,22 @@ export const router = createBrowserRouter([
       {
         path: "/contatos",
         element: <ContatosPage/>
+      },
+      {
+        path: "/custos",
+        element: <CustosPage/>
+      },
+      {
+        path: "/custos/fixos",
+        element: <CustosFixosPage/>
+      },
+      {
+        path: "/custos/pre-eventos",
+        element: <CustosPreEventosPage/>
+      },
+      {
+        path: "/custos/temporada",
+        element: <CustosTemporadaPage/>
       },
       {
         path: "/suporte",

@@ -5,8 +5,9 @@ export interface Tarefa {
   nome: string;
   responsaveis: string;
   atribuido_por: string;
+  status: number;
   criado_em: any;
-  [key: string]: string;
+  [key: string | number]: string | number;
 }
 
 export interface TarefaState {

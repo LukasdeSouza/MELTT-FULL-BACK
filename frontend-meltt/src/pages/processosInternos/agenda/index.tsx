@@ -3,22 +3,14 @@ import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import timeGridPlugin from '@fullcalendar/timegrid';
-import { Stack, Typography, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Box, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
+import { Stack, Typography, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Box, FormControl, InputLabel, Select, MenuItem, IconButton } from '@mui/material';
 import ptBrLocale from '@fullcalendar/core/locales/pt-br';
 import '../../../../fullCalendar.css'
-import { apiGetData, apiPostData } from '../../../services/api';
+import { apiDeleteData, apiGetData, apiPostData } from '../../../services/api';
 import toast from 'react-hot-toast';
 import { LoadingButton } from '@mui/lab';
+import { IoMdTrash } from 'react-icons/io';
 
-// interface Evento {
-//   id: number;
-//   title: string;
-//   start: Date;
-//   end?: Date;
-//   descricao: string;
-//   nome_turma: string;
-//   turma_id: number;
-// }
 
 interface NewEventProps {
   open: boolean;
@@ -26,17 +18,26 @@ interface NewEventProps {
   onRefresh: () => void;
 }
 
+// Definição do tipo para o formulário
+type FormDataType = {
+  nome: string;
+  descricao: string;
+  data: string;
+  nome_turma: string | null;
+  turma_id: string | null;
+};
+
 const AgendaPage = () => {
   const [eventos, setEventos] = useState<any[]>([]);
   const [openModal, setOpenModal] = useState(false);
 
   useEffect(() => {
-    fetchEvents();
+    fetchAgenda();
   }, []);
 
-  const fetchEvents = async () => {
+  const fetchAgenda = async () => {
     try {
-      const response = await apiGetData("academic", "/agenda");
+      const response = await apiGetData("academic", "/agenda?limit=150");
       console.log(response.data);
       const eventosFormatados = response.data.map((evento: any) => {
         const dataEvento = evento.data ? new Date(evento.data) : null;
@@ -53,6 +54,17 @@ const AgendaPage = () => {
       setEventos(eventosFormatados);
     } catch (error) {
       console.error('Erro ao carregar eventos:', error);
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    try {
+      await apiDeleteData("academic", `/agenda/${id}`, {});
+      await fetchAgenda();
+      toast.success('Evento excluído com sucesso');
+    } catch (error) {
+      console.error('Erro ao excluir evento:', error);
+      toast.error('Erro ao excluir evento');
     }
   };
 
@@ -102,12 +114,50 @@ const AgendaPage = () => {
             }
           }}
           eventContent={(eventInfo: any) => (
-            <div style={{ fontWeight: 500 }}>
-              <div>{eventInfo.event.title}</div>
-              <div style={{ fontSize: '0.8em', opacity: 0.9 }}>
+            <Box
+              sx={{
+                position: 'relative',
+                padding: '4px',
+                fontWeight: 500,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'flex-start',
+                textAlign: 'left',
+                width: '100%',
+                maxWidth: '100%',
+                overflowWrap: 'break-word',
+                wordBreak: 'break-word',
+                whiteSpace: 'normal',
+                '&:hover .delete-button': {
+                  display: 'flex',
+                },
+              }}
+            >
+              <Box sx={{ zIndex: 1 }}>{eventInfo.event.title}</Box>
+              <Box sx={{ fontSize: '0.8em', opacity: 0.9, zIndex: 1 }}>
                 {eventInfo.event.extendedProps.nome_turma}
-              </div>
-            </div>
+              </Box>
+
+              <IconButton
+                size="small"
+                onClick={() => handleDelete(eventInfo.event.id)}
+                className="delete-button"
+                sx={{
+                  position: 'absolute',
+                  top: '50%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  zIndex: 2,
+                  backgroundColor: 'rgba(255,255,255,0.8)',
+                  display: 'none',
+                  '&:hover': {
+                    backgroundColor: 'rgba(255,255,255,1)',
+                  },
+                }}
+              >
+                <IoMdTrash fontSize="small" color='red' />
+              </IconButton>
+            </Box>
           )}
         />
       </Box>
@@ -115,22 +165,19 @@ const AgendaPage = () => {
       <NewEventModal
         open={openModal}
         onClose={() => setOpenModal(false)}
-        onRefresh={fetchEvents}
+        onRefresh={fetchAgenda}
       />
     </Stack>
   );
 };
 
-
-
-
 const NewEventModal = ({ open, onClose, onRefresh }: NewEventProps) => {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormDataType>({
     nome: '',
     descricao: '',
     data: new Date().toISOString().slice(0, 16),
-    nome_turma: '',
-    turma_id: ''
+    nome_turma: null,
+    turma_id: null
   });
   const [turmas, setTurmas] = useState([]);
   const [loadingSave, setLoadingSave] = useState(false);
@@ -196,8 +243,8 @@ const NewEventModal = ({ open, onClose, onRefresh }: NewEventProps) => {
           />
           <TextField
             label="Nome da Turma"
-            value={formData.nome_turma}
-            onChange={(e) => setFormData({ ...formData, nome_turma: e.target.value })}
+            value={formData.nome_turma ?? ''}
+            onChange={(e) => setFormData({ ...formData, nome_turma: e.target.value || null })}
           />
           <FormControl >
             <InputLabel
@@ -212,8 +259,8 @@ const NewEventModal = ({ open, onClose, onRefresh }: NewEventProps) => {
             <Select
               labelId="tipo"
               name="tipo"
-              value={formData.turma_id ?? ""}
-              onChange={(e) => setFormData({ ...formData, turma_id: e.target.value })}
+              value={formData.turma_id ?? ''}
+              onChange={(e) => setFormData({ ...formData, turma_id: e.target.value || null })}
             >
               {turmas.map((turma: { id: string, nome: string }) => (
                 <MenuItem key={turma.id} value={turma.id}>

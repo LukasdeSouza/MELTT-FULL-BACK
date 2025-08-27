@@ -51,7 +51,7 @@ const PaginadaTurmaCriarTopicoPage = () => {
   };
 
   return (
-    <Stack width={"calc(100% - 28px)"}>
+    <Stack width={"calc(100% - 64px)"}>
       <Stack direction={"row"} alignItems={"center"} my={2} gap={2}>
         <IconButton size="small" onClick={() => navigate(`/turmas`)}>
           <IoMdArrowBack />

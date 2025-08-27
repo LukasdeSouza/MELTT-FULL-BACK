@@ -10,6 +10,7 @@ router.get("/turma/atas/pressignedUrl", authMiddleware, s3Controller.getUploadAt
 router.get("/turma/informativos/pressignedUrl", authMiddleware, s3Controller.getUploadInformativoTurma);
 router.get("/turmas/getAll", authMiddleware, s3Controller.getAllContratosTurma);
 router.get("/turmas/getByTurma", authMiddleware, s3Controller.getContratosByTurma);
+router.get("/turma/musicas/pressignedUrl", authMiddleware, s3Controller.getUploadMusicaTurma);
 
 
 export default router;

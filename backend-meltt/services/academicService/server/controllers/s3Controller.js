@@ -185,7 +185,7 @@ class s3Controller {
       if (!validTypes.includes(fileType)) {
         return res.status(400).json({ error: "Tipo de arquivo não suportado" });
       }
-     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
       const sanitizedFileName = fileName.replace(/\s+/g, '_');
       const filePath = `turmas/informativos/${turmaId}/${uniqueSuffix}_${sanitizedFileName}`;
 
@@ -206,6 +206,47 @@ class s3Controller {
     }
   }
 
+  async getUploadMusicaTurma(req, res) {
+    try {
+      const { fileName, fileType, turmaId } = req.query;
+
+      if (!fileName || !fileType || !turmaId) {
+        return res.status(400).json({ error: "fileName, fileType e turmaId são obrigatórios" });
+      }
+
+      const validTypes = [
+        'audio/mpeg',       // mp3
+        'audio/wav',        // wav
+        'audio/mp4',        // mp4 áudio
+        'audio/x-wav',      // wav (variante)
+        'audio/aac',
+        'audio/ogg',
+      ];
+
+      if (!validTypes.includes(fileType)) {
+        return res.status(400).json({ error: "Tipo de arquivo não suportado" });
+      }
+
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+      const sanitizedFileName = fileName.replace(/\s+/g, '_');
+      const filePath = `turmas/musicas/${turmaId}/${uniqueSuffix}_${sanitizedFileName}`;
+
+      const signedUrl = await s3Service.s3Client.getSignedUrl("putObject", {
+        Bucket: process.env.AWS_BUCKET_TURMAS,
+        Key: filePath,
+        ContentType: fileType,
+        Expires: 3600,
+        Metadata: {
+          turmaId: turmaId.toString(),
+        }
+      });
+
+      return res.json({ url: signedUrl, path: filePath });
+    } catch (error) {
+      console.error("Erro ao gerar presigned URL:", error);
+      return res.status(500).json({ error: "Erro ao gerar URL de upload" });
+    }
+  }
 }
 
 export default new s3Controller();

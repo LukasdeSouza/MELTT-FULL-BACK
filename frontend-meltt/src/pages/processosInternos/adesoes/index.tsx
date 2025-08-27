@@ -1,4 +1,5 @@
 import {
+  Box,
   Button,
   Chip,
   IconButton,
@@ -8,6 +9,8 @@ import {
   Stack,
   TableCell,
   TableRow,
+  TextField,
+  Tooltip,
 } from "@mui/material";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -22,14 +25,18 @@ import LoadingTable from "../../../components/loadingTable";
 import BasicTable from "../../../components/table";
 import NoTableData from "../../../components/noData";
 import { useAdesaoContext } from "../../../providers/adesaoContext";
-import { apiGetData } from "../../../services/api";
+import { apiGetData, apiPostData } from "../../../services/api";
+import { PiSignature } from "react-icons/pi";
+import CustomModal from "../../../components/modal";
 
 interface Adesao {
   id: string | number;
+  faculdade: string;
   aluno_id: string;
   turma_id: string;
   status: string;
   data_assinatura: any;
+  file_uuid: string | null;
   observacoes: string;
 }
 
@@ -41,9 +48,13 @@ const AdesoesPage = () => {
   const [loading, setLoading] = useState(false);
 
   const [adesoes, setAdesoes] = useState<Adesao[]>([]);
+  const [signer, setSigner] = useState<string>("");
   const [adesoesPendentes, setAdesoesPendentes] = useState<[]>([]);
   const [adesoesConcluidas, setAdesoesConcluidas] = useState<[]>([]);
   const [adesoesCanceladas, setAdesoesCanceladas] = useState<[]>([]);
+
+  const [openModal, setOpenModal] = useState(false);
+  const [uuidAdesao, setUuidAdesao] = useState<string | null>(null);
 
   const [onLoad, setOnLoad] = useState(false);
 
@@ -60,6 +71,36 @@ const AdesoesPage = () => {
     }
     setLoading(false);
   };
+
+  const onSendToSign = async () => {
+    toast.loading("Enviando Adesão para Assinatura");
+
+    let createListObj = {
+      uuid_document: uuidAdesao,
+      signers: [{
+        email: signer, act: "1", foreign: "0", certificadoicpbr: "1"
+      }]
+    }
+
+    let signerListObj = { message: "\"Olá! Segue ADESAO de formatura da MELTT para assinatura.\"", workflow: "0", skip_email: "0", uuid_document: uuidAdesao }
+
+    try {
+      const createList = await apiPostData("academic", "/d4sign/create-signature-list", createListObj)
+      const sendSigner = await apiPostData("academic", "/d4sign/send-to-signer", signerListObj);
+      console.log(createList)
+      console.log(sendSigner)
+      toast.dismiss()
+      toast.success('Adesão Enviada com Sucesso')
+    } catch (error) {
+      toast.error('Erro ao enviar adesão para assinatura')
+      toast.dismiss();
+    } finally {
+      toast.dismiss();
+      setOpenModal(false)
+    }
+
+  }
+
 
   const handleChangePagination = (_: React.ChangeEvent<unknown>, value: number) => {
     try {
@@ -96,7 +137,7 @@ const AdesoesPage = () => {
             color="primary"
             variant="outlined"
             sx={{ fontFamily: "Poppins" }}
-            />
+          />
         </TableCell>
         <TableCell align="left" sx={{ fontFamily: "Poppins" }}>
           {row.data_assinatura
@@ -107,6 +148,17 @@ const AdesoesPage = () => {
           {row.observacoes}
         </TableCell>
         <TableCell align="left" sx={{ fontFamily: "Poppins" }}>
+          <Tooltip title='Enviar para Assinatura'>
+            <IconButton
+              disabled={row.file_uuid === null}
+              onClick={() => {
+                setUuidAdesao(row.file_uuid)
+                setOpenModal(true)
+              }}
+            >
+              <PiSignature />
+            </IconButton>
+          </Tooltip>
           <IconButton size="small" onClick={() => onClickRowView(row)}>
             <FaEye color="#2d1c63" size={22} />
           </IconButton>
@@ -121,7 +173,7 @@ const AdesoesPage = () => {
   }, []);
 
   return (
-    <Stack width={"calc(100% - 28px)"}>
+    <Stack width={"calc(100% - 64px)"}>
       <Stack
         direction={"row"}
         alignItems={"center"}
@@ -216,6 +268,33 @@ const AdesoesPage = () => {
           </Paper>
         </Paper>
       </Slide>
+      <CustomModal
+        title="Enviar Adesão para Assinatura"
+        subHeader="preencha o email que receberá a proposta da turma para assinatura"
+        openModal={openModal}
+        handleCloseModal={() => {
+          setOpenModal(false);
+        }}
+        onSubmit={onSendToSign}
+      >
+        <Box display={'flex'} flexDirection={'column'} component={'form'} sx={{ width: '100%' }}>
+          <Stack width={'100%'} direction={'column'} gap={2}>
+            <Stack direction={'row'} gap={1} alignItems={'center'}>
+              <TextField
+                fullWidth
+                type="email"
+                required
+                label="E-mail que receberá a adesão"
+                placeholder="email que receberá a adesão MELTT"
+                value={signer}
+                onChange={(e) =>
+                  setSigner(e.target.value)
+                }
+              />
+            </Stack>
+          </Stack>
+        </Box>
+      </CustomModal>
     </Stack>
   );
 };

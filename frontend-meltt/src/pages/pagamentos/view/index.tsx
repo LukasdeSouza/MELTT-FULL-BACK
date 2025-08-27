@@ -21,7 +21,7 @@ const ViewPagamentoPage = () => {
   useEffect(() => {}, []);
 
   return (
-    <Stack width={"calc(100% - 28px)"}>
+    <Stack width={"calc(100% - 64px)"}>
       <Stack direction={"row"} alignItems={"center"} gap={2} my={2}>
         <IconButton size="small" onClick={() => navigate("/pagamentos")}>
           <BiArrowBack />

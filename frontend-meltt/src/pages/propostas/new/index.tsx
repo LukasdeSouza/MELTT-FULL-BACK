@@ -53,7 +53,7 @@ const PropostasNewPage = () => {
   const onSubmitProposta = async (values: any) => {
     setLoadingSave(true);
 
-    toast.loading("Salvando Propostas...");
+    toast.loading("Salvando Proposta...");
     try {
       let propostaUuid: string | null = null;
 

@@ -3,6 +3,10 @@ import {
   Button,
   Card,
   CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Divider,
   IconButton,
   List,
@@ -35,7 +39,7 @@ import { CustomJwtPayload } from "../../../../components/customDrawer";
 import { FiMessageCircle } from "react-icons/fi";
 import { BiArrowBack, BiCloudDownload, BiImage } from "react-icons/bi";
 import { TabContext, TabList, TabPanel } from "@mui/lab";
-import { MdClose, MdCloudUpload, MdInsertDriveFile, MdPictureAsPdf, MdVisibility } from "react-icons/md";
+import { MdAudiotrack, MdClose, MdCloudUpload, MdInsertDriveFile, MdPause, MdPictureAsPdf, MdPlayArrow, MdStop, MdVisibility } from "react-icons/md";
 import FileViewer from "../../../../components/fileViewer";
 
 
@@ -49,6 +53,7 @@ const PaginaDaTurmaPage = () => {
   const [tabView, setTabView] = useState("0");
   const [openModalAtas, setOpenModalAtas] = useState(false);
   const [openModalInformativos, setOpenModalInformativos] = useState(false);
+  const [openModalMusicas, setOpenModalMusicas] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [loadingSendFile, setLoadingSendFile] = useState(false);
@@ -62,9 +67,60 @@ const PaginaDaTurmaPage = () => {
   const [fileTitleAta, setFileTitleAta] = useState<string>('');
   const [fileTitleInformativo, setFileTitleInformativo] = useState<string>('');
   const [informativoFile, setInformativoFile] = useState<File | null>(null);
+  const [musicaFile, setMusicaFile] = useState<File | null>(null);
+  const [musicas, setMusicas] = useState<any[]>([]);
 
   const [selectedFile, setSelectedFile] = useState<string | null>(null)
 
+  const [audioPlayer, setAudioPlayer] = useState<HTMLAudioElement | null>(null);
+  const [currentMusicUrl, setCurrentMusicUrl] = useState<string | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+
+  const handlePlayPause = (url: string) => {
+    if (audioPlayer && currentMusicUrl === url) {
+      // Mesma música: pausa ou play
+      if (isPlaying) {
+        audioPlayer.pause();
+        setIsPlaying(false);
+      } else {
+        audioPlayer.play();
+        setIsPlaying(true);
+      }
+    } else {
+      // Música diferente: para o anterior e toca nova
+      if (audioPlayer) {
+        audioPlayer.pause();
+        audioPlayer.currentTime = 0;
+      }
+      const newAudio = new Audio(url);
+      newAudio.play();
+      setAudioPlayer(newAudio);
+      setCurrentMusicUrl(url);
+      setIsPlaying(true);
+
+      // Opcional: quando terminar, resetar estado
+      newAudio.onended = () => {
+        setIsPlaying(false);
+        setCurrentMusicUrl(null);
+        setAudioPlayer(null);
+      };
+    }
+  };
+
+  const handleStop = () => {
+    if (audioPlayer) {
+      audioPlayer.pause();
+      audioPlayer.currentTime = 0;
+      setIsPlaying(false);
+      setCurrentMusicUrl(null);
+      setAudioPlayer(null);
+    }
+  };
+
+  const getCleanFileName = (fullName: string) => {
+    const parts = fullName.split('_');
+    return parts.length > 1 ? parts.slice(1).join('_') : fullName;
+  };
 
   const onChangeTab = (_: React.SyntheticEvent, newValue: string) => {
     setTabView(newValue)
@@ -171,12 +227,20 @@ const PaginaDaTurmaPage = () => {
     setLoading(false);
   };
 
+  const fetchMusicas = async () => {
+    setLoading(true);
+    try {
+      await apiGetData("academic", `/musicas/turma/${id}`).then((data) => {
+        setMusicas(data);
+      });
+    } catch (error) {
+      toast.error("Erro ao buscar músicas");
+    }
+    setLoading(false);
+  };
+
   const fetchAll = async () => {
-    const [] = await Promise.all([fetchTurma(), fetchAtas(), fetchInformativos(), fetchTopicos()])
-    // await fetchTurma();
-    // await fetchAtas();
-    // await fetchInformativos();
-    // await fetchTopicos();
+    const [] = await Promise.all([fetchTurma(), fetchAtas(), fetchInformativos(), fetchTopicos(), fetchMusicas()]);
   };
 
   const onSubmitAtaFile = async () => {
@@ -282,8 +346,67 @@ const PaginaDaTurmaPage = () => {
     } finally {
       setLoadingSendFile(false);
     }
-
   }
+
+  const onSubmitMusicaFile = async () => {
+    setLoadingSendFile(true);
+
+    if (!musicaFile) {
+      toast.error("Selecione um arquivo de áudio");
+      setLoadingSendFile(false);
+      return;
+    }
+
+    try {
+      const encodedFileName = encodeURIComponent(musicaFile.name);
+
+      const presignedUrl = await apiGetData("academic",
+        `/s3/uploads/turma/musicas/pressignedUrl?fileName=${encodedFileName}&turmaId=${id}&fileType=${musicaFile.type}`
+      );
+
+      if (!presignedUrl?.url || !presignedUrl?.path) {
+        throw new Error("Falha ao obter URL assinada ou caminho");
+      }
+
+      const uploadResponse = await fetch(presignedUrl.url, {
+        method: 'PUT',
+        body: musicaFile,
+        headers: {
+          'Content-Type': musicaFile.type || 'audio/mpeg',
+          'x-amz-meta-turmaId': id || ''
+        }
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error("Falha no upload para o S3");
+      }
+
+      const fileUrl = `https://meltt-turmas.s3.us-east-1.amazonaws.com/${presignedUrl.path}`;
+
+      const musicaData = {
+        turma_id: decoded?.turma_id || '',
+        nome: musicaFile.name,
+        user_id: decoded?.id || '',
+        url_arquivo: fileUrl
+      };
+
+      const response = await apiPostData("academic", "/musicas", musicaData);
+
+
+      if (response?.turma_id) {
+        toast.success("Música enviada com sucesso!");
+        await fetchMusicas();
+        setMusicaFile(null);
+        setOpenModalMusicas(false);
+      }
+
+    } catch (error) {
+      console.error("Erro ao enviar música:", error);
+      toast.error("Erro ao enviar música");
+    } finally {
+      setLoadingSendFile(false);
+    }
+  };
 
   useEffect(() => {
     fetchAll();
@@ -291,7 +414,7 @@ const PaginaDaTurmaPage = () => {
 
   return (
     <Stack width={"100%"} height={"100%"} gap={8}>
-      <Stack width={"calc(100% - 28px)"} direction={"column"}>
+      <Stack width={"calc(100% - 64px)"} direction={"column"}>
         <Box padding={2}>
           <Stack direction={"row"} alignItems={"center"} gap={1}>
             <IconButton onClick={() => navigate(-1)} size="small">
@@ -315,6 +438,7 @@ const PaginaDaTurmaPage = () => {
               <Tab label="Postagens" value={"0"} sx={{ fontFamily: "Poppins", textTransform: "capitalize" }} />
               <Tab label="Atas" value={"1"} sx={{ fontFamily: "Poppins", textTransform: "capitalize" }} />
               <Tab label="Informativos" value={"2"} sx={{ fontFamily: "Poppins", textTransform: "capitalize" }} />
+              <Tab label="Músicas" value={"3"} sx={{ fontFamily: "Poppins", textTransform: "capitalize" }} />
             </TabList>
             <TabPanel value={"0"} sx={{ mt: 4, p: 0 }}>
               <Stack direction={"column"} mt={-4} gap={1}>
@@ -660,6 +784,203 @@ const PaginaDaTurmaPage = () => {
                 </List>
               </Stack>
             </TabPanel>
+            <TabPanel value={"3"} sx={{ mt: 4, p: 0 }}>
+              <Stack direction={"column"} mt={-4} gap={1}>
+                <Stack
+                  direction={"row"}
+                  alignItems={"center"}
+                  justifyContent={"space-between"}
+                >
+                  <Typography
+                    color="primary"
+                    variant="body2"
+                  >
+                    Lista de músicas
+                  </Typography>
+
+                  <Button
+                    color="secondary"
+                    variant="contained"
+                    size="small"
+                    endIcon={<MdCloudUpload />}
+                    onClick={() => {
+                      const input = document.createElement('input');
+                      input.type = 'file';
+                      input.accept = 'audio/*';
+                      input.style.display = 'none';
+                      document.body.appendChild(input);
+
+                      input.onchange = (event: any) => {
+                        const file = event.target.files?.[0];
+                        if (file) {
+                          setMusicaFile(file);
+                          setOpenModalMusicas(true);
+                        }
+                        document.body.removeChild(input);
+                      };
+
+                      input.click();
+                    }}
+                    sx={{ fontFamily: "Poppins" }}
+                  >
+                    Enviar Música
+                  </Button>
+                </Stack>
+
+                <List
+                  subheader={
+                    <ListSubheader
+                      component="div"
+                      className="bg-pink-50 rounded-t-lg"
+                      sx={{
+                        fontSize: '1rem',
+                        fontWeight: '600',
+                        color: 'text.primary',
+                        py: 1.5,
+                        px: 2
+                      }}
+                    >
+                      MÚSICAS DA TURMA
+                    </ListSubheader>
+                  }
+                  sx={{
+                    bgcolor: "background.paper",
+                    borderRadius: 2,
+                    boxShadow: 1
+                  }}
+                >
+                  {musicas?.length > 0 ? (
+                    musicas.map((item: { file_name: string, url_arquivo: string }, index) => {
+                      const fileName = item.url_arquivo.split('/').pop()?.split('?')[0] || `musica-${index + 1}`;
+                      const cleanFileName = getCleanFileName(fileName);
+
+                      return (
+                        <ListItem
+                          key={index}
+                          disablePadding
+                          sx={{
+                            borderBottom: '1px solid',
+                            borderColor: 'divider',
+                            '&:last-child': { borderBottom: 'none' }
+                          }}
+                        >
+                          <Card className="w-full m-2 hover:bg-gray-50 transition-colors">
+                            <ListItemButton sx={{ px: 2, py: 1.5 }}>
+                              <div className="flex items-center w-full">
+                                <div className="mr-4 text-pink-600">
+                                  <MdAudiotrack fontSize="medium" />
+                                </div>
+
+                                <ListItemText
+                                  primary={
+                                    <Typography variant="body1" className="font-medium">
+                                      {cleanFileName ?? 'nome da música não informado'}
+                                    </Typography>
+                                  }
+                                  secondary={
+                                    <Stack direction={'column'}>
+                                      Enviado em {new Date().toLocaleDateString()}
+                                    </Stack>
+                                  }
+                                  secondaryTypographyProps={{
+                                    variant: 'caption',
+                                    color: 'text.secondary'
+                                  }}
+                                />
+
+                                <div className="flex items-center gap-2 ml-auto">
+                                  <Tooltip title="Parar">
+                                    <IconButton
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleStop();
+                                      }}
+                                      sx={{ color: 'primary.main' }}
+                                    >
+                                      <MdStop />
+                                    </IconButton>
+                                  </Tooltip>
+                                  <Tooltip title="Ouvir">
+                                    <IconButton
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handlePlayPause(item.url_arquivo);
+                                      }}
+                                      sx={{ color: 'primary.main' }}
+                                    >
+                                      {currentMusicUrl === item.url_arquivo && isPlaying ? <MdPause /> : <MdPlayArrow />}
+                                    </IconButton>
+                                  </Tooltip>
+
+                                  <Tooltip title="Download">
+                                    <IconButton
+                                      onClick={async () => {
+                                        try {
+                                          const response = await fetch(item.url_arquivo);
+                                          if (!response.ok) throw new Error("Erro ao baixar arquivo");
+                                          const blob = await response.blob();
+                                          const url = window.URL.createObjectURL(blob);
+
+                                          const link = document.createElement('a');
+                                          link.href = url;
+
+                                          let downloadName = cleanFileName;
+                                          if (!downloadName.toLowerCase().endsWith('.mp3')) {
+                                            downloadName += '.mp3';
+                                          }
+
+                                          link.download = downloadName;
+                                          document.body.appendChild(link);
+                                          link.click();
+
+                                          window.URL.revokeObjectURL(url);
+                                          document.body.removeChild(link);
+                                        } catch (error) {
+                                          console.error("Falha no download", error);
+                                        }
+                                      }}
+                                      sx={{ color: 'primary.main' }}
+                                    >
+                                      <BiCloudDownload />
+                                    </IconButton>
+                                  </Tooltip>
+
+                                </div>
+                              </div>
+                            </ListItemButton>
+                          </Card>
+                        </ListItem>
+                      );
+                    })
+                  ) : (
+                    <Stack width={'100%'} height={'100%'} justifyContent={'center'} alignItems={'center'} gap={1}>
+                      <img src="https://cdn.dribbble.com/userupload/8726277/file/still-90096ae0b20436af7d475737af5b86e5.gif?resize=400x0" alt="" width={220} />
+                      <Typography
+                        color="textSecondary"
+                        sx={{ ml: 2, fontSize: 12, mt: -2 }}
+                      >
+                        Nenhuma música foi enviada ainda. Seja o primeiro a compartilhar!
+                      </Typography>
+                    </Stack>
+                  )}
+                </List>
+              </Stack>
+            </TabPanel>
+            <Dialog open={openModalMusicas} onClose={() => setOpenModalMusicas(false)}>
+              <DialogTitle>Enviar Música</DialogTitle>
+              <DialogContent>
+                <Typography variant="body2">
+                  Música selecionada: {musicaFile?.name}
+                </Typography>
+              </DialogContent>
+              <DialogActions>
+                <Button onClick={() => setOpenModalMusicas(false)}>Cancelar</Button>
+                <Button onClick={onSubmitMusicaFile} variant="contained" color="primary">
+                  Enviar
+                </Button>
+              </DialogActions>
+            </Dialog>
+
           </TabContext>
         </Box>
       </Stack>

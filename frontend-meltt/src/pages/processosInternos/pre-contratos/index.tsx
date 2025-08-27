@@ -11,8 +11,9 @@ import {
   DialogActions,
   Typography,
   Divider,
+  IconButton,
 } from "@mui/material";
-import { IoMdAdd } from "react-icons/io";
+import { IoMdAdd, IoMdEye } from "react-icons/io";
 import { DragDropContext, Droppable, Draggable, DropResult } from "react-beautiful-dnd";
 import toast from "react-hot-toast";
 import { format } from 'date-fns';
@@ -70,6 +71,8 @@ const PreContratoPage = () => {
     packageInterest: "",
     status: Status.PARADO,
   });
+  const [selectedCard, setSelectedCard] = useState<Item | null>(null);
+  const [openDetailModal, setOpenDetailModal] = useState(false);
 
   const fetchPreContratos = useCallback(async () => {
     try {
@@ -144,16 +147,22 @@ const PreContratoPage = () => {
     if (
       !newCard.content.trim() ||
       !newCard.createdBy ||
-      !newCard.studentName ||
-      !newCard.turmaName || 
-      !newCard.agreedValue
+      !newCard.studentName
+      // !newCard.turmaName 
+      // !newCard.agreedValue
     ) {
       return toast.error("Preencha todos os campos para salvar!");
     }
 
     const newCardData = {
       created_at: new Date().toISOString(),
-      ...newCard,
+      content: newCard.content ?? '',
+      createdBy: newCard.createdBy,
+      contactedBy: newCard.contactedBy,
+      turmaName: newCard.turmaName ?? 'N/A',
+      studentName: newCard.studentName ?? '',
+      agreedValue: newCard.agreedValue ?? '0',
+      packageInterest: newCard.packageInterest ?? 'N/A',
       status: Status.PARADO,
     };
 
@@ -211,7 +220,7 @@ const PreContratoPage = () => {
   };
 
   return (
-    <Stack width={"calc(100% - 28px)"}>
+    <Stack width={"calc(100% - 64px)"}>
       <Stack direction={"row"} alignItems={"center"} justifyContent={"space-between"} my={2}>
         <h2 className="text-xl text-default font-extrabold">Status dos Pré-Contratos</h2>
         <Button
@@ -266,27 +275,32 @@ const PreContratoPage = () => {
                             }}
                           >
                             <CardContent sx={{ p: 1 }}>
-                              <Stack direction="column" gap={1}>
+                              <Stack direction="row" alignItems={'center'} justifyContent="flex-start">
                                 <Typography variant="caption" color="textSecondary">
-                                  {item.created_at && !isNaN(new Date(item.created_at).getTime())
+                                  Data e Hora: {item.created_at && !isNaN(new Date(item.created_at).getTime())
                                     ? format(new Date(item.created_at), "dd/MM/yy HH:mm")
                                     : "Data inválida"}
                                 </Typography>
-
-                                <Stack direction="column" spacing={0.5}>
-                                  <Typography variant="caption" color="textSecondary">Criado por:</Typography>
-                                  <Typography variant="body2">{item.createdBy}</Typography>
+                                <IconButton size="small" onClick={() => { setSelectedCard(item); setOpenDetailModal(true); }}>
+                                  <IoMdEye className="text-secondary" />
+                                </IconButton>
+                              </Stack>
+                              <Divider/>
+                              <Stack direction="column" gap={1} mt={1}>
+                                <Stack direction={'row'} justifyContent={'space-between'}>
+                                  <Stack direction="column">
+                                    <Typography variant="caption" color="textSecondary">Nome do Aluno:</Typography>
+                                    <Typography variant="body2">{item.studentName}</Typography>
+                                  </Stack>
+                                  <Stack direction="column">
+                                    <Typography variant="caption" color="textSecondary">Turma:</Typography>
+                                    <Typography variant="body2">{item.turmaName ?? 'N/A'}</Typography>
+                                  </Stack>
                                 </Stack>
-
-                                <Stack direction="column" spacing={0.5}>
-                                  <Typography variant="caption" color="textSecondary">Turma:</Typography>
-                                  <Typography variant="body2">{item.studentName}</Typography>
-                                </Stack>
-
-                                <Stack direction="column" spacing={0.5}>
-                                  <Typography variant="caption" color="textSecondary">Valor Acordado:</Typography>
-                                  <Typography variant="body2">R$ {item.agreedValue}</Typography>
-                                </Stack>
+                                <Stack direction="column">
+                                    <Typography variant="caption" color="textSecondary">Valor:</Typography>
+                                    <Typography variant="body2">R$ {item.agreedValue ?? 'N/A'}</Typography>
+                                  </Stack>
 
                                 <Button
                                   fullWidth
@@ -326,7 +340,7 @@ const PreContratoPage = () => {
           </Stack>
           <Stack direction={'column'} alignItems={'center'}>
             <Typography variant="body2" color="textSecondary" fontFamily={'Poppins'}>Valor Total</Typography>
-            <Typography variant="body1" color="success" fontWeight={600} fontFamily={'Poppins'}>R${getTotalAgreedValue()}</Typography>
+            <Typography variant="body1" color="success" fontWeight={600} fontFamily={'Poppins'}>R${getTotalAgreedValue() ?? 0}</Typography>
           </Stack>
         </Stack>
         <Divider flexItem orientation="horizontal" sx={{ my: 1 }} />
@@ -338,11 +352,11 @@ const PreContratoPage = () => {
                 <Stack direction="column" gap={1}>
                   <Stack direction={'row'} alignItems={'center'} justifyContent={'space-between'}>
                     <Typography variant="body2" color="primary">Aluno: <strong>{item.studentName}</strong></Typography>
-                    <Typography variant="body2" color="primary">Criado por:<strong>{item.createdBy}</strong></Typography>
+                    <Typography variant="body2" color="primary">Criado por:<strong>{item.createdBy.toUpperCase()}</strong></Typography>
                   </Stack>
                   <Stack direction={'row'} alignItems={'center'} gap={4}>
                     <Typography variant="body2" color="primary">Valor Acordado: <strong>R${item.agreedValue}</strong></Typography>
-                    <Typography variant="body2" color="primary">Pacote de Formatura: <strong>{item.packageInterest}</strong></Typography>
+                    <Typography variant="body2" color="primary">Pacote de Formatura: <strong>{item.packageInterest ?? 'não informado'}</strong></Typography>
                   </Stack>
                   <Typography variant="caption" color="textSecondary">
                     {item.created_at && !isNaN(new Date(item.created_at).getTime())
@@ -422,6 +436,31 @@ const PreContratoPage = () => {
           </Button>
           <Button variant="contained" onClick={addNewCard} endIcon={<BiSave />} color="primary" sx={{ width: 140 }}>
             Salvar
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Modal de Detalhes do Card */}
+      <Dialog open={openDetailModal} onClose={() => setOpenDetailModal(false)} fullWidth maxWidth="sm">
+        <DialogTitle>Detalhes do Pré-Contrato</DialogTitle>
+        <DialogContent>
+          {selectedCard && (
+            <Stack spacing={2}>
+              <Typography variant="body1"><strong>Nome do Aluno:</strong> {selectedCard.studentName}</Typography>
+              <Typography variant="body1"><strong>Turma:</strong> {selectedCard.turmaName}</Typography>
+              <Typography variant="body1"><strong>Valor Acordado:</strong> R$ {selectedCard.agreedValue}</Typography>
+              <Typography variant="body1"><strong>Pacote de Interesse:</strong> {selectedCard.packageInterest ?? 'N/A'}</Typography>
+              <Typography variant="body1"><strong>Observações:</strong> {selectedCard.content}</Typography>
+              <Typography variant="body1"><strong>Criado por:</strong> {selectedCard.createdBy}</Typography>
+              <Typography variant="body1"><strong>Contato feito via:</strong> {selectedCard.contactedBy}</Typography>
+              <Typography variant="body1"><strong>Status:</strong> {selectedCard.status}</Typography>
+              <Typography variant="body1"><strong>Data de Criação:</strong> {selectedCard.created_at && !isNaN(new Date(selectedCard.created_at).getTime()) ? format(new Date(selectedCard.created_at), "dd/MM/yyyy HH:mm") : "Data inválida"}</Typography>
+            </Stack>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenDetailModal(false)} color="secondary">
+            Fechar
           </Button>
         </DialogActions>
       </Dialog>

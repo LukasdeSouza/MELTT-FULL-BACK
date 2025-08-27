@@ -58,14 +58,6 @@ class TarefasController {
     });
   };
 
-  deleteTarefa(req, res) {
-    const id = req.params.id;
-    db.query("DELETE FROM tarefas WHERE id = ?", [id], (err) => {
-      if (err) return res.status(500).json(err);
-      res.status(200).json({ message: "Turma deletada com sucesso!" });
-    });
-  };
-
   getResponsaveis(req, res) {
     db.query(
       "SELECT u.id AS usuario_id, u.nome AS usuario_nome, ut.tarefa_id FROM usuario_tarefa ut JOIN usuarios u ON ut.usuario_id = u.id",
@@ -115,9 +107,10 @@ class TarefasController {
 
   async deleteTarefa(req, res) {
     const id = req.params.id;
+    console.log(`Tentando deletar tarefa com ID: ${id}`);
     try {
-      await pool.query("DELETE FROM tarefas WHERE id = ?", [id]);
-      res.status(200).json({ message: "Tarefa deletada com sucesso!" });
+      await pool.query("UPDATE tarefas SET status = 0 WHERE id = ?", [id]);
+      res.status(200).json({ message: "Tarefa Inativada com sucesso!" });
     } catch (err) {
       res.status(500).json({ error: err.message });
     }

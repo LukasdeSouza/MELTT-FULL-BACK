@@ -242,7 +242,7 @@ const ContratosEnvioPage = () => {
   }, []);
 
   return (
-    <Stack width={"calc(100% - 28px)"}>
+    <Stack width={"calc(100% - 64px)"}>
       <Stack direction={"row"} justifyContent={"space-between"} my={2}>
         <h2 className="text-2xl text-default font-extrabold"></h2>
         <LoadingButton

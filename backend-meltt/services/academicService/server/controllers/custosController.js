@@ -14,16 +14,7 @@ class CustosController {
     const tiposValidos = ["Fixo", "Pre-evento", "Temporada"];
 
     try {
-      let query = `
-      SELECT 
-        custos.*,
-        turmas.nome AS turma_nome,
-        turmas.identificador AS turma_identificador,
-        fornecedores.nome AS fornecedor_nome
-      FROM custos
-      LEFT JOIN turmas ON custos.turma_id = turmas.id
-      LEFT JOIN fornecedores ON custos.fornecedor_id = fornecedores.id
-    `;
+      let query = "SELECT * FROM custos";
 
       let countQuery = `SELECT COUNT(*) AS total FROM custos`;
 
@@ -126,6 +117,7 @@ class CustosController {
       vencimento,
       situacao
     } = req.body;
+    console.log(req.body, "req.body custos");
     const query =
       `INSERT INTO custos (tipo_custo, turma_id, evento, fornecedor_id, beneficiario, categoria, valor, valor_pago_parcial, vencimento, situacao)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;

@@ -9,9 +9,7 @@ import CustomModal from '../../components/modal';
 import { useNavigate } from 'react-router-dom';
 import CustomCard from '../../components/card';
 import { apiDeleteData, apiGetData, apiPostData } from '../../services/api';
-import { IoMdTrash } from 'react-icons/io';
 import formatDateToDDMMYYYY from '../../utils/functions/formatDate';
-import { BsTrash2 } from 'react-icons/bs';
 import { FaTrash } from 'react-icons/fa6';
 
 const initialForm = {
@@ -85,9 +83,9 @@ const CustosPage = () => {
       valor: valorCentavos,
       valor_pago_parcial: valorPagoParcialCentavos,
     };
+    console.log(dataObj, "dataObj");
     try {
-      const response = await apiPostData('academic', '/custos', dataObj);
-      console.log(response.status, "response.status");
+      await apiPostData('academic', '/custos', dataObj);
       await fetchAll();
     } catch (error) {
       console.error('Error creating custo:', error);
@@ -110,6 +108,7 @@ const CustosPage = () => {
 
   const fetchFornecedores = async () => {
     const response = await apiGetData('academic', '/fornecedores');
+    console.log(response, "response fornecedores");
     setFornecedores(response.data || []);
   };
 

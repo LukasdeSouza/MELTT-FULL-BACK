@@ -8,14 +8,9 @@ class FornecedoresController {
   
     try {
       const [results] = await pool.query(`
-        SELECT 
-          fornecedores.*,
-          turmas.nome AS turma_nome,
-          turmas.identificador AS turma_identificador
+        SELECT *
           -- Adicione mais campos conforme necessário (sem vírgula no último campo!)
         FROM fornecedores
-        LEFT JOIN turmas 
-          ON fornecedores.turma_id = turmas.id
         LIMIT ? OFFSET ?
       `, [limit, offset]);
   

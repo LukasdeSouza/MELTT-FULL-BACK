@@ -19,7 +19,7 @@ const cardStyle = {
   transform: "translate(-50%, -50%)",
   bgcolor: "#ffff",
   borderRadius: 3,
-  width: "800px",
+  width: "40%",
   boxShadow: 12,
 };
 
@@ -56,7 +56,7 @@ const CustomModal = ({
           title={title}
           subheader={subHeader}
           titleTypographyProps={{
-            fontSize: 18,
+            fontSize: 22,
             fontWeight: 600,
           }}
           subheaderTypographyProps={{ fontSize: 12 }}
@@ -65,7 +65,7 @@ const CustomModal = ({
               <MdClose size={18} style={{ color: "#ddd" }} />
             </IconButton>
           }
-          sx={{ borderRadius: "12px 12px 0 0 " }}
+          sx={{ borderRadius: "12px 12px 0 0" }}
         />
 
         <CardContent style={{ padding: 2 }}>

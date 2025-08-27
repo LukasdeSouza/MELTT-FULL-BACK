@@ -4,6 +4,7 @@ import authMiddleware from "../middlewares/auth/index.js";
 
 const router = express.Router();
 
+router.get("/valor-total", authMiddleware, custosController.getTotalCustos);
 router.get("/", authMiddleware, custosController.getAllCustos);
 router.get("/:id", authMiddleware, custosController.getCustosById);
 router.post("/", authMiddleware, custosController.createCustos);

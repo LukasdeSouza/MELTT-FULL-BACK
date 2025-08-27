@@ -1,14 +1,16 @@
 
 
-import React, { useState } from 'react';
-import { Box, IconButton, Stack, Tooltip, Button, TextField, MenuItem } from '@mui/material';
+import React, { useEffect, useState } from 'react';
+import { NumericFormat } from 'react-number-format';
+import { Box, IconButton, Stack, Tooltip, Button, TextField, MenuItem, Card } from '@mui/material';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import CustomModal from '../../components/modal';
 import { useNavigate } from 'react-router-dom';
 import CustomCard from '../../components/card';
-
-
+import { apiDeleteData, apiGetData, apiPostData } from '../../services/api';
+import formatDateToDDMMYYYY from '../../utils/functions/formatDate';
+import { FaTrash } from 'react-icons/fa6';
 
 const initialForm = {
   tipo_custo: '',
@@ -24,15 +26,27 @@ const initialForm = {
 };
 
 const tiposCusto = [
-  { value: 'pre-eventos', label: 'Pré-Eventos' },
-  { value: 'temporada', label: 'Temporada' },
-  { value: 'fixos', label: 'Fixos' },
+  { value: 'Pre-evento', label: 'Pré-Eventos' },
+  { value: 'Temporada', label: 'Temporada' },
+  { value: 'Fixo', label: 'Fixos' },
 ];
 
 const situacoes = [
-  { value: 'pendente', label: 'Pendente' },
+  { value: 'Pendente', label: 'Pendente' },
   { value: 'pago', label: 'Pago' },
-  { value: 'parcial', label: 'Pago Parcial' },
+  { value: 'Parcialmente Pago', label: 'Pago Parcial' },
+  { value: 'Vencido', label: 'Vencido' },
+];
+
+const categorias = [
+  { value: 'aluguel', label: 'Aluguel' },
+  { value: 'energia', label: 'Energia' },
+  { value: 'alimentação', label: 'Alimentação' },
+  { value: 'agua', label: 'Água' },
+  { value: 'equipamentos_midia', label: 'Equipamentos de Mídia' },
+  { value: 'equipe', label: 'Equipe' },
+  { value: 'decoracao', label: 'Decoração' },
+  { value: 'buffet', label: 'Buffet' },
 ];
 
 const CustosPage = () => {
@@ -40,6 +54,13 @@ const CustosPage = () => {
   const [openModal, setOpenModal] = React.useState(false);
   const [form, setForm] = React.useState(initialForm);
   const [loading, setLoading] = React.useState(false);
+
+  const [turmas, setTurmas] = useState([]);
+  const [fornecedores, setFornecedores] = useState([]);
+  const [custosPreEvento, setCustosPreEvento] = useState([]);
+  const [custosTemporada, setCustosTemporada] = useState([]);
+  const [custosFixo, setCustosFixo] = useState([]);
+  const [valorTotal, setValorTotal] = useState(0);
 
   const handleOpenModal = () => setOpenModal(true);
   const handleCloseModal = () => {
@@ -53,17 +74,78 @@ const CustosPage = () => {
 
   const handleSubmit = async () => {
     setLoading(true);
-    let dataObj = {
+    const valorNumero = parseFloat(form.valor.replace(/\./g, '').replace('R$', '').replace(',', '.'));
+    const valorCentavos = Math.round(valorNumero * 100);
+    const valorPagoParcialNumero = parseFloat(form.valor_pago_parcial.replace(/\./g, '').replace('R$', '').replace(',', '.'));
+    const valorPagoParcialCentavos = Math.round(valorPagoParcialNumero * 100);
+    const dataObj = {
       ...form,
-      situacao: 'Pendente'
-    }
-    // Aqui você faria a chamada para o backend, ex: apiPostData('academic', '/custos', form)
-    setTimeout(() => {
+      valor: valorCentavos,
+      valor_pago_parcial: valorPagoParcialCentavos,
+    };
+    console.log(dataObj, "dataObj");
+    try {
+      await apiPostData('academic', '/custos', dataObj);
+      await fetchAll();
+    } catch (error) {
+      console.error('Error creating custo:', error);
+    } finally {
       setLoading(false);
       setOpenModal(false);
       setForm(initialForm);
-    }, 1200);
+    }
   };
+
+  const handleDelete = async (id: number) => {
+    await apiDeleteData('academic', `/custos/${id}`);
+    await fetchAll();
+  };
+
+  const fetchTurmas = async () => {
+    const response = await apiGetData('academic', '/turmas');
+    setTurmas(response.data || []);
+  };
+
+  const fetchFornecedores = async () => {
+    const response = await apiGetData('academic', '/fornecedores');
+    console.log(response, "response fornecedores");
+    setFornecedores(response.data || []);
+  };
+
+  const fetchCustosPreEvento = async () => {
+    const response = await apiGetData('academic', '/custos?tipo_custo=Pre-evento');
+    setCustosPreEvento(response.data || []);
+  };
+
+  const fetchCustosTemporada = async () => {
+    const response = await apiGetData('academic', '/custos?tipo_custo=Temporada');
+    setCustosTemporada(response.data || []);
+  };
+
+  const fetchCustosFixo = async () => {
+    const response = await apiGetData('academic', '/custos?tipo_custo=Fixo');
+    setCustosFixo(response.data || []);
+  };
+
+  const fetchValorTotal = async () => {
+    const response = await apiGetData('academic', '/custos/valor-total');
+    setValorTotal(response.total || 0);
+  };
+
+  const fetchAll = async () => {
+    await Promise.all([
+      fetchTurmas(),
+      fetchFornecedores(),
+      fetchCustosPreEvento(),
+      fetchCustosTemporada(),
+      fetchCustosFixo(),
+      fetchValorTotal()
+    ]);
+  };
+
+  useEffect(() => {
+    fetchAll();
+  }, []);
 
   return (
     <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: '#F6F7FB', p: { xs: 2, md: 6 } }}>
@@ -89,7 +171,20 @@ const CustosPage = () => {
               </IconButton>
             </Tooltip>
           }
-        >{null}</CustomCard>
+        >{custosPreEvento.map((custo) =>
+          <Card sx={{ m: 1, p: 1, borderRadius: "12px", bgcolor: "", display: "flex", justifyContent: "space-between", alignItems: "center" }} key={custo.id_custo}>
+            <div className='flex flex-col'>
+              <div className='flex flex-col'>
+                <p className='text-sm text-gray-500'>Evento e data</p>
+                <p className='font-medium'>{custo.evento} - {formatDateToDDMMYYYY(custo.vencimento)}</p>
+                <p className='text-sm text-gray-500'>Valor</p>
+                <p>{custo.valor ? `R$ ${parseFloat(custo.valor / 100).toFixed(2)}` : 'R$ 0,00'}</p>
+              </div>
+            </div>
+            <FaTrash style={{ cursor: 'pointer' }} onClick={(e) => handleDelete(custo.id_custo)} />
+          </Card>
+        )}
+        </CustomCard>
         <CustomCard
           title="Temporada"
           sxProps={{ flex: 1, height: '100%' }}
@@ -100,7 +195,20 @@ const CustosPage = () => {
               </IconButton>
             </Tooltip>
           }
-        >{null}</CustomCard>
+        >{custosTemporada.map((custo) =>
+          <Card sx={{ m: 1, p: 1, borderRadius: "12px", bgcolor: "", display: "flex", justifyContent: "space-between", alignItems: "center" }} key={custo.id_custo}>
+            <div className='flex flex-col'>
+              <div className='flex flex-col'>
+                <p className='text-sm text-gray-500'>Evento e data</p>
+                <p className='font-medium'>{custo.evento} - {formatDateToDDMMYYYY(custo.vencimento)}</p>
+                <p className='text-sm text-gray-500'>Valor</p>
+                <p>{custo.valor ? `R$ ${parseFloat(custo.valor / 100).toFixed(2)}` : 'R$ 0,00'}</p>
+              </div>
+            </div>
+            <FaTrash style={{ cursor: 'pointer' }} onClick={(e) => handleDelete(custo.id_custo)} />
+          </Card>
+        )}
+        </CustomCard>
         <CustomCard
           title="Fixos"
           sxProps={{ flex: 1, height: '100%' }}
@@ -111,11 +219,24 @@ const CustosPage = () => {
               </IconButton>
             </Tooltip>
           }
-        >{null}</CustomCard>
+        >{custosFixo.map((custo) =>
+          <Card sx={{ m: 1, p: 1, borderRadius: "12px", bgcolor: "", display: "flex", justifyContent: "space-between", alignItems: "center" }} key={custo.id_custo}>
+            <div className='flex flex-col'>
+              <div className='flex flex-col'>
+                <p className='text-sm text-gray-500'>Evento e data</p>
+                <p className='font-medium'>{custo.evento} - {formatDateToDDMMYYYY(custo.vencimento)}</p>
+                <p className='text-sm text-gray-500'>Valor</p>
+                <p>{custo.valor ? `R$ ${parseFloat(custo.valor / 100).toFixed(2)}` : 'R$ 0,00'}</p>
+              </div>
+            </div>
+            <FaTrash style={{ cursor: 'pointer' }} onClick={(e) => handleDelete(custo.id_custo)} />
+          </Card>
+        )}
+        </CustomCard>
       </Stack>
-      <Stack direction="row" justifyContent="flex-end" sx={{ mt: 2 }}>
+      <Stack direction="row" display="flex" justifyContent="flex-end" sx={{ mt: 2 }}>
         <Box sx={{ maxWidth: 400, width: '100%' }}>
-          <CustomCard title="Totalizadores">{null}</CustomCard>
+          <Card sx={{ p: 2, backgroundColor: "#fff", borderRadius: "12px", boxShadow: "none"}}>{`Totalizadores: ${valorTotal}`}</Card>
         </Box>
       </Stack>
 
@@ -134,6 +255,7 @@ const CustosPage = () => {
             name="tipo_custo"
             value={form.tipo_custo}
             onChange={handleChange}
+            size='small'
             fullWidth
           >
             {tiposCusto.map((option) => (
@@ -141,54 +263,109 @@ const CustosPage = () => {
             ))}
           </TextField>
           <TextField
-            label="Turma ID"
+            select
+            label="Turma"
             name="turma_id"
             value={form.turma_id}
             onChange={handleChange}
+            size='small'
             fullWidth
-          />
+          >
+            {turmas.map((turma: any) => (
+              <MenuItem key={turma.id} value={turma.id}>{turma.nome}</MenuItem>
+            ))}
+          </TextField>
           <TextField
             label="Evento"
             name="evento"
             value={form.evento}
             onChange={handleChange}
+            size='small'
             fullWidth
           />
           <TextField
-            label="Fornecedor ID"
+            select
+            label="Fornecedor"
             name="fornecedor_id"
             value={form.fornecedor_id}
             onChange={handleChange}
+            size='small'
             fullWidth
-          />
+          >
+            {fornecedores.map((fornecedor: any) => (
+              <MenuItem key={fornecedor.id} value={fornecedor.id}>{fornecedor.nome}</MenuItem>
+            ))}
+          </TextField>
           <TextField
             label="Beneficiário"
             name="beneficiario"
             value={form.beneficiario}
             onChange={handleChange}
+            size='small'
             fullWidth
           />
           <TextField
+            select
             label="Categoria"
             name="categoria"
             value={form.categoria}
             onChange={handleChange}
+            size='small'
             fullWidth
-          />
+          >
+            {categorias.map((option) => (
+              <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
+            ))}
+          </TextField>
           <TextField
+            select
+            label="Situação"
+            name="situacao"
+            value={form.situacao}
+            onChange={handleChange}
+            size='small'
+            fullWidth
+          >
+            {situacoes.map((option) => (
+              <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
+            ))}
+          </TextField>
+          <NumericFormat
+            value={form.valor}
+            allowLeadingZeros
+            thousandSeparator="."
+            allowNegative={false}
+            decimalSeparator=","
+            decimalScale={2}
+            fixedDecimalScale
+            prefix="R$"
+            customInput={TextField}
             label="Valor"
             name="valor"
-            value={form.valor}
-            onChange={handleChange}
-            type="number"
+            onValueChange={(values) => {
+              const { formattedValue, value } = values;
+              setForm({ ...form, valor: formattedValue });
+            }}
+            size='small'
             fullWidth
           />
-          <TextField
-            label="Valor pago parcial"
-            name="valor_pago_parcial"
+          <NumericFormat
             value={form.valor_pago_parcial}
-            onChange={handleChange}
-            type="number"
+            allowLeadingZeros
+            thousandSeparator="."
+            allowNegative={false}
+            decimalSeparator=","
+            decimalScale={2}
+            fixedDecimalScale
+            prefix="R$"
+            customInput={TextField}
+            label="Valor Pago Parcial"
+            name="valor_pago_parcial"
+            onValueChange={(values) => {
+              const { formattedValue, value } = values;
+              setForm({ ...form, valor_pago_parcial: formattedValue });
+            }}
+            size='small'
             fullWidth
           />
           <TextField
@@ -198,6 +375,7 @@ const CustosPage = () => {
             onChange={handleChange}
             type="date"
             InputLabelProps={{ shrink: true }}
+            size='small'
             fullWidth
           />
           {/* <TextField

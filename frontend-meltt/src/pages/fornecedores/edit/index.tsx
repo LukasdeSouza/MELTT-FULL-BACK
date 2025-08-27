@@ -1,14 +1,8 @@
 import {
-  Autocomplete,
   Box,
   Button,
-  FormControl,
   Grid,
-  InputAdornment,
-  InputLabel,
-  MenuItem,
   Paper,
-  Select,
   TextField,
   Typography,
   useTheme,
@@ -17,21 +11,21 @@ import { Formik } from "formik";
 import { BiSave } from "react-icons/bi";
 import { useNavigate, useParams } from "react-router-dom";
 import { validateFornecedorSchema } from "../../../utils/validationSchemas";
-import { MdOutlineAttachMoney } from "react-icons/md";
-import { apiGetData, apiPostData, apiPutData } from "../../../services/api";
-import { useEffect, useState } from "react";
+import { apiPostData, apiPutData } from "../../../services/api";
+import { useState } from "react";
 import toast from "react-hot-toast";
 import { LoadingButton } from "@mui/lab";
 import { FaHardHat } from "react-icons/fa";
 import { useFornecedorContext } from "../../../providers/fornecedorContext";
 import { initialValuesFornecedor } from "../../../initialValues";
+import phoneMask from "../../../utils/functions/phoneMask";
+import CnpjMask from "../../../utils/functions/cnpjMask";
 
 type FornecedoresFormValuesProps = {
   nome: string;
-  tipo_servico: string;
   telefone: string;
-  valor_cotado: string;
-  status: any;
+  cnpj: string;
+  responsavel: string;
 };
 
 const FornecedoresEditPage = () => {
@@ -40,8 +34,6 @@ const FornecedoresEditPage = () => {
   const { id } = useParams();
   const { stateFornecedor } = useFornecedorContext();
   const [loadingSave, setLoadingSave] = useState(false);
-  const [loadingTurmas, setLoadingTurmas] = useState(false);
-  const [turmas, setTurmas] = useState([]);
 
   const getFornecedorInitialValue = Object.keys(initialValuesFornecedor).reduce(
     (acc, key) => {
@@ -54,19 +46,10 @@ const FornecedoresEditPage = () => {
     {} as typeof initialValuesFornecedor
   );
 
-  const fetchTurmas = async () => {
-    setLoadingTurmas(true);
-    await apiGetData("academic", `/turmas`).then((response) => {
-      setTurmas(response.data)
-    });
-    setLoadingTurmas(false);
-  };
-
   const onSubmitFornecedor = async (values: FornecedoresFormValuesProps) => {
     setLoadingSave(true);
     let dataObj = {
       ...values,
-      valor_cotado: parseFloat(values.valor_cotado.replace(/\./g, '').replace(',', '.')),
     };
 
     try {
@@ -89,13 +72,9 @@ const FornecedoresEditPage = () => {
     setLoadingSave(false);
   };
 
-  useEffect(() => {
-    fetchTurmas();
-  }, [])
-
   return (
-    <Box sx={{ 
-      p: 4, 
+    <Box sx={{
+      p: 4,
       height: '100vh',
       backgroundColor: 'background.default'
     }}>
@@ -108,7 +87,7 @@ const FornecedoresEditPage = () => {
           height: 'calc(100vh - 64px)',
           overflow: 'auto',
           '&::-webkit-scrollbar': { width: '6px' },
-          '&::-webkit-scrollbar-thumb': { 
+          '&::-webkit-scrollbar-thumb': {
             backgroundColor: 'divider',
             borderRadius: 3
           }
@@ -119,13 +98,13 @@ const FornecedoresEditPage = () => {
           validationSchema={validateFornecedorSchema}
           onSubmit={(values) => onSubmitFornecedor(values)}
         >
-          {({ values, errors, handleChange, handleSubmit }) => (
+          {({ values, errors, handleChange, handleSubmit, setFieldValue }) => (
             <form onSubmit={handleSubmit}>
               <Box sx={{ mb: 4 }}>
-                <Box sx={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: 2, 
+                <Box sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 2,
                   mb: 4,
                   pb: 2,
                   borderBottom: `2px solid ${theme.palette.divider}`
@@ -151,20 +130,6 @@ const FornecedoresEditPage = () => {
                       InputLabelProps={{ shrink: true }}
                     />
                   </Grid>
-                  
-                  <Grid item xs={12} md={6}>
-                    <TextField
-                      fullWidth
-                      variant="outlined"
-                      name="tipo_servico"
-                      label="Tipo de Serviço"
-                      value={values.tipo_servico}
-                      onChange={handleChange}
-                      error={Boolean(errors.tipo_servico)}
-                      helperText={errors.tipo_servico}
-                      InputLabelProps={{ shrink: true }}
-                    />
-                  </Grid>
 
                   {/* Linha 2 */}
                   <Grid item xs={12} md={6}>
@@ -180,71 +145,22 @@ const FornecedoresEditPage = () => {
                       InputLabelProps={{ shrink: true }}
                     />
                   </Grid>
-                  
-                  <Grid item xs={12} md={6}>
-                    <FormControl fullWidth>
-                      <InputLabel>Turma</InputLabel>
-                      <Select
-                        name="turma_id"
-                        disabled={loadingTurmas}
-                        value={values.turma_id}
-                        onChange={handleChange}
-                        label="Turma"
-                      >
-                        {turmas?.map((item: { nome: string; id: number }) => (
-                          <MenuItem key={item.id} value={item.id}>
-                            {item.nome}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
-                  </Grid>
 
                   {/* Linha 3 */}
                   <Grid item xs={12} md={6}>
                     <TextField
                       fullWidth
                       variant="outlined"
-                      name="valor_cotado"
-                      label="Valor cotado"
-                      value={values.valor_cotado}
-                      onChange={handleChange}
-                      error={Boolean(errors.valor_cotado)}
-                      helperText={errors.valor_cotado}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <MdOutlineAttachMoney 
-                              style={{ color: theme.palette.warning.main }} 
-                              size={24} 
-                            />
-                          </InputAdornment>
-                        ),
+                      name="telefone"
+                      label="Telefone para contato"
+                      value={values.telefone}
+                      onChange={(e) => {
+                        const masked = phoneMask(e.target.value);
+                        setFieldValue("telefone", masked);
                       }}
+                      error={Boolean(errors.telefone)}
+                      helperText={errors.telefone}
                       InputLabelProps={{ shrink: true }}
-                    />
-                  </Grid>
-                  
-                  <Grid item xs={12} md={6}>
-                    <Autocomplete
-                      fullWidth
-                      options={["Pagamento efetuado", "Pagamento não efetuado"]}
-                      value={values.status}
-                      onChange={(_, newValue) => {
-                        handleChange({
-                          target: {
-                            name: "status",
-                            value: newValue,
-                          },
-                        });
-                      }}
-                      renderInput={(params) => (
-                        <TextField 
-                          {...params} 
-                          label="Status do pagamento" 
-                          InputLabelProps={{ shrink: true }}
-                        />
-                      )}
                     />
                   </Grid>
 
@@ -253,24 +169,13 @@ const FornecedoresEditPage = () => {
                     <TextField
                       fullWidth
                       variant="outlined"
-                      name="telefone"
-                      label="Telefone para contato"
-                      value={values.telefone}
-                      onChange={handleChange}
-                      error={Boolean(errors.telefone)}
-                      helperText={errors.telefone}
-                      InputLabelProps={{ shrink: true }}
-                    />
-                  </Grid>
-                  
-                  <Grid item xs={12} md={6}>
-                    <TextField
-                      fullWidth
-                      variant="outlined"
                       name="cnpj"
                       label="CNPJ"
                       value={values.cnpj}
-                      onChange={handleChange}
+                      onChange={(e) => {
+                        const masked = CnpjMask(e.target.value);
+                        setFieldValue("cnpj", masked);
+                      }}
                       error={Boolean(errors.cnpj)}
                       helperText={errors.cnpj}
                       InputLabelProps={{ shrink: true }}
@@ -279,9 +184,9 @@ const FornecedoresEditPage = () => {
                 </Grid>
               </Box>
 
-              <Box sx={{ 
-                display: 'flex', 
-                justifyContent: 'flex-end', 
+              <Box sx={{
+                display: 'flex',
+                justifyContent: 'flex-end',
                 gap: 2,
                 pt: 3,
                 borderTop: `1px solid ${theme.palette.divider}`
@@ -289,8 +194,8 @@ const FornecedoresEditPage = () => {
                 <Button
                   variant="outlined"
                   onClick={() => navigate("/fornecedores")}
-                  sx={{ 
-                    px: 4, 
+                  sx={{
+                    px: 4,
                     borderRadius: 2,
                     textTransform: 'none'
                   }}
@@ -302,8 +207,8 @@ const FornecedoresEditPage = () => {
                   variant="contained"
                   loading={loadingSave}
                   endIcon={<BiSave size={18} />}
-                  sx={{ 
-                    px: 4, 
+                  sx={{
+                    px: 4,
                     borderRadius: 2,
                     textTransform: 'none',
                     '&:hover': {

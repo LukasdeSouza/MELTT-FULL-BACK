@@ -1,6 +1,5 @@
 import {
   Button,
-  Chip,
   CircularProgress,
   IconButton,
   Paper,
@@ -17,7 +16,7 @@ import { IoMdAdd } from "react-icons/io";
 import toast from "react-hot-toast";
 import NoTableData from "../../components/noData";
 import LoadingTable from "../../components/loadingTable";
-import { MdModeEdit, MdOutlinePayments } from "react-icons/md";
+import { MdModeEdit } from "react-icons/md";
 import { fornecedoresColumns } from "./table/columns";
 import { FaTrashAlt } from "react-icons/fa";
 import { useFornecedorContext } from "../../providers/fornecedorContext";
@@ -25,11 +24,9 @@ import { useFornecedorContext } from "../../providers/fornecedorContext";
 interface Fornecedor {
   id: number;
   nome: string;
-  tipo_servico: string;
   telefone: string;
-  valor_cotado: string;
-  turma_nome: string;
-  status: string;
+  cnpj: string;
+  responsavel: string;
 }
 
 const FornecedoresPage = () => {
@@ -47,7 +44,7 @@ const FornecedoresPage = () => {
   const fetchFornecedores = async (page: number) => {
     setLoading(true);
     try {
-      const response = await apiGetData("academic", `${page > 1 ? `/fornecedores?page=${page}` : '/fornecedores' }`);
+      const response = await apiGetData("academic", `${page > 1 ? `/fornecedores?page=${page}` : '/fornecedores'}`);
       setTotalPages(response.totalPages)
       setPages(response.page)
       setFornecedores(response.data);
@@ -88,31 +85,12 @@ const FornecedoresPage = () => {
           " &:hover": { bgcolor: "#F7F7F7", cursor: "pointer" },
         }}
       >
-        <TableCell component="th" scope="row">
-          {row.nome}
-        </TableCell>
-        <TableCell align="left">{row.tipo_servico}</TableCell>
-        <TableCell align="left">
-          <Chip
-            label={row.status}
-            color={row.status.includes("não") ? "error" : "success"}
-            variant="filled"
-            icon={<MdOutlinePayments />}
-            sx={{ padding: 1 }}
-          />
-        </TableCell>
-        <TableCell align="left">{row.turma_nome}</TableCell>
-        <TableCell align="left">
-          <Chip
-            label={`R$ ${row.valor_cotado}`}
-            color="primary"
-            variant="filled"
-            icon={<MdOutlinePayments />}
-            sx={{ padding: 1 }}
-          />
-        </TableCell>
-        <TableCell align="left">
-          <Stack direction={"row"}>
+        <TableCell align="left">{row.nome}</TableCell>
+        <TableCell align="left">{row.responsavel}</TableCell>
+        <TableCell align="left">{row.telefone}</TableCell>
+        <TableCell align="left">{row.cnpj}</TableCell>
+        <TableCell>
+          <Stack direction={"row"} alignItems={"center"} justifyContent={"center"}>
             <IconButton onClick={() => onClickRow(row)}>
               <MdModeEdit color="#2d1c63" size={22} />
             </IconButton>

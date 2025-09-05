@@ -5,31 +5,53 @@ class FornecedoresController {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const offset = (page - 1) * limit;
+    const nome = req.query.nome || null;
+    const noPagination = req.query.all === 'true' || req.query.noPagination === 'true'; // Desabilita paginação
 
     try {
-      const [results] = await pool.query(`
-        SELECT *
-        FROM fornecedores
-        ORDER BY criado_em DESC
-        LIMIT ? OFFSET ?
-      `, [limit, offset]);
+      let query = "SELECT * FROM fornecedores";
+      let countQuery = "SELECT COUNT(*) AS total FROM fornecedores";
+      let queryParams = [];
+      let countParams = [];
 
-      const [countResult] = await pool.query("SELECT COUNT(*) AS total FROM fornecedores");
-      const total = countResult[0].total;
-      const totalPages = Math.ceil(total / limit);
+      if (nome) {
+        query += " WHERE nome LIKE ?";
+        countQuery += " WHERE nome LIKE ?";
+        queryParams.push(`%${nome}%`);
+        countParams.push(`%${nome}%`);
+      }
 
-      res.status(200).json({
-        page,
-        totalPages,
-        totalItems: total,
-        itemsPerPage: limit,
-        data: results,
-      });
+      query += " ORDER BY criado_em DESC";
+
+      if (!noPagination) {
+        query += " LIMIT ? OFFSET ?";
+        queryParams.push(limit, offset);
+      }
+
+      const [results] = await pool.query(query, queryParams);
+
+      if (noPagination) {
+        res.status(200).json({
+          totalItems: results.length,
+          data: results,
+        });
+      } else {
+        const [countResult] = await pool.query(countQuery, countParams);
+        const total = countResult[0].total;
+        const totalPages = Math.ceil(total / limit);
+
+        res.status(200).json({
+          page,
+          totalPages,
+          totalItems: total,
+          itemsPerPage: limit,
+          data: results,
+        });
+      }
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
   }
-
   async getFornecedoresById(req, res) {
     const id = req.params.id;
     try {

@@ -71,7 +71,7 @@ class PagamentosController {
         "SELECT * FROM pagamentos WHERE numeroDocumento = ? ORDER BY dataEmissao DESC LIMIT 1",
         [numeroDocumento]
       );
-      res.status(200).json(results[0] || null);
+      res.status(200).json(results || null);
     } catch (err) {
       res.status(500).json({ error: err.message });
     }

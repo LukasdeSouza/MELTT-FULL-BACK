@@ -43,7 +43,7 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Senha Incorreta' });
     }
     const token = generateToken(user);
-    res.json({ token });
+    res.json({ token, user });
   } catch (error) {
     res.status(500).json({ error: 'Failed to login' });
   }

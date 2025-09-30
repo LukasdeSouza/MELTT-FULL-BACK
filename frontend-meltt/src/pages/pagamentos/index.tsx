@@ -1,5 +1,4 @@
 import {
-  Button,
   Chip,
   FormControl,
   IconButton,
@@ -17,6 +16,7 @@ import {
   Typography,
 } from "@mui/material";
 import BasicTable from "../../components/table";
+import { HiOutlineDocumentDownload } from "react-icons/hi";
 import { Key, useEffect, useState } from "react";
 import { apiGetData, apiPostData } from "../../services/api";
 import { EnumStudentBasicEducation } from "../../utils/enums";
@@ -34,6 +34,7 @@ import { jwtDecode } from "jwt-decode";
 import { CustomJwtPayload } from "../../components/customDrawer";
 import CustomModal from "../../components/modal";
 import { Turma } from "../../types";
+import { formatDateToDDMMYYYY_Split } from "../../utils/functions/formatDate";
 
 interface Student {
   id: number;
@@ -73,7 +74,6 @@ const PagamentosPage = () => {
 
   const [page, setPage] = useState(1);
   const [filterSituation, setFilterSituation] = useState<string | null>(null);
-  // const [filterDate, setFilterDate] = useState<string | null>(null);
 
   const fetchPagamentos = async (page: number) => {
     setLoading(true);
@@ -98,9 +98,6 @@ const PagamentosPage = () => {
         if (filterSituation) {
           params.append("situacoes", filterSituation);
         }
-        // if (filterDate) {
-        //   params.append("dataInicial", filterDate);
-        // }
 
         const response = await apiGetData("academic", `/pagamentos/documentos?documentos=${decoded?.documento}`);
         setPayments(response);
@@ -199,22 +196,22 @@ const PagamentosPage = () => {
             underline="always"
             sx={{ fontFamily: "Poppins" }}
           >
-            {row.contato.nome}
+            {row?.contato?.nome}
           </Link>
         </TableCell>
         <TableCell component="th" scope="row">
-          {row.contato.numeroDocumento}
+          {row?.contato?.numeroDocumento}
         </TableCell>
         <TableCell align="left" sx={{ fontFamily: "Poppins" }}>
-          R$ {row.valor}
+          R$ {row?.valor}
         </TableCell>
         <TableCell align="left" sx={{ fontFamily: "Poppins" }}>
-          {row.vencimento ? format(new Date(row.vencimento), "dd/MM/yyyy") : ""}
+          {row.vencimento ? formatDateToDDMMYYYY_Split(row?.vencimento) : ""}
         </TableCell>
         <TableCell align="left" sx={{ fontFamily: "Poppins" }}>
           <Chip
-            label={row.situacao === 2 ? "Pago" : row.situacao === 1 ? 'Em Aberto' : 'Cancelado'}
-            color={row.situacao === 2 ? "success" : row.situacao === 1 ? "warning" : "error"}
+            label={row?.situacao === 2 ? "Pago" : row?.situacao === 1 ? 'Em Aberto' : 'Cancelado'}
+            color={row?.situacao === 2 ? "success" : row?.situacao === 1 ? "warning" : "error"}
             variant="filled"
             icon={<MdOutlinePayments />}
             sx={{ padding: 1 }}
@@ -222,9 +219,9 @@ const PagamentosPage = () => {
         </TableCell>
         <TableCell align="left" sx={{ fontFamily: "Poppins" }}>
           <Stack direction={'row'} alignItems={'center'} gap={2}>
-            <Tooltip title="Visualizar Boleto">
+            <Tooltip title="Visualizar/Baixar Boleto">
               <IconButton size="small" onClick={() => window.open(row.linkBoleto, "_blank")}>
-                <FaEye color="#2d1c63" size={22} />
+                <HiOutlineDocumentDownload color="#2d1c63" size={22} />
               </IconButton>
             </Tooltip>
             {decoded?.tipo === 'ADMIN' && (
@@ -310,7 +307,7 @@ const PagamentosPage = () => {
             borderRadius: 4,
           }}
         >
-          {decoded?.tipo === 'ADMIN' && (
+          {(decoded?.tipo === 'ADMIN' || decoded?.tipo === 'FINANCEIRO') && (
             <Stack direction={'row'} alignItems={'center'} gap={2} p={2}>
               <FormControl sx={{ width: '20%' }}>
                 <InputLabel sx={{ p: 0.3, bgcolor: '#fff' }}>filtrar por Status</InputLabel>
@@ -342,9 +339,9 @@ const PagamentosPage = () => {
                 onChange={(e) => setEndDate(e.target.value)}
                 InputLabelProps={{ shrink: true }}
               />
-              <Button color="primary" size="small" startIcon={<BiSearch />} onClick={fetchWithFilters}>
-                Buscar
-              </Button>
+              <IconButton color="secondary" size="small" onClick={fetchWithFilters} sx={{bgcolor:"#ddd"}}>
+                <BiSearch />
+              </IconButton>
             </Stack>
           )}
           <Paper

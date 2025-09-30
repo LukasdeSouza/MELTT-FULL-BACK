@@ -20,7 +20,10 @@ const cardStyle = {
   bgcolor: "#ffff",
   borderRadius: 3,
   width: "40%",
+  maxHeight: "90vh", // Limita altura máxima do modal
   boxShadow: 12,
+  display: "flex",
+  flexDirection: "column",
 };
 
 type CustomModalProps = {
@@ -65,28 +68,49 @@ const CustomModal = ({
               <MdClose size={18} style={{ color: "#ddd" }} />
             </IconButton>
           }
-          sx={{ borderRadius: "12px 12px 0 0" }}
+          sx={{ 
+            borderRadius: "12px 12px 0 0",
+            flexShrink: 0 // Impede que o header encolha
+          }}
         />
 
-        <CardContent style={{ padding: 2 }}>
-          <Box padding={2}>
+        <CardContent 
+          sx={{ 
+            padding: 0,
+            flex: 1, // Ocupa o espaço restante
+            overflow: "hidden", // Esconde overflow do CardContent
+            display: "flex",
+            flexDirection: "column"
+          }}
+        >
+          <Box 
+            sx={{
+              padding: 2,
+              flex: 1,
+              overflow: "auto", // Permite scroll no conteúdo
+              maxHeight: "calc(90vh - 180px)", // Desconta header e actions
+            }}
+          >
             {children}
           </Box>
         </CardContent>
+        
         <CardActions
-          style={{
+          sx={{
             width: "100%",
             display: "flex",
             flexDirection: "row",
             justifyContent: "flex-end",
             padding: "16px",
+            flexShrink: 0, // Impede que as actions encolham
+            borderTop: "1px solid #f0f0f0", // Linha sutil para separar
           }}
         >
           <Button
             color="error"
             variant="outlined"
             onClick={handleCloseModal}
-            style={{ borderRadius: "8px", width: 80 }}
+            style={{ borderRadius: "8px", width: 80, marginRight: 8 }}
           >
             Cancelar
           </Button>

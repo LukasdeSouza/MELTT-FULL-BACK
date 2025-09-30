@@ -300,7 +300,7 @@ const TurmasEditPage = () => {
                       <TextField
                         key={field}
                         fullWidth
-                        name={field}
+                        name={`Regras de ${field}`}
                         label={field.split('_')[1].toUpperCase()}
                         multiline
                         rows={4}

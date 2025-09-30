@@ -6,6 +6,7 @@ class TurmaController {
     const limit = parseInt(req.query.limit) || 10; // Itens por página (default: 10)
     const offset = (page - 1) * limit; // Calcula o deslocamento
     const nome = req.query.nome || null; // Filtro opcional pelo nome
+    const noPagination = req.query.all === 'true' || req.query.noPagination === 'true'; // Desabilita paginação
 
     try {
       let query = "SELECT * FROM turmas";
@@ -13,6 +14,7 @@ class TurmaController {
       let queryParams = [];
       let countParams = [];
 
+      // Aplica filtro se fornecido
       if (nome) {
         query += " WHERE nome LIKE ?";
         countQuery += " WHERE nome LIKE ?";
@@ -20,21 +22,34 @@ class TurmaController {
         countParams.push(`%${nome}%`);
       }
 
-      query += " LIMIT ? OFFSET ?";
-      queryParams.push(limit, offset);
+      // Aplica paginação apenas se não for solicitado todos os registros
+      if (!noPagination) {
+        query += " LIMIT ? OFFSET ?";
+        queryParams.push(limit, offset);
+      }
 
       const [results] = await pool.query(query, queryParams);
-      const [countResult] = await pool.query(countQuery, countParams);
-      const total = countResult[0].total;
-      const totalPages = Math.ceil(total / limit);
 
-      res.status(200).json({
-        page,
-        totalPages,
-        totalItems: total,
-        itemsPerPage: limit,
-        data: results,
-      });
+      // Se não há paginação, retorna formato simplificado
+      if (noPagination) {
+        res.status(200).json({
+          totalItems: results.length,
+          data: results,
+        });
+      } else {
+        // Com paginação, mantém o formato original
+        const [countResult] = await pool.query(countQuery, countParams);
+        const total = countResult[0].total;
+        const totalPages = Math.ceil(total / limit);
+
+        res.status(200).json({
+          page,
+          totalPages,
+          totalItems: total,
+          itemsPerPage: limit,
+          data: results,
+        });
+      }
     } catch (err) {
       res.status(500).json({ error: err.message });
     }

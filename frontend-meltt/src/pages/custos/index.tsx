@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { NumericFormat } from 'react-number-format';
-import { Box, IconButton, Stack, Tooltip, Button, TextField, MenuItem, Card } from '@mui/material';
+import { Box, IconButton, Stack, Tooltip, Button, TextField, MenuItem, Card, Divider, Typography } from '@mui/material';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import CustomModal from '../../components/modal';
@@ -10,7 +10,13 @@ import { useNavigate } from 'react-router-dom';
 import CustomCard from '../../components/card';
 import { apiDeleteData, apiGetData, apiPostData } from '../../services/api';
 import formatDateToDDMMYYYY from '../../utils/functions/formatDate';
-import { FaTrash } from 'react-icons/fa6';
+import { Custos } from '../../types';
+import toast from 'react-hot-toast';
+import { BiCalculator } from 'react-icons/bi';
+import { IoTrashOutline } from 'react-icons/io5';
+import { getToken } from '../../utils/token';
+import { jwtDecode } from 'jwt-decode';
+import { CustomJwtPayload } from '../../components/customDrawer';
 
 const initialForm = {
   tipo_custo: '',
@@ -38,18 +44,25 @@ const situacoes = [
   { value: 'Vencido', label: 'Vencido' },
 ];
 
-const categorias = [
-  { value: 'aluguel', label: 'Aluguel' },
-  { value: 'energia', label: 'Energia' },
-  { value: 'alimentação', label: 'Alimentação' },
-  { value: 'agua', label: 'Água' },
-  { value: 'equipamentos_midia', label: 'Equipamentos de Mídia' },
-  { value: 'equipe', label: 'Equipe' },
-  { value: 'decoracao', label: 'Decoração' },
-  { value: 'buffet', label: 'Buffet' },
-];
+// const categorias = [
+//   { value: 'aluguel', label: 'Aluguel' },
+//   { value: 'energia', label: 'Energia' },
+//   { value: 'alimentação', label: 'Alimentação' },
+//   { value: 'agua', label: 'Água' },
+//   { value: 'equipamentos_midia', label: 'Equipamentos de Mídia' },
+//   { value: 'equipe', label: 'Equipe/Time Interno' },
+//   { value: 'decoracao', label: 'Decoração & Ambiente' },
+//   { value: 'buffet', label: 'Buffet/Garçons' },
+//   { value: 'som', label: 'Som/Banda/DJ' },
+//   { value: 'bebida', label: 'Bebidas' },
+//   { value: 'limpeza', label: 'Limpeza e Manutenção' },
+//   { value: 'lembrancinha', label: 'Lembrancinhas' },
+// ];
 
 const CustosPage = () => {
+  const token = getToken();
+  const decoded = token ? jwtDecode<CustomJwtPayload>(token) : null;
+
   const navigate = useNavigate();
   const [openModal, setOpenModal] = React.useState(false);
   const [form, setForm] = React.useState(initialForm);
@@ -60,7 +73,13 @@ const CustosPage = () => {
   const [custosPreEvento, setCustosPreEvento] = useState([]);
   const [custosTemporada, setCustosTemporada] = useState([]);
   const [custosFixo, setCustosFixo] = useState([]);
-  const [valorTotal, setValorTotal] = useState(0);
+  const [totais, setTotais] = useState({
+    geral: 'R$ 0,00',
+    fixo: 'R$ 0,00',
+    preEvento: 'R$ 0,00',
+    temporada: 'R$ 0,00'
+  });
+
 
   const handleOpenModal = () => setOpenModal(true);
   const handleCloseModal = () => {
@@ -81,12 +100,15 @@ const CustosPage = () => {
     const dataObj = {
       ...form,
       valor: valorCentavos,
-      valor_pago_parcial: valorPagoParcialCentavos,
+      valor_pago_parcial: valorPagoParcialCentavos ?? 0,
+      turma_id: form.turma_id === '' && null
     };
-    console.log(dataObj, "dataObj");
     try {
-      await apiPostData('academic', '/custos', dataObj);
-      await fetchAll();
+      const response = await apiPostData('academic', '/custos', dataObj);
+      if (response.affectedRows > 0) {
+        toast.success('Informação salva com sucesso')
+        await fetchAll();
+      }
     } catch (error) {
       console.error('Error creating custo:', error);
     } finally {
@@ -97,18 +119,20 @@ const CustosPage = () => {
   };
 
   const handleDelete = async (id: number) => {
-    await apiDeleteData('academic', `/custos/${id}`);
+    const response = await apiDeleteData('academic', `/custos/${id}`);
+    if (response.message.includes('sucesso')) {
+      toast.success('Registro excluído com sucesso')
+    }
     await fetchAll();
   };
 
   const fetchTurmas = async () => {
-    const response = await apiGetData('academic', '/turmas');
+    const response = await apiGetData('academic', '/turmas?all=true');
     setTurmas(response.data || []);
   };
 
   const fetchFornecedores = async () => {
-    const response = await apiGetData('academic', '/fornecedores');
-    console.log(response, "response fornecedores");
+    const response = await apiGetData('academic', '/fornecedores?all=true');
     setFornecedores(response.data || []);
   };
 
@@ -129,7 +153,13 @@ const CustosPage = () => {
 
   const fetchValorTotal = async () => {
     const response = await apiGetData('academic', '/custos/valor-total');
-    setValorTotal(response.total || 0);
+
+    setTotais({
+      geral: response.totalGeral || 'R$ 0,00',
+      fixo: response.totaisPorTipo.fixo.formatado || 'R$ 0,00',
+      preEvento: response.totaisPorTipo.preEvento.formatado || 'R$ 0,00',
+      temporada: response.totaisPorTipo.temporada.formatado || 'R$ 0,00'
+    });
   };
 
   const fetchAll = async () => {
@@ -148,22 +178,55 @@ const CustosPage = () => {
   }, []);
 
   return (
-    <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: '#F6F7FB', p: { xs: 2, md: 6 } }}>
-      <Stack direction="row" justifyContent="flex-end" >
-        <Button
-          variant="contained"
-          color="primary"
-          startIcon={<AddCircleOutlineIcon />}
-          onClick={handleOpenModal}
-          sx={{ mb: 2, borderRadius: 2 }}
+    <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: '#F6F7FB', p: { xs: 2, md: 6 }, pb: '140px' }}>
+      <Stack width={'100%'} direction={'row'} alignItems={'center'} justifyContent={'space-between'}>
+        <Typography
+          color='secondary'
+          variant='h5'
+          fontFamily={'Poppins'}
+          fontWeight={600}
         >
-          Criar novo custo
-        </Button>
+          Centro de Custos
+        </Typography>
+        <Stack direction={'row'} alignItems={'center'} gap={2}>
+          <Button
+            variant="contained"
+            color="secondary"
+            onClick={() => navigate('/fornecedores')}
+            sx={{ mb: 2, borderRadius: 2 }}
+          >
+            Cadastrar Fornecedor
+          </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={<AddCircleOutlineIcon />}
+            onClick={handleOpenModal}
+            sx={{ mb: 2, borderRadius: 2 }}
+          >
+            Novo custo
+          </Button>
+        </Stack>
       </Stack>
       <Stack direction="row" spacing={4} sx={{ height: 'calc(65vh - 48px)' }}>
         <CustomCard
           title="Pré-Eventos"
-          sxProps={{ flex: 1, height: '100%' }}
+          sxProps={{
+            flex: 1,
+            maxHeight: '500px',
+            overflowY: 'auto',
+            '&::-webkit-scrollbar': {
+              width: '8px',
+            },
+            '&::-webkit-scrollbar-track': {
+              background: '#f1f1f1',
+              borderRadius: '4px',
+            },
+            '&::-webkit-scrollbar-thumb': {
+              background: '#c1c1c1',
+              borderRadius: '4px',
+            }
+          }}
           headerActionContent={
             <Tooltip title="Ver detalhes de custos de pré-eventos">
               <IconButton color="primary" onClick={() => navigate('/custos/pre-eventos')}>
@@ -171,78 +234,180 @@ const CustosPage = () => {
               </IconButton>
             </Tooltip>
           }
-        >{custosPreEvento.map((custo) =>
-          <Card sx={{ m: 1, p: 1, borderRadius: "12px", bgcolor: "", display: "flex", justifyContent: "space-between", alignItems: "center" }} key={custo.id_custo}>
+        >{custosPreEvento.map((custo: Custos) =>
+          <Card
+            key={custo.id_custo}
+            sx={{
+              m: 1,
+              p: 2,
+              boxShadow: 1,
+              borderRadius: "8px",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              minHeight: "60px",
+              flexShrink: 0
+            }}>
             <div className='flex flex-col'>
               <div className='flex flex-col'>
-                <p className='text-sm text-gray-500'>Evento e data</p>
-                <p className='font-medium'>{custo.evento} - {formatDateToDDMMYYYY(custo.vencimento)}</p>
-                <p className='text-sm text-gray-500'>Valor</p>
-                <p>{custo.valor ? `R$ ${parseFloat(custo.valor / 100).toFixed(2)}` : 'R$ 0,00'}</p>
+                <Stack direction={'column'}>
+                  <small className='text-sm text-secondary'>Evento e Data</small>
+                  <p className='font-medium'>{custo.evento} - {formatDateToDDMMYYYY(custo.vencimento)}</p>
+                </Stack>
+                <Stack alignItems={'center'} direction={'row'} gap={1}>
+                  <small className='text-sm text-gray-500'>Valor:</small>
+                  <p>{custo.valor ? `R$ ${(custo.valor / 100).toFixed(2)}` : 'R$ 0,00'}</p>
+                </Stack>
               </div>
             </div>
-            <FaTrash style={{ cursor: 'pointer' }} onClick={(e) => handleDelete(custo.id_custo)} />
+            <IoTrashOutline className='text-red-700' onClick={() => handleDelete(custo.id_custo)} />
           </Card>
         )}
         </CustomCard>
         <CustomCard
           title="Temporada"
-          sxProps={{ flex: 1, height: '100%' }}
+          sxProps={{
+            flex: 1,
+            maxHeight: '500px',
+            overflowY: 'auto',
+            '&::-webkit-scrollbar': {
+              width: '8px',
+            },
+            '&::-webkit-scrollbar-track': {
+              background: '#f1f1f1',
+              borderRadius: '4px',
+            },
+            '&::-webkit-scrollbar-thumb': {
+              background: '#c1c1c1',
+              borderRadius: '4px',
+            }
+          }}
           headerActionContent={
-            <Tooltip title="Ver detalhes de custos de temporada">
-              <IconButton color="primary" onClick={() => navigate('/custos/temporada')}>
-                <InfoOutlinedIcon />
-              </IconButton>
-            </Tooltip>
+            <IconButton color="primary" onClick={() => navigate('/custos/temporada')}>
+              <InfoOutlinedIcon />
+            </IconButton>
           }
-        >{custosTemporada.map((custo) =>
-          <Card sx={{ m: 1, p: 1, borderRadius: "12px", bgcolor: "", display: "flex", justifyContent: "space-between", alignItems: "center" }} key={custo.id_custo}>
+        >{custosTemporada.map((custo: Custos) =>
+          <Card sx={{
+            m: 1,
+            p: 2,
+            boxShadow: 1,
+            borderRadius: "8px",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            minHeight: "60px",
+            flexShrink: 0
+          }} key={custo.id_custo}>
             <div className='flex flex-col'>
               <div className='flex flex-col'>
-                <p className='text-sm text-gray-500'>Evento e data</p>
+                <small className='text-sm text-secondary'>Evento e data</small>
                 <p className='font-medium'>{custo.evento} - {formatDateToDDMMYYYY(custo.vencimento)}</p>
-                <p className='text-sm text-gray-500'>Valor</p>
-                <p>{custo.valor ? `R$ ${parseFloat(custo.valor / 100).toFixed(2)}` : 'R$ 0,00'}</p>
+                <Stack direction={'row'} alignItems={'center'} gap={1}>
+                  <small className='text-sm text-gray-500'>Valor</small>
+                  <p>{custo.valor ? `R$ ${(custo.valor / 100).toFixed(2)}` : 'R$ 0,00'}</p>
+                </Stack>
               </div>
             </div>
-            <FaTrash style={{ cursor: 'pointer' }} onClick={(e) => handleDelete(custo.id_custo)} />
+            <IoTrashOutline className='text-red-700' style={{ cursor: 'pointer' }} onClick={() => handleDelete(custo.id_custo)} />
           </Card>
         )}
         </CustomCard>
-        <CustomCard
-          title="Fixos"
-          sxProps={{ flex: 1, height: '100%' }}
-          headerActionContent={
-            <Tooltip title="Ver detalhes de custos fixos">
-              <IconButton color="primary" onClick={() => navigate('/custos/fixos')}>
-                <InfoOutlinedIcon />
-              </IconButton>
-            </Tooltip>
-          }
-        >{custosFixo.map((custo) =>
-          <Card sx={{ m: 1, p: 1, borderRadius: "12px", bgcolor: "", display: "flex", justifyContent: "space-between", alignItems: "center" }} key={custo.id_custo}>
-            <div className='flex flex-col'>
+        {decoded?.tipo !== 'GESTAO_PRODUCAO' && (
+          <CustomCard
+            title="Fixos"
+            sxProps={{
+              flex: 1,
+              maxHeight: '500px',
+              overflowY: 'auto',
+              '&::-webkit-scrollbar': {
+                width: '8px',
+              },
+              '&::-webkit-scrollbar-track': {
+                background: '#f1f1f1',
+                borderRadius: '4px',
+              },
+              '&::-webkit-scrollbar-thumb': {
+                background: '#c1c1c1',
+                borderRadius: '4px',
+              }
+            }}
+            headerActionContent={
+              <Tooltip title="Ver detalhes de custos fixos">
+                <IconButton color="primary" onClick={() => navigate('/custos/fixos')}>
+                  <InfoOutlinedIcon />
+                </IconButton>
+              </Tooltip>
+            }
+          >{custosFixo.map((custo: Custos) =>
+            <Card sx={{
+              m: 1,
+              p: 2,
+              boxShadow: 1,
+              borderRadius: "8px",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              minHeight: "60px",
+              flexShrink: 0
+            }} key={custo.id_custo}>
               <div className='flex flex-col'>
-                <p className='text-sm text-gray-500'>Evento e data</p>
-                <p className='font-medium'>{custo.evento} - {formatDateToDDMMYYYY(custo.vencimento)}</p>
-                <p className='text-sm text-gray-500'>Valor</p>
-                <p>{custo.valor ? `R$ ${parseFloat(custo.valor / 100).toFixed(2)}` : 'R$ 0,00'}</p>
+                <div className='flex flex-col'>
+                  <small className='text-sm text-secondary'>Evento e data</small>
+                  <p className='font-medium'>{custo.evento} - {formatDateToDDMMYYYY(custo.vencimento)}</p>
+                  <Stack direction={'row'} alignItems={'center'} gap={1}>
+                    <small className='text-sm text-gray-500'>Valor</small>
+                    <p>{custo.valor ? `R$ ${(custo.valor / 100).toFixed(2)}` : 'R$ 0,00'}</p>
+                  </Stack>
+                </div>
               </div>
-            </div>
-            <FaTrash style={{ cursor: 'pointer' }} onClick={(e) => handleDelete(custo.id_custo)} />
-          </Card>
+              <IoTrashOutline className='text-red-700' style={{ cursor: 'pointer' }} onClick={() => handleDelete(custo.id_custo)} />
+            </Card>
+          )}
+          </CustomCard>
         )}
-        </CustomCard>
       </Stack>
-      <Stack direction="row" display="flex" justifyContent="flex-end" sx={{ mt: 2 }}>
-        <Box sx={{ maxWidth: 400, width: '100%' }}>
-          <Card sx={{ p: 2, backgroundColor: "#fff", borderRadius: "12px", boxShadow: "none"}}>{`Totalizadores: ${valorTotal}`}</Card>
-        </Box>
-      </Stack>
-
-      {/* Modal de criação de custo */}
+      {/* Totalizador fixo na parte inferior */}
+      <Box
+        sx={{
+          position: 'fixed',
+          bottom: 0,
+          right: 0,
+          zIndex: 1000,
+          p: 2,
+          maxWidth: 400,
+          width: '100%',
+        }}
+      >
+        <Card
+          sx={{
+            p: 2,
+            backgroundColor: "#fff",
+            borderRadius: "12px 12px 0 0",
+            boxShadow: "0 -4px 20px rgba(0,0,0,0.1)",
+            border: "1px solid #e0e0e0"
+          }}>
+          <Stack direction={'row'} gap={1} alignItems={'center'}>
+            <BiCalculator className='text-secondary' />
+            <Typography variant='body1' color='secondary' fontWeight={600}>
+              Totalizador
+            </Typography>
+          </Stack>
+          <Divider />
+          <Stack direction={'column'} spacing={0.5} p={0.5}>
+            <Stack direction={'row'} justifyContent={'space-between'}>
+              <Typography variant='body2' fontFamily={'Poppins'}>Pré-evento: <b>{totais.preEvento}</b></Typography>
+              <Typography variant='body2' fontFamily={'Poppins'}>Temporada: <b>{totais.temporada}</b></Typography>
+            </Stack>
+            <Stack direction={'row'} justifyContent={'space-between'}>
+              <Typography variant='body2' fontFamily={'Poppins'}>Fixo: <b>{totais.fixo}</b></Typography>
+              <Typography variant='body2' fontFamily={'Poppins'}>Geral: <b>{totais.geral}</b></Typography>
+            </Stack>
+          </Stack>
+        </Card>
+      </Box>
       <CustomModal
-        title="Criar novo custo"
+        title="Novo custo"
         openModal={openModal}
         handleCloseModal={handleCloseModal}
         loadingSave={loading}
@@ -262,122 +427,204 @@ const CustosPage = () => {
               <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
             ))}
           </TextField>
-          <TextField
-            select
-            label="Turma"
-            name="turma_id"
-            value={form.turma_id}
-            onChange={handleChange}
-            size='small'
-            fullWidth
-          >
-            {turmas.map((turma: any) => (
-              <MenuItem key={turma.id} value={turma.id}>{turma.nome}</MenuItem>
-            ))}
-          </TextField>
-          <TextField
-            label="Evento"
-            name="evento"
-            value={form.evento}
-            onChange={handleChange}
-            size='small'
-            fullWidth
-          />
-          <TextField
-            select
-            label="Fornecedor"
-            name="fornecedor_id"
-            value={form.fornecedor_id}
-            onChange={handleChange}
-            size='small'
-            fullWidth
-          >
-            {fornecedores.map((fornecedor: any) => (
-              <MenuItem key={fornecedor.id} value={fornecedor.id}>{fornecedor.nome}</MenuItem>
-            ))}
-          </TextField>
-          <TextField
-            label="Beneficiário"
-            name="beneficiario"
-            value={form.beneficiario}
-            onChange={handleChange}
-            size='small'
-            fullWidth
-          />
-          <TextField
-            select
-            label="Categoria"
-            name="categoria"
-            value={form.categoria}
-            onChange={handleChange}
-            size='small'
-            fullWidth
-          >
-            {categorias.map((option) => (
-              <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
-            ))}
-          </TextField>
-          <TextField
-            select
-            label="Situação"
-            name="situacao"
-            value={form.situacao}
-            onChange={handleChange}
-            size='small'
-            fullWidth
-          >
-            {situacoes.map((option) => (
-              <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
-            ))}
-          </TextField>
-          <NumericFormat
-            value={form.valor}
-            allowLeadingZeros
-            thousandSeparator="."
-            allowNegative={false}
-            decimalSeparator=","
-            decimalScale={2}
-            fixedDecimalScale
-            prefix="R$"
-            customInput={TextField}
-            label="Valor"
-            name="valor"
-            onValueChange={(values) => {
-              const { formattedValue, value } = values;
-              setForm({ ...form, valor: formattedValue });
+          <Divider>informações sobre o custo</Divider>
+          <Stack
+            spacing={2}
+            direction={'column'}
+            sx={{
+              maxHeight: 300,
+              overflow: 'auto',
+              '&::-webkit-scrollbar': {
+                width: '8px',
+              },
+              '&::-webkit-scrollbar-track': {
+                background: '#f1f1f1',
+                borderRadius: '4px',
+              },
+              '&::-webkit-scrollbar-thumb': {
+                background: '#c1c1c1',
+                borderRadius: '4px',
+              },
+              '&::-webkit-scrollbar-thumb:hover': {
+                background: '#a8a8a8',
+              },
             }}
-            size='small'
-            fullWidth
-          />
-          <NumericFormat
-            value={form.valor_pago_parcial}
-            allowLeadingZeros
-            thousandSeparator="."
-            allowNegative={false}
-            decimalSeparator=","
-            decimalScale={2}
-            fixedDecimalScale
-            prefix="R$"
-            customInput={TextField}
-            label="Valor Pago Parcial"
-            name="valor_pago_parcial"
-            onValueChange={(values) => {
-              const { formattedValue, value } = values;
-              setForm({ ...form, valor_pago_parcial: formattedValue });
+          >
+            {form.tipo_custo !== 'Fixo' && (
+              <TextField
+                select
+                label="Turma"
+                name="turma_id"
+                value={form.turma_id}
+                onChange={handleChange}
+                size='small'
+                fullWidth
+                SelectProps={{
+                  MenuProps: {
+                    PaperProps: {
+                      style: {
+                        maxHeight: 200
+                      },
+                    },
+                  },
+                }}
+              >
+                {turmas.map((turma: any) => (
+                  <MenuItem key={turma.id} value={turma.id}>{turma.nome}</MenuItem>
+                ))}
+              </TextField>
+            )}
+            <TextField
+              label="Nome do Evento/Custo"
+              name="evento"
+              placeholder='nome do evento/custo'
+              value={form.evento}
+              onChange={handleChange}
+              size='small'
+              fullWidth
+            />
+            <TextField
+              select
+              label="Fornecedor"
+              name="fornecedor_id"
+              placeholder='selecione um fornecedor'
+              value={form.fornecedor_id}
+              onChange={handleChange}
+              size='small'
+              fullWidth
+              SelectProps={{
+                MenuProps: {
+                  PaperProps: {
+                    style: {
+                      maxHeight: 200
+                    },
+                  },
+                },
+              }}
+            >
+              {fornecedores.map((fornecedor: any) => (
+                <MenuItem key={fornecedor.id} value={fornecedor.id}>{fornecedor.nome}</MenuItem>
+              ))}
+            </TextField>
+            <TextField
+              label="Beneficiário"
+              name="beneficiario"
+              placeholder='nome do beneficiário do custo'
+              value={form.beneficiario}
+              onChange={handleChange}
+              size='small'
+              fullWidth
+            />
+            <TextField
+              // select
+              label="Categoria"
+              name="categoria"
+              value={form.categoria}
+              onChange={handleChange}
+              size='small'
+              fullWidth
+              // SelectProps={{
+              //   MenuProps: {
+              //     PaperProps: {
+              //       style: {
+              //         maxHeight: 200
+              //       },
+              //     },
+              //   },
+              // }}
+            />
+              {/* {categorias.map((option) => (
+                <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
+              ))} */}
+            {/* </TextField> */}
+          </Stack>
+          <Divider>informações sobre pagamento</Divider>
+          <Stack
+            spacing={2}
+            direction={'column'}
+            sx={{
+              maxHeight: 300,
+              overflow: 'auto',
+              '&::-webkit-scrollbar': {
+                width: '8px',
+              },
+              '&::-webkit-scrollbar-track': {
+                background: '#f1f1f1',
+                borderRadius: '4px',
+              },
+              '&::-webkit-scrollbar-thumb': {
+                background: '#c1c1c1',
+                borderRadius: '4px',
+              },
+              '&::-webkit-scrollbar-thumb:hover': {
+                background: '#a8a8a8',
+              },
             }}
-            size='small'
-            fullWidth
-          />
-          <TextField
-            label="Vencimento"
-            name="vencimento"
-            value={form.vencimento}
-            onChange={handleChange}
-            type="date"
-            InputLabelProps={{ shrink: true }}
-            size='small'
-            fullWidth
-          />
+          >
+            <TextField
+              select
+              label="Situação"
+              name="situacao"
+              value={form.situacao}
+              onChange={handleChange}
+              size='small'
+              fullWidth
+            >
+              {situacoes.map((option) => (
+                <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
+              ))}
+            </TextField>
+            <NumericFormat
+              value={form.valor}
+              allowLeadingZeros
+              thousandSeparator="."
+              allowNegative={false}
+              decimalSeparator=","
+              decimalScale={2}
+              fixedDecimalScale
+              prefix="R$"
+              customInput={TextField}
+              label="Valor"
+              name="valor"
+              onValueChange={(values: any) => {
+                const { formattedValue } = values;
+                setForm({ ...form, valor: formattedValue });
+              }}
+              size='small'
+              fullWidth
+            />
+            {form.situacao.includes('Parcialmente') && (
+              <NumericFormat
+                value={form.valor_pago_parcial}
+                allowLeadingZeros
+                thousandSeparator="."
+                allowNegative={false}
+                decimalSeparator=","
+                decimalScale={2}
+                fixedDecimalScale
+                prefix="R$"
+                customInput={TextField}
+                label="Valor Pago Parcial"
+                name="valor_pago_parcial"
+                onValueChange={(values: any) => {
+                  const { formattedValue } = values;
+                  setForm({ ...form, valor_pago_parcial: formattedValue });
+                }}
+                size='small'
+                fullWidth
+              />
+            )}
+            <TextField
+              label="Vencimento"
+              name="vencimento"
+              value={form.vencimento}
+              onChange={handleChange}
+              type="date"
+              InputLabelProps={{ shrink: true }}
+              size='small'
+              fullWidth
+            />
+          </Stack>
           {/* <TextField
             select
             label="Situação"

@@ -34,6 +34,7 @@ const CustomCard = ({
               sx={{
                 fontSize: 18,
                 fontWeight: 600,
+                fontFamily: 'Poppins',
                 color: "#342394",
               }}
             >

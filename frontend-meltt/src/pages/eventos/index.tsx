@@ -102,7 +102,16 @@ const EventosPage = () => {
       >
         <TableCell component="th" scope="row">
           <Stack direction="row" alignItems="center" gap={2}>
-            <Avatar src={"https://images.pexels.com/photos/1587927/pexels-photo-1587927.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1"} alt="foto evento" sizes="32px" />
+            <Avatar
+              src={row.nome.includes('Gala') 
+                ? 'https://media.istockphoto.com/id/943685424/pt/foto/decor-for-a-large-party-or-gala-dinner.jpg?s=612x612&w=0&k=20&c=AgmRC-VxQ8IgPjHmqvoRLUq7Bb6rGusQlofv0Tnj0Ko=' 
+                : row.nome.includes('Festa') 
+                ? 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSvW8hlgZZB4efP_3IAIsyRGoBboIEDfnedxQ&s' 
+                : "https://images.pexels.com/photos/1587927/pexels-photo-1587927.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1"}
+              alt="foto evento"
+              sizes="32px"
+              sx={{ borderRadius: 2 }}
+            />
             <Link
               color="primary"
               underline="always"
@@ -187,14 +196,24 @@ const EventosPage = () => {
             p: 1,
             flexGrow: 1,
             width: "100%",
-            height: "calc(100vh - 170px)",
+            height: {
+              xs: "400px", // Altura fixa no mobile
+              sm: "500px", // Altura fixa no tablet
+              md: "calc(100vh - 200px)", // Dinâmica no desktop
+            },
+            minHeight: "300px",
             borderRadius: 4,
           }}
         >
           <Paper
             elevation={0}
             sx={{
-              height: "100%",
+              height: {
+                xs: "400px", // Altura fixa no mobile
+                sm: "500px", // Altura fixa no tablet
+                md: "calc(100vh - 200px)", // Dinâmica no desktop
+              },
+              minHeight: "300px",
               overflow: "auto",
               "&::-webkit-scrollbar": {
                 width: "8px",

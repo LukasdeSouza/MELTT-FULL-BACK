@@ -227,7 +227,7 @@ const TurmasPage = () => {
   const searchWithFilter = async () => {
     setLoading(true);
     if (decoded?.tipo === 'ALUNO') {
-     toast.error('filtro não aplicável')
+      toast.error('filtro não aplicável')
     }
     else {
       try {
@@ -255,19 +255,32 @@ const TurmasPage = () => {
         justifyContent={"space-between"}
         my={2}
       >
-        <h2 className="text-2xl text-default font-extrabold"></h2>
-        <Button
-          color="secondary"
-          variant="contained"
-          endIcon={<IoMdAdd />}
-          onClick={() => {
-            dispatchTurma({ type: "SET_TURMA_SELECIONADA", payload: null });
-            navigate("/turmas/new");
-          }}
-          sx={{ borderRadius: 2 }}
-        >
-          Adicionar
-        </Button>
+        <Stack direction={'row'} alignItems={'center'} justifyContent={'space-between'} width={'100%'} mb={1}>
+          <Stack direction={'row'} alignItems={'center'} gap={1}>
+            <TextField
+              size="small"
+              placeholder="filtrar por nome ou identificador da turma"
+              value={filterValueName}
+              onChange={(e) => setFilterValueName(e.target.value)}
+              sx={{ width: '350px' }}
+            />
+            <IconButton color="secondary" onClick={searchWithFilter} sx={{ bgcolor: '#ddd', borderRadius: 2 }}>
+              <BiSearch size={22} className="text-sm" />
+            </IconButton>
+          </Stack>
+          <Button
+            color="secondary"
+            variant="contained"
+            endIcon={<IoMdAdd />}
+            onClick={() => {
+              dispatchTurma({ type: "SET_TURMA_SELECIONADA", payload: null });
+              navigate("/turmas/new");
+            }}
+            sx={{ borderRadius: 2 }}
+          >
+            Adicionar
+          </Button>
+        </Stack>
       </Stack>
       <Slide direction="right" in={onLoad} mountOnEnter>
         <Paper
@@ -276,14 +289,24 @@ const TurmasPage = () => {
             p: 1,
             flexGrow: 1,
             width: "100%",
-            height: "calc(100vh - 200px)",
+            height: {
+              xs: "400px", // Altura fixa no mobile
+              sm: "500px", // Altura fixa no tablet
+              md: "calc(100vh - 200px)", // Dinâmica no desktop
+            },
+            minHeight: "300px", // Altura mínima garantida
             borderRadius: 4,
           }}
         >
           <Paper
             elevation={0}
             sx={{
-              height: "100%",
+              height: {
+                xs: "400px", // Altura fixa no mobile
+                sm: "500px", // Altura fixa no tablet
+                md: "calc(100vh - 200px)", // Dinâmica no desktop
+              },
+              minHeight: "300px", // Altura mínima garantida
               overflow: "auto",
               "&::-webkit-scrollbar": {
                 width: "8px",
@@ -298,18 +321,6 @@ const TurmasPage = () => {
               },
             }}
           >
-            <Stack direction={'row'} alignItems={'center'} gap={2} width={'100%'} mb={1}>
-              <TextField
-                size="small"
-                placeholder="filtro por nome ou id. da turma"
-                value={filterValueName}
-                onChange={(e) => setFilterValueName(e.target.value)}
-                sx={{width: '300px'}}
-              />
-              <IconButton size="large" onClick={searchWithFilter}>
-                <BiSearch size={22} className="text-sm"/>
-              </IconButton>
-            </Stack>
             {loading ? (
               <LoadingTable />
             ) : turmas?.length > 0 ? (

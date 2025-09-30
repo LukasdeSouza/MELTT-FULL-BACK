@@ -90,3 +90,19 @@ export interface Contrato {
   fornecedores: Fornecedor[];
   status: "pendente" | "em_andamento" | "concluido";
 }
+
+export interface Custos {
+  id_custo: number;
+  criado_em: Date | string;
+  evento: string;
+  tipo_custo?: string;
+  turma_id?: number;
+  fornecedor_id?: number;
+  vencimento: Date | string;
+  valor: number | null | undefined;
+  situacao: string
+  categoria: string;
+  valor_pago_parcial: number | null | undefined;
+  valor_restante: string;
+  beneficiario: string;
+}

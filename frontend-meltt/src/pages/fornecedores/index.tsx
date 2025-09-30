@@ -2,11 +2,13 @@ import {
   Button,
   CircularProgress,
   IconButton,
+  InputAdornment,
   Paper,
   Slide,
   Stack,
   TableCell,
   TableRow,
+  TextField,
 } from "@mui/material";
 import BasicTable from "../../components/table";
 import { useEffect, useState } from "react";
@@ -18,7 +20,7 @@ import NoTableData from "../../components/noData";
 import LoadingTable from "../../components/loadingTable";
 import { MdModeEdit } from "react-icons/md";
 import { fornecedoresColumns } from "./table/columns";
-import { FaTrashAlt } from "react-icons/fa";
+import { FaSearch, FaTimes, FaTrashAlt } from "react-icons/fa";
 import { useFornecedorContext } from "../../providers/fornecedorContext";
 
 interface Fornecedor {
@@ -40,18 +42,46 @@ const FornecedoresPage = () => {
 
   const [fornecedores, setFornecedores] = useState([]);
   const [onLoad, setOnLoad] = useState(false);
+  const [searchTerm, setSearchTerm] = useState<string>("");
 
-  const fetchFornecedores = async (page: number) => {
+  const fetchFornecedores = async (page: number, nome?: string) => {
     setLoading(true);
     try {
-      const response = await apiGetData("academic", `${page > 1 ? `/fornecedores?page=${page}` : '/fornecedores'}`);
-      setTotalPages(response.totalPages)
-      setPages(response.page)
+      let url = `/fornecedores`;
+      const params = new URLSearchParams();
+
+      if (page > 1) {
+        params.append('page', page.toString());
+      }
+
+      if (nome && nome.trim()) {
+        params.append('nome', nome.trim());
+      }
+
+      if (params.toString()) {
+        url += `?${params.toString()}`;
+      }
+
+      const response = await apiGetData("academic", url);
+      setTotalPages(response.totalPages);
+      setPages(response.page);
       setFornecedores(response.data);
     } catch (error) {
       toast.error("Erro ao buscar fornecedores");
     }
     setLoading(false);
+  };
+
+  const handleSearch = (searchValue: string) => {
+    setSearchTerm(searchValue);
+    setPages(1); // Reset para primeira página ao buscar
+    fetchFornecedores(1, searchValue);
+  };
+
+  const clearSearch = () => {
+    setSearchTerm("");
+    setPages(1);
+    fetchFornecedores(1);
   };
 
   const onClickRow = (row: any) => {
@@ -114,13 +144,43 @@ const FornecedoresPage = () => {
 
   return (
     <Stack width={"calc(100% - 64px)"}>
-      <Stack
-        direction={"row"}
-        alignItems={"center"}
-        justifyContent={"space-between"}
-        my={2}
-      >
-        <h2 className="text-2xl text-default font-extrabold"></h2>
+      <Stack my={2} width={'100%'} direction="row" alignItems={"center"} justifyContent={"space-between"}>
+        <TextField
+          size="small"
+          placeholder="Buscar fornecedor por nome..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          onKeyPress={(e) => {
+            if (e.key === 'Enter') {
+              handleSearch(searchTerm);
+            }
+          }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <FaSearch color="#666" />
+              </InputAdornment>
+            ),
+            endAdornment: searchTerm && (
+              <InputAdornment position="end">
+                <IconButton
+                  size="small"
+                  onClick={clearSearch}
+                  sx={{ p: 0.5 }}
+                >
+                  <FaTimes color="#666" size={14} />
+                </IconButton>
+              </InputAdornment>
+            ),
+          }}
+          sx={{
+            flex: 1,
+            maxWidth: 400,
+            '& .MuiOutlinedInput-root': {
+              borderRadius: 2,
+            }
+          }}
+        />
         <Button
           color="secondary"
           variant="contained"
@@ -144,14 +204,24 @@ const FornecedoresPage = () => {
             p: 1,
             flexGrow: 1,
             width: "100%",
-            height: "calc(100vh - 170px)",
+            height: {
+              xs: "400px", // Altura fixa no mobile
+              sm: "500px", // Altura fixa no tablet
+              md: "calc(100vh - 200px)", // Dinâmica no desktop
+            },
+            minHeight: "300px",
             borderRadius: 4,
           }}
         >
           <Paper
             elevation={0}
             sx={{
-              height: "100%",
+              height: {
+                xs: "400px", // Altura fixa no mobile
+                sm: "500px", // Altura fixa no tablet
+                md: "calc(100vh - 200px)", // Dinâmica no desktop
+              },
+              minHeight: "300px",
               overflow: "auto",
               "&::-webkit-scrollbar": {
                 width: "8px",

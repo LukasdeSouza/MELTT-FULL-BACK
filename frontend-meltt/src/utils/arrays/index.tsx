@@ -1,12 +1,13 @@
 import { LuGraduationCap, LuNetwork, LuPartyPopper } from "react-icons/lu";
-import { FaGraduationCap, FaMoneyBill1Wave, FaRegHandshake } from "react-icons/fa6";
+import { FaGraduationCap, FaMoneyBill1Wave } from "react-icons/fa6";
 import { FaCircle } from "react-icons/fa";
 import { IoBarChartOutline, IoContract } from "react-icons/io5";
-import { MdBookmarkAdded, MdMoneyOff, MdOutlinePayments, MdOutlineWorkOutline, MdPayments, MdPreview } from "react-icons/md";
+import { MdBookmarkAdded, MdOutlinePayments, MdOutlineWorkOutline } from "react-icons/md";
 import { LiaSchoolSolid } from "react-icons/lia";
 import { RiContactsBook2Line } from "react-icons/ri";
 import { PiUsersFourLight } from "react-icons/pi";
 import { BsTrophy } from "react-icons/bs";
+import { TbPigMoney } from "react-icons/tb";
 
 export const menuListAdmin = [
   {
@@ -53,44 +54,44 @@ export const menuListAdmin = [
     icon: <LiaSchoolSolid size={22} />,
   },
   {
-    title: "Fornecedores",
-    route: "/fornecedores",
-    icon: <FaRegHandshake size={22} />,
-  },
-  {
-    title: "Eventos (Uniticket)",
+    title: "Eventos",
     route: "/eventos",
     icon: <BsTrophy size={20} />,
   },
   {
-    title: "Contatos (Bling)",
+    title: "Contatos Formandos",
     route: "/contatos",
     icon: <RiContactsBook2Line size={22} />,
   },
   {
-    title: "Pagamentos (Bling)",
+    title: "Pagamentos Formandos",
     route: "/pagamentos",
     icon: <MdOutlinePayments size={22} />,
   },
+  // {
+  //   title: "Fornecedores",
+  //   route: "/fornecedores",
+  //   icon: <FaRegHandshake size={22} />,
+  // },
   {
-    title: "Custos",
+    title: "Centro de Custos",
     route: "/custos",
-    icon: <MdMoneyOff size={22} />,
-        subRoutes: [
+    icon: <TbPigMoney size={22} />,
+    subRoutes: [
       {
         title: "Pré-Eventos",
         route: '/custos/pre-eventos',
-        icon: <MdPreview size={14} color={'white'} />
+        icon: <TbPigMoney size={14} color={'white'} />
       },
       {
         title: "Temporada",
         route: '/custos/temporada',
-        icon: <MdPreview size={14} color={'white'} />
+        icon: <TbPigMoney size={14} color={'white'} />
       },
       {
         title: "Fixos",
         route: "/custos/fixos",
-        icon: <MdPreview size={14} color={'white'} />,
+        icon: <TbPigMoney size={14} color={'white'} />,
       }
     ]
   },
@@ -102,7 +103,7 @@ export const menuListAdmin = [
       { title: "Pré-Contratos", route: "/dashboard/pre-contrato", icon: <FaCircle size={8} className="text-white" /> },
       { title: "Propostas", route: "/dashboard/propostas", icon: <FaCircle size={8} className="text-white" /> },
       { title: "Adesões", route: "/dashboard/adesoes", icon: <FaCircle size={8} className="text-white" /> },
-      { title: "Fornecedores", route: "/dashboard/fornecedor", icon: <FaCircle size={8} className="text-white" /> },
+      {title: "Custos por Turma", route: "/dashboard/centro-custos", icon: <FaCircle size={8} className="text-white"/>}
     ],
   },
   {
@@ -195,15 +196,37 @@ export const menuListGestaoProducao = [
     route: "/turmas",
     icon: <LiaSchoolSolid size={22} />,
   },
-  {
-    title: "Fornecedores",
-    route: "/fornecedores",
-    icon: <FaRegHandshake size={22} />,
-  },
+  // {
+  //   title: "Fornecedores",
+  //   route: "/fornecedores",
+  //   icon: <FaRegHandshake size={22} />,
+  // },
   {
     title: "Eventos",
     route: "/eventos",
     icon: <LuPartyPopper size={22} />,
+  },
+  {
+    title: "Centro de Custos",
+    route: "/custos",
+    icon: <TbPigMoney size={22} />,
+    subRoutes: [
+      {
+        title: "Pré-Eventos",
+        route: '/custos/pre-eventos',
+        icon: <TbPigMoney size={14} color={'white'} />
+      },
+      {
+        title: "Temporada",
+        route: '/custos/temporada',
+        icon: <TbPigMoney size={14} color={'white'} />
+      },
+      // {
+      //   title: "Fixos",
+      //   route: "/custos/fixos",
+      //   icon: <TbPigMoney size={14} color={'white'} />,
+      // }
+    ]
   },
 ];
 
@@ -267,14 +290,41 @@ export const menuListFinanceiro = [
     icon: <LuPartyPopper size={22} />,
   },
   {
-    title: "Contatos (Bling)",
+    title: "Contatos",
     route: "/contatos",
     icon: <RiContactsBook2Line size={22} />,
   },
   {
-    title: "Pagamentos (Bling)",
+    title: "Pagamentos Formandos",
     route: "/pagamentos",
     icon: <MdOutlinePayments size={22} />,
+  },
+  // {
+  //   title: "Fornecedores",
+  //   route: "/fornecedores",
+  //   icon: <FaRegHandshake size={22} />,
+  // },
+  {
+    title: "Centro de Custos",
+    route: "/custos",
+    icon: <TbPigMoney size={22} />,
+    subRoutes: [
+      {
+        title: "Pré-Eventos",
+        route: '/custos/pre-eventos',
+        icon: <TbPigMoney size={14} color={'white'} />
+      },
+      {
+        title: "Temporada",
+        route: '/custos/temporada',
+        icon: <TbPigMoney size={14} color={'white'} />
+      },
+      {
+        title: "Fixos",
+        route: "/custos/fixos",
+        icon: <TbPigMoney size={14} color={'white'} />,
+      }
+    ]
   },
 ];
 

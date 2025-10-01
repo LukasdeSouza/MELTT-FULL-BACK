@@ -97,12 +97,13 @@ const CustosPage = () => {
     const valorCentavos = Math.round(valorNumero * 100);
     const valorPagoParcialNumero = parseFloat(form.valor_pago_parcial.replace(/\./g, '').replace('R$', '').replace(',', '.'));
     const valorPagoParcialCentavos = Math.round(valorPagoParcialNumero * 100);
+    console.log("Turma id: ", form.turma_id);
     const dataObj = {
       ...form,
       valor: valorCentavos,
       valor_pago_parcial: valorPagoParcialCentavos ?? 0,
-      turma_id: form.turma_id === '' && null
     };
+    console.log(dataObj);
     try {
       const response = await apiPostData('academic', '/custos', dataObj);
       if (response.affectedRows > 0) {

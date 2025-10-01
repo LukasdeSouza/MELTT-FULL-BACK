@@ -1,6 +1,8 @@
 import { Box, Stack, Typography, useTheme } from "@mui/material";
 
-const BoxDashboardValues = ({ title, valor }: { title: string, valor: number }) => {
+type Tipo = 'entrada' | 'saida';
+
+const BoxDashboardValues = ({ title, valor, tipo = 'entrada' }: { title: string, valor: number, tipo?: Tipo }) => {
   const theme = useTheme();
   
   const valorFormatado = new Intl.NumberFormat('pt-BR', {
@@ -48,7 +50,7 @@ const BoxDashboardValues = ({ title, valor }: { title: string, valor: number }) 
           lineHeight: 1.2,
           mb: 0.5,
           letterSpacing: '-0.5px',
-          color: valor > 0 ? theme.palette.success.dark : theme.palette.text.disabled
+          color: valor > 0 ? tipo == 'entrada' ? theme.palette.success.dark : theme.palette.error.dark :theme.palette.text.disabled
         }}
       >
         {valorFormatado}
@@ -66,7 +68,7 @@ const BoxDashboardValues = ({ title, valor }: { title: string, valor: number }) 
       >
         {valor > 0 ? (
           <>
-            <Box component="span" sx={{ color: 'success.light' }}>▲</Box> 
+            <Box component="span" sx={{ color: tipo == 'entrada' ? 'success.light' : 'error.light' }}>▲</Box> 
             {' '}Total acumulado
           </>
         ) : (

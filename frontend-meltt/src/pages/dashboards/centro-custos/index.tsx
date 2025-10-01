@@ -25,7 +25,7 @@ import BoxDashboardValues from "../../../components/box/dashboardValues";
 import CustomLineChart from "../../../components/charts/line";
 import CustomPieChart from "../../../components/charts/pie";
 import toast from "react-hot-toast";
-import { apiGetData } from "../../../services/api";
+import { apiGetData, apiPostData } from "../../../services/api";
 
 type ChartDataArray = Array<{
   data_valor: string;
@@ -176,6 +176,7 @@ const CentroCustosTurmaPage = () => {
     let custosTotaisTurmaPreEventoTemporada = 0;
     setTurmaSelected(newValue);
     custosTotaisTurmaEntradaSaida = await fetchCustosTotaisTurmaEntradaSaida(newValue?.id || '');
+    console.log(custosTotaisTurmaEntradaSaida);
     custosTotaisTurmaPreEventoTemporada = await fetchCustosTotaisTurmaPreEventoTemporada(newValue?.id || '');
     const dataCustos = {
       preEvento: custosTotaisTurmaPreEventoTemporada.totaisPorTipo.preEvento.reais,
@@ -232,7 +233,7 @@ const CentroCustosTurmaPage = () => {
   };
 
   const handleSubmit = () => {
-    if (!formData.categoria || !formData.descricao || !formData.valor || !turmaSelected) {
+    if (!formData.categoria || !formData.descricao || !formData.valor || !formData.data || !turmaSelected) {
       toast.error('Preencha todos os campos obrigatórios');
       return;
     }
@@ -243,22 +244,21 @@ const CentroCustosTurmaPage = () => {
       return;
     }
 
-    apiGetData('academic', '/custos-turma', {
-      method: 'POST',
-      data: {
-        turmaId: turmaSelected.id,
-        tipo: formData.tipo,
-        categoria: formData.categoria,
-        descricao: formData.descricao,
-        valor: parseFloat(formData.valor.replace(',', '.')),
-      }
+    apiPostData('academic', '/custos-turma', {
+      tipo: formData.tipo,
+      valor: parseFloat(formData.valor.replace(',', '.')),
+      data: formData.data,
+      categoria: formData.categoria,
+      descricao: formData.descricao,
+      turma_id: turmaSelected.id,
     })
       .then(() => {
         toast.success('Movimentação adicionada com sucesso');
         // Opcional: atualizar dados após adicionar movimentação
         handleTurmaChange(null, turmaSelected);
       })
-      .catch(() => {
+      .catch((err) => {
+        console.log('Erro ao adicionar movimentação: ', err);
         toast.error('Erro ao adicionar movimentação');
       });
 
@@ -375,6 +375,7 @@ const CentroCustosTurmaPage = () => {
                     <BoxDashboardValues
                       title="Total Saídas"
                       valor={custosData.totalSaidas}
+                      tipo={'saida'}
                     />
                   </Grid>
                 </Grid>

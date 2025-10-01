@@ -103,7 +103,7 @@ class CustosTurmaController {
       totalByTipoResult.forEach(row => {
         if (row.tipo === 'entrada') {
           totais.entrada = row.total || 0;
-        } else if (row.tipo === 'saída') {
+        } else if (row.tipo === 'saida') {
           totais.saida = row.total || 0;
         }
       });
@@ -128,10 +128,12 @@ class CustosTurmaController {
 
 
   async createCustoTurma(req, res) {
-    const { valor, tipo, data, turma_id } = req.body;
-    const query = "INSERT INTO custos_turma (valor, tipo, data, turma_id) VALUES (?, ?, ?, ?)";
+    const { valor, tipo, data, descricao, categoria, turma_id } = req.body;
+    console.log(req.body);
+    const query = "INSERT INTO custos_turma (valor, tipo, data, descrição, categoria, turma_id) VALUES (?, ?, ?, ?, ?, ?)";
     try {
-      const [result] = await pool.query(query, [valor, tipo, data, turma_id]);
+      const [result] = await pool.query(query, [valor, tipo, data, descricao, categoria, turma_id]);
+      console.log(result);
       res.status(201).json({ id: result.insertId, ...req.body });
     } catch (err) {
       res.status(500).json({ error: err.message });

@@ -25,7 +25,7 @@ import BoxDashboardValues from "../../../components/box/dashboardValues";
 import CustomLineChart from "../../../components/charts/line";
 import CustomPieChart from "../../../components/charts/pie";
 import toast from "react-hot-toast";
-import { apiGetData } from "../../../services/api";
+import { apiGetData, apiPostData } from "../../../services/api";
 
 type ChartDataArray = Array<{
   data_valor: string;
@@ -38,7 +38,7 @@ interface TurmaOption {
 }
 
 interface CustosData {
-  preEventos: number;
+  preEvento: number;
   temporada: number;
   totalEntradas: number;
   totalSaidas: number;
@@ -57,14 +57,14 @@ const CentroCustosTurmaPage = () => {
   const [onLoad, setOnLoad] = useState(false);
   const [turmaSelected, setTurmaSelected] = useState<TurmaOption | null>(null);
   const [custosData, setCustosData] = useState<CustosData>({
-    preEventos: 0,
+    preEvento: 0,
     temporada: 0,
     totalEntradas: 0,
     totalSaidas: 0,
     chartData: []
   });
   const [turmas, setTurmas] = useState([])
-  
+
   // Estados do modal
   const [modalOpen, setModalOpen] = useState(false);
   const [tipoModal, setTipoModal] = useState<'entrada' | 'saida'>('entrada');
@@ -83,7 +83,29 @@ const CentroCustosTurmaPage = () => {
     } catch (error) {
       toast.error('erro ao buscar turmas')
     }
-  } 
+  }
+
+  const fetchCustosTotaisTurmaPreEventoTemporada = async (turmaId: string) => {
+    try {
+      const response = await apiGetData('academic', `/custos/valor-total/${turmaId}`)
+      // Processar e definir os dados conforme a resposta da API
+      console.log("fetchCustosTotaisTurma: ", response)
+      return response
+    } catch (error) {
+      toast.error('Erro ao buscar dados de custos da turma')
+    }
+  }
+
+  const fetchCustosTotaisTurmaEntradaSaida = async (turmaId: string) => {
+    try {
+      const response = await apiGetData('academic', `/custos-turma/valor-total/${turmaId}`)
+      // Processar e definir os dados conforme a resposta da API
+      console.log("fetchCustosTurma: ", response)
+      return response
+    } catch (error) {
+      toast.error('Erro ao buscar dados de custos da turma')
+    }
+  }
 
   // Dados mockados das turmas
   // const turmasOptions: TurmaOption[] = [
@@ -108,7 +130,7 @@ const CentroCustosTurmaPage = () => {
   // Categorias para entradas e saídas
   const categoriasEntrada = [
     "Mensalidades",
-    "Taxas de Inscrição", 
+    "Taxas de Inscrição",
     "Eventos Especiais",
     "Patrocínios",
     "Outros"
@@ -116,7 +138,7 @@ const CentroCustosTurmaPage = () => {
 
   const categoriasSaida = [
     "Material",
-    "Alimentação", 
+    "Alimentação",
     "Transporte",
     "Hospedagem",
     "Marketing",
@@ -126,7 +148,6 @@ const CentroCustosTurmaPage = () => {
 
   // Dados mockados para gráfico de evolução temporal
   const generateMockChartData = (turmaId: string): ChartDataArray => {
-    console.log(turmaId)
     const baseData = [
       { data_valor: "2024-01-15", valor_pago: Math.random() * 5000 + 2000 },
       { data_valor: "2024-02-15", valor_pago: Math.random() * 7000 + 3000 },
@@ -142,7 +163,7 @@ const CentroCustosTurmaPage = () => {
   const generateMockData = (turmaId: string): CustosData => {
     const multiplier = parseInt(turmaId) * 0.8;
     return {
-      preEventos: Math.round((Math.random() * 15000 + 10000) * multiplier),
+      preEvento: Math.round((Math.random() * 15000 + 10000) * multiplier),
       temporada: Math.round((Math.random() * 25000 + 15000) * multiplier),
       totalEntradas: Math.round((Math.random() * 50000 + 30000) * multiplier),
       totalSaidas: Math.round((Math.random() * 35000 + 20000) * multiplier),
@@ -150,15 +171,28 @@ const CentroCustosTurmaPage = () => {
     };
   };
 
-  const handleTurmaChange = (_: any, newValue: TurmaOption | null) => {
+  const handleTurmaChange = async (_: any, newValue: TurmaOption | null) => {
+    let custosTotaisTurmaEntradaSaida = 0;
+    let custosTotaisTurmaPreEventoTemporada = 0;
     setTurmaSelected(newValue);
+    custosTotaisTurmaEntradaSaida = await fetchCustosTotaisTurmaEntradaSaida(newValue?.id || '');
+    console.log(custosTotaisTurmaEntradaSaida);
+    custosTotaisTurmaPreEventoTemporada = await fetchCustosTotaisTurmaPreEventoTemporada(newValue?.id || '');
+    const dataCustos = {
+      preEvento: custosTotaisTurmaPreEventoTemporada.totaisPorTipo.preEvento.reais,
+      temporada: custosTotaisTurmaPreEventoTemporada.totaisPorTipo.temporada.reais,
+      totalEntradas: custosTotaisTurmaEntradaSaida.entradas.valor,
+      totalSaidas: custosTotaisTurmaEntradaSaida.saidas.valor,
+      chartData: generateMockChartData(newValue?.id || '')
+    }
+
     if (newValue) {
-      const mockData = generateMockData(newValue.id);
-      setCustosData(mockData);
+      setCustosData(dataCustos);
+      console.log("dataCustos: ", dataCustos);
       toast.success(`Dados carregados para ${newValue.nome}`);
     } else {
       setCustosData({
-        preEventos: 0,
+        preEvento: 0,
         temporada: 0,
         totalEntradas: 0,
         totalSaidas: 0,
@@ -199,7 +233,7 @@ const CentroCustosTurmaPage = () => {
   };
 
   const handleSubmit = () => {
-    if (!formData.categoria || !formData.descricao || !formData.valor || !turmaSelected) {
+    if (!formData.categoria || !formData.descricao || !formData.valor || !formData.data || !turmaSelected) {
       toast.error('Preencha todos os campos obrigatórios');
       return;
     }
@@ -210,36 +244,23 @@ const CentroCustosTurmaPage = () => {
       return;
     }
 
-    // Simular adição nos dados mockados
-    setCustosData(prev => {
-      const newData = { ...prev };
-      
-      if (formData.tipo === 'entrada') {
-        newData.totalEntradas += valor;
-        toast.success(`Entrada de ${new Intl.NumberFormat('pt-BR', {
-          style: 'currency',
-          currency: 'BRL'
-        }).format(valor)} adicionada com sucesso!`);
-      } else {
-        newData.totalSaidas += valor;
-        toast.success(`Saída de ${new Intl.NumberFormat('pt-BR', {
-          style: 'currency',
-          currency: 'BRL'
-        }).format(valor)} adicionada com sucesso!`);
-      }
-
-      // Atualizar gráfico com novo ponto de dados
-      const newChartPoint = {
-        data_valor: formData.data,
-        valor_pago: valor
-      };
-      
-      newData.chartData = [...prev.chartData, newChartPoint].sort((a, b) => 
-        new Date(a.data_valor).getTime() - new Date(b.data_valor).getTime()
-      );
-
-      return newData;
-    });
+    apiPostData('academic', '/custos-turma', {
+      tipo: formData.tipo,
+      valor: parseFloat(formData.valor.replace(',', '.')),
+      data: formData.data,
+      categoria: formData.categoria,
+      descricao: formData.descricao,
+      turma_id: turmaSelected.id,
+    })
+      .then(() => {
+        toast.success('Movimentação adicionada com sucesso');
+        // Opcional: atualizar dados após adicionar movimentação
+        handleTurmaChange(null, turmaSelected);
+      })
+      .catch((err) => {
+        console.log('Erro ao adicionar movimentação: ', err);
+        toast.error('Erro ao adicionar movimentação');
+      });
 
     closeModal();
   };
@@ -280,15 +301,15 @@ const CentroCustosTurmaPage = () => {
           timeout={300}
         >
           <Stack direction={"column"} justifyContent={"space-between"}>
-            <Typography 
-              variant="h4" 
-              color="primary" 
-              fontFamily={'Poppins'} 
+            <Typography
+              variant="h4"
+              color="primary"
+              fontFamily={'Poppins'}
               sx={{ fontWeight: 600, mb: 3 }}
             >
               Centro de Custos por Turma
             </Typography>
-            
+
             <Stack direction="row" spacing={2} py={2}>
               <Autocomplete
                 sx={{ width: "30%" }}
@@ -333,37 +354,38 @@ const CentroCustosTurmaPage = () => {
 
                 <Grid container spacing={3} sx={{ mb: 3 }}>
                   <Grid item xs={12} md={3}>
-                    <BoxDashboardValues 
-                      title="Custos Pré-Eventos" 
-                      valor={custosData.preEventos} 
+                    <BoxDashboardValues
+                      title="Custos Pré-Eventos"
+                      valor={custosData.preEvento}
                     />
                   </Grid>
                   <Grid item xs={12} md={3}>
-                    <BoxDashboardValues 
-                      title="Custos Temporada" 
-                      valor={custosData.temporada} 
+                    <BoxDashboardValues
+                      title="Custos Temporada"
+                      valor={custosData.temporada}
                     />
                   </Grid>
                   <Grid item xs={12} md={3}>
-                    <BoxDashboardValues 
-                      title="Total Entradas" 
-                      valor={custosData.totalEntradas} 
+                    <BoxDashboardValues
+                      title="Total Entradas"
+                      valor={custosData.totalEntradas}
                     />
                   </Grid>
                   <Grid item xs={12} md={3}>
-                    <BoxDashboardValues 
-                      title="Total Saídas" 
-                      valor={custosData.totalSaidas} 
+                    <BoxDashboardValues
+                      title="Total Saídas"
+                      valor={custosData.totalSaidas}
+                      tipo={'saida'}
                     />
                   </Grid>
                 </Grid>
 
                 <Card sx={{ mb: 3 }}>
                   <CardContent>
-                    <Typography 
-                      variant="h6" 
-                      color="primary" 
-                      fontFamily={'Poppins'} 
+                    <Typography
+                      variant="h6"
+                      color="primary"
+                      fontFamily={'Poppins'}
                       sx={{ fontWeight: 600, mb: 2 }}
                     >
                       Saldo Final
@@ -372,15 +394,27 @@ const CentroCustosTurmaPage = () => {
                       sx={{
                         p: 3,
                         borderRadius: 2,
-                        backgroundColor: saldoFinal >= 0 ? '#E8F5E8' : '#FFE8E8',
-                        border: `2px solid ${saldoFinal >= 0 ? '#4CAF50' : '#F44336'}`,
+                        backgroundColor: saldoFinal > 0
+                          ? '#E8F5E8'       // positivo -> verde claro
+                          : saldoFinal < 0
+                            ? '#FFE8E8'     // negativo -> vermelho claro
+                            : '#F5F5F5',    // zero -> cinza
+                        border: `2px solid ${saldoFinal > 0
+                          ? '#4CAF50'       // positivo -> verde
+                          : saldoFinal < 0
+                            ? '#F44336'     // negativo -> vermelho
+                            : '#BDBDBD'}`,  // zero -> cinza escuro
                       }}
                     >
                       <Typography
                         variant="h4"
                         sx={{
                           fontWeight: 700,
-                          color: saldoFinal >= 0 ? '#2E7D32' : '#C62828',
+                          color: saldoFinal > 0
+                            ? '#2E7D32'       // positivo -> verde
+                            : saldoFinal < 0
+                              ? '#C62828'     // negativo -> vermelho
+                              : '#BDBDBD',    // zero -> cinza escuro
                           textAlign: 'center'
                         }}
                       >
@@ -393,11 +427,15 @@ const CentroCustosTurmaPage = () => {
                         variant="body2"
                         sx={{
                           textAlign: 'center',
-                          color: saldoFinal >= 0 ? '#2E7D32' : '#C62828',
+                          color: saldoFinal > 0
+                            ? '#2E7D32'       // positivo -> verde
+                            : saldoFinal < 0
+                              ? '#C62828'     // negativo -> vermelho
+                              : '#BDBDBD',    // zero -> cinza escuro
                           mt: 1
                         }}
                       >
-                        {saldoFinal >= 0 ? 'Resultado Positivo' : 'Resultado Negativo'}
+                        {saldoFinal > 0 ? 'Resultado Positivo' : saldoFinal < 0 ? 'Resultado Negativo' : 'Resultado Neutro'}
                       </Typography>
                     </Box>
                   </CardContent>
@@ -411,9 +449,9 @@ const CentroCustosTurmaPage = () => {
           <>
             <Slide direction="right" in={onLoad} mountOnEnter>
               <Stack direction={"column"}>
-                <Typography 
-                  color="primary" 
-                  fontFamily={'Poppins'} 
+                <Typography
+                  color="primary"
+                  fontFamily={'Poppins'}
                   sx={{ fontWeight: 600, mb: 2 }}
                 >
                   Evolução dos Gastos ao Longo do Tempo
@@ -427,9 +465,9 @@ const CentroCustosTurmaPage = () => {
                 <Grid item xs={12} md={6}>
                   <Card>
                     <CardContent>
-                      <Typography 
-                        color="primary" 
-                        fontFamily={'Poppins'} 
+                      <Typography
+                        color="primary"
+                        fontFamily={'Poppins'}
                         sx={{ fontWeight: 600, mb: 2 }}
                       >
                         Distribuição de Custos por Categoria
@@ -440,21 +478,21 @@ const CentroCustosTurmaPage = () => {
                     </CardContent>
                   </Card>
                 </Grid>
-                
+
                 <Grid item xs={12} md={6}>
                   <Card>
                     <CardContent>
-                      <Typography 
-                        color="primary" 
-                        fontFamily={'Poppins'} 
+                      <Typography
+                        color="primary"
+                        fontFamily={'Poppins'}
                         sx={{ fontWeight: 600, mb: 2 }}
                       >
                         Resumo Financeiro
                       </Typography>
                       <Stack spacing={2}>
-                        <Box 
-                          sx={{ 
-                            display: 'flex', 
+                        <Box
+                          sx={{
+                            display: 'flex',
                             justifyContent: 'space-between',
                             p: 2,
                             backgroundColor: '#F5F5F5',
@@ -462,8 +500,8 @@ const CentroCustosTurmaPage = () => {
                           }}
                         >
                           <Typography fontWeight={500}>Receitas Totais:</Typography>
-                          <Typography 
-                            fontWeight={600} 
+                          <Typography
+                            fontWeight={600}
                             color="success.main"
                           >
                             {new Intl.NumberFormat('pt-BR', {
@@ -472,10 +510,10 @@ const CentroCustosTurmaPage = () => {
                             }).format(custosData.totalEntradas)}
                           </Typography>
                         </Box>
-                        
-                        <Box 
-                          sx={{ 
-                            display: 'flex', 
+
+                        <Box
+                          sx={{
+                            display: 'flex',
                             justifyContent: 'space-between',
                             p: 2,
                             backgroundColor: '#F5F5F5',
@@ -483,8 +521,8 @@ const CentroCustosTurmaPage = () => {
                           }}
                         >
                           <Typography fontWeight={500}>Despesas Totais:</Typography>
-                          <Typography 
-                            fontWeight={600} 
+                          <Typography
+                            fontWeight={600}
                             color="error.main"
                           >
                             {new Intl.NumberFormat('pt-BR', {
@@ -493,10 +531,10 @@ const CentroCustosTurmaPage = () => {
                             }).format(custosData.totalSaidas)}
                           </Typography>
                         </Box>
-                        
-                        <Box 
-                          sx={{ 
-                            display: 'flex', 
+
+                        <Box
+                          sx={{
+                            display: 'flex',
                             justifyContent: 'space-between',
                             p: 2,
                             backgroundColor: '#E3F2FD',
@@ -505,8 +543,8 @@ const CentroCustosTurmaPage = () => {
                           }}
                         >
                           <Typography fontWeight={600}>Saldo:</Typography>
-                          <Typography 
-                            fontWeight={700} 
+                          <Typography
+                            fontWeight={700}
                             color={saldoFinal >= 0 ? 'success.main' : 'error.main'}
                           >
                             {new Intl.NumberFormat('pt-BR', {
@@ -526,9 +564,9 @@ const CentroCustosTurmaPage = () => {
 
         {!turmaSelected && (
           <Slide direction="right" in={onLoad} mountOnEnter>
-            <Box 
-              sx={{ 
-                textAlign: 'center', 
+            <Box
+              sx={{
+                textAlign: 'center',
                 py: 8,
                 color: 'text.secondary'
               }}
@@ -553,19 +591,19 @@ const CentroCustosTurmaPage = () => {
             justifyContent: 'center',
           }}
         >
-          <Card sx={{ 
-            width: '90%', 
-            maxWidth: 500, 
-            maxHeight: '90vh', 
+          <Card sx={{
+            width: '90%',
+            maxWidth: 500,
+            maxHeight: '90vh',
             overflow: 'auto',
             outline: 'none'
           }}>
             <CardContent>
               <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
-                <Typography 
-                  variant="h6" 
-                  color="primary" 
-                  fontFamily={'Poppins'} 
+                <Typography
+                  variant="h6"
+                  color="primary"
+                  fontFamily={'Poppins'}
                   sx={{ fontWeight: 600 }}
                 >
                   {tipoModal === 'entrada' ? 'Adicionar Entrada' : 'Adicionar Saída'}

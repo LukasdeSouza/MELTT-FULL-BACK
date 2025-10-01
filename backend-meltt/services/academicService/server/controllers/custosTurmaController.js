@@ -74,11 +74,66 @@ class CustosTurmaController {
     }
   }
 
-  async createCustoTurma(req, res) {
-    const { valor, tipo, data, turma_id } = req.body;
-    const query = "INSERT INTO custos_turma (valor, tipo, data, turma_id) VALUES (?, ?, ?, ?)";
+  async getTotalEntradasSaidasByTurma(req, res) {
+    const id = req.params.id;
+
     try {
-      const [result] = await pool.query(query, [valor, tipo, data, turma_id]);
+      const [totalByTipoResult] = await pool.query(
+        `SELECT 
+          tipo,
+          SUM(valor) AS total
+       FROM custos_turma
+       WHERE turma_id = ?
+       GROUP BY tipo`,
+        [id]
+      );
+
+      const formatToCurrency = (valor) => {
+        return Number(valor).toLocaleString('pt-BR', {
+          style: 'currency',
+          currency: 'BRL',
+        });
+      };
+
+      const totais = {
+        entrada: 0,
+        saida: 0
+      };
+
+      totalByTipoResult.forEach(row => {
+        if (row.tipo === 'entrada') {
+          totais.entrada = row.total || 0;
+        } else if (row.tipo === 'saida') {
+          totais.saida = row.total || 0;
+        }
+      });
+
+      const response = {
+        id,
+        entradas: {
+          valor: totais.entrada,
+          formatado: formatToCurrency(totais.entrada)
+        },
+        saidas: {
+          valor: totais.saida,
+          formatado: formatToCurrency(totais.saida)
+        }
+      };
+
+      res.status(200).json(response);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+
+
+  async createCustoTurma(req, res) {
+    const { valor, tipo, data, descricao, categoria, turma_id } = req.body;
+    console.log(req.body);
+    const query = "INSERT INTO custos_turma (valor, tipo, data, descrição, categoria, turma_id) VALUES (?, ?, ?, ?, ?, ?)";
+    try {
+      const [result] = await pool.query(query, [valor, tipo, data, descricao, categoria, turma_id]);
+      console.log(result);
       res.status(201).json({ id: result.insertId, ...req.body });
     } catch (err) {
       res.status(500).json({ error: err.message });

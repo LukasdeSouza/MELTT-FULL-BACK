@@ -67,7 +67,7 @@ class CustosTurmaController {
   async getCustoTurmaById(req, res) {
     const id = req.params.id;
     try {
-      const [result] = await pool.query("SELECT * FROM custos_turma WHERE id = ?", [id]);
+      const [result] = await pool.query("SELECT * FROM custos_turma WHERE turma_id = ?", [id]);
       res.status(200).json({ data: result });
     } catch (err) {
       res.status(500).json({ error: err.message });
@@ -125,7 +125,6 @@ class CustosTurmaController {
       res.status(500).json({ error: err.message });
     }
   }
-
 
   async createCustoTurma(req, res) {
     const { valor, tipo, data, descricao, categoria, turma_id } = req.body;

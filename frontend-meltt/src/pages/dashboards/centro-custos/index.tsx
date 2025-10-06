@@ -16,6 +16,14 @@ import {
   MenuItem,
   InputAdornment,
   IconButton,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Chip,
 } from "@mui/material";
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
@@ -29,7 +37,8 @@ import { apiGetData, apiPostData } from "../../../services/api";
 
 type ChartDataArray = Array<{
   data_valor: string;
-  valor_pago: number;
+  entradas: number;
+  saidas: number;
 }>;
 
 interface TurmaOption {
@@ -43,6 +52,8 @@ interface CustosData {
   totalEntradas: number;
   totalSaidas: number;
   chartData: ChartDataArray;
+  pieData: Array<{ key: string; resultado: number }>;
+  custosLista: any[];
 }
 
 interface MovimentacaoForm {
@@ -61,7 +72,9 @@ const CentroCustosTurmaPage = () => {
     temporada: 0,
     totalEntradas: 0,
     totalSaidas: 0,
-    chartData: []
+    chartData: [],
+    pieData: [],
+    custosLista: []
   });
   const [turmas, setTurmas] = useState([])
 
@@ -82,6 +95,16 @@ const CentroCustosTurmaPage = () => {
       setTurmas(response.data)
     } catch (error) {
       toast.error('erro ao buscar turmas')
+    }
+  }
+
+  const fetchCustosByTurma = async (turmaId:string) => {
+    try {
+      const response = await apiGetData('academic', `/custos-turma/${turmaId}`)
+      return response.data
+    } catch (error) {
+      toast.error('erro ao buscar custos da turma')
+      return []
     }
   }
 
@@ -116,16 +139,7 @@ const CentroCustosTurmaPage = () => {
   //   { id: "5", nome: "Turma E - 2024.2" },
   // ];
 
-  // Dados mockados para gráfico de pizza - distribuição de custos
-  const pieData = [
-    { key: "Material", resultado: 30 },
-    { key: "Alimentação", resultado: 25 },
-    { key: "Transporte", resultado: 20 },
-    { key: "Hospedagem", resultado: 15 },
-    { key: "Outros", resultado: 10 },
-  ];
-
-  const pieColors = ["#DB1F8D", "#8B5CF6", "#10B981", "#F59E0B", "#EF4444"];
+  const pieColors = ["#DB1F8D", "#8B5CF6", "#10B981", "#F59E0B", "#EF4444", "#3B82F6", "#F97316", "#EC4899"];
 
   // Categorias para entradas e saídas
   const categoriasEntrada = [
@@ -146,58 +160,111 @@ const CentroCustosTurmaPage = () => {
     "Outros"
   ];
 
-  // Dados mockados para gráfico de evolução temporal
-  const generateMockChartData = (turmaId: string): ChartDataArray => {
-    const baseData = [
-      { data_valor: "2024-01-15", valor_pago: Math.random() * 5000 + 2000 },
-      { data_valor: "2024-02-15", valor_pago: Math.random() * 7000 + 3000 },
-      { data_valor: "2024-03-15", valor_pago: Math.random() * 6000 + 2500 },
-      { data_valor: "2024-04-15", valor_pago: Math.random() * 8000 + 4000 },
-      { data_valor: "2024-05-15", valor_pago: Math.random() * 5500 + 3500 },
-      { data_valor: "2024-06-15", valor_pago: Math.random() * 7500 + 4500 },
-    ];
-    return baseData;
+  // Função para processar dados da API e transformar em dados do gráfico
+  const processChartData = (custos: any[]): ChartDataArray => {
+    if (!custos || custos.length === 0) return [];
+
+    // Agrupar custos por data
+    const groupedByDate: { [key: string]: { entradas: number; saidas: number } } = {};
+
+    custos.forEach((custo) => {
+      const date = new Date(custo.data).toISOString().split('T')[0];
+
+      if (!groupedByDate[date]) {
+        groupedByDate[date] = { entradas: 0, saidas: 0 };
+      }
+
+      const valor = parseFloat(custo.valor);
+      if (custo.tipo === 'entrada') {
+        groupedByDate[date].entradas += valor;
+      } else if (custo.tipo === 'saida') {
+        groupedByDate[date].saidas += valor;
+      }
+    });
+
+    // Converter para array e ordenar por data
+    const chartData = Object.entries(groupedByDate)
+      .map(([date, values]) => ({
+        data_valor: date,
+        entradas: values.entradas,
+        saidas: values.saidas,
+      }))
+      .sort((a, b) => new Date(a.data_valor).getTime() - new Date(b.data_valor).getTime());
+
+    return chartData;
   };
 
-  // Função para gerar dados mockados baseados na turma selecionada
-  const generateMockData = (turmaId: string): CustosData => {
-    const multiplier = parseInt(turmaId) * 0.8;
-    return {
-      preEvento: Math.round((Math.random() * 15000 + 10000) * multiplier),
-      temporada: Math.round((Math.random() * 25000 + 15000) * multiplier),
-      totalEntradas: Math.round((Math.random() * 50000 + 30000) * multiplier),
-      totalSaidas: Math.round((Math.random() * 35000 + 20000) * multiplier),
-      chartData: generateMockChartData(turmaId)
-    };
+  // Função para processar dados do gráfico de pizza - distribuição por categoria
+  const processPieData = (custos: any[]): Array<{ key: string; resultado: number }> => {
+    if (!custos || custos.length === 0) return [];
+
+    // Agrupar custos por categoria (apenas saídas)
+    const groupedByCategory: { [key: string]: number } = {};
+
+    custos.forEach((custo) => {
+      if (custo.tipo === 'saida') {
+        const categoria = custo.categoria;
+        const valor = parseFloat(custo.valor);
+
+        if (!groupedByCategory[categoria]) {
+          groupedByCategory[categoria] = 0;
+        }
+
+        groupedByCategory[categoria] += valor;
+      }
+    });
+
+    // Converter para array
+    const pieData = Object.entries(groupedByCategory)
+      .map(([categoria, valor]) => ({
+        key: categoria,
+        resultado: valor,
+      }))
+      .sort((a, b) => b.resultado - a.resultado);
+
+    return pieData;
   };
+
 
   const handleTurmaChange = async (_: any, newValue: TurmaOption | null) => {
-    let custosTotaisTurmaEntradaSaida = 0;
-    let custosTotaisTurmaPreEventoTemporada = 0;
     setTurmaSelected(newValue);
-    custosTotaisTurmaEntradaSaida = await fetchCustosTotaisTurmaEntradaSaida(newValue?.id || '');
-    console.log(custosTotaisTurmaEntradaSaida);
-    custosTotaisTurmaPreEventoTemporada = await fetchCustosTotaisTurmaPreEventoTemporada(newValue?.id || '');
-    const dataCustos = {
-      preEvento: custosTotaisTurmaPreEventoTemporada.totaisPorTipo.preEvento.reais,
-      temporada: custosTotaisTurmaPreEventoTemporada.totaisPorTipo.temporada.reais,
-      totalEntradas: custosTotaisTurmaEntradaSaida.entradas.valor,
-      totalSaidas: custosTotaisTurmaEntradaSaida.saidas.valor,
-      chartData: generateMockChartData(newValue?.id || '')
-    }
 
-    if (newValue) {
-      setCustosData(dataCustos);
-      console.log("dataCustos: ", dataCustos);
-      toast.success(`Dados carregados para ${newValue.nome}`);
-    } else {
+    if (!newValue) {
       setCustosData({
         preEvento: 0,
         temporada: 0,
         totalEntradas: 0,
         totalSaidas: 0,
-        chartData: []
+        chartData: [],
+        pieData: [],
+        custosLista: []
       });
+      return;
+    }
+
+    try {
+      const custosTotaisTurmaEntradaSaida = await fetchCustosTotaisTurmaEntradaSaida(newValue.id);
+      const custosTotaisTurmaPreEventoTemporada = await fetchCustosTotaisTurmaPreEventoTemporada(newValue.id);
+      const custosByTurmaId = await fetchCustosByTurma(newValue.id);
+
+      console.log('custosByTurmaId:', custosByTurmaId);
+
+      const dataCustos = {
+        preEvento: custosTotaisTurmaPreEventoTemporada.totaisPorTipo.preEvento.reais,
+        temporada: custosTotaisTurmaPreEventoTemporada.totaisPorTipo.temporada.reais,
+        totalEntradas: custosTotaisTurmaEntradaSaida.entradas.valor,
+        totalSaidas: custosTotaisTurmaEntradaSaida.saidas.valor,
+        chartData: processChartData(custosByTurmaId),
+        pieData: processPieData(custosByTurmaId),
+        custosLista: custosByTurmaId || []
+      };
+
+      setCustosData(dataCustos);
+      console.log("dataCustos: ", dataCustos);
+      toast.success(`Dados carregados para ${newValue.nome}`);
+    } catch (error) {
+      console.error('Erro ao carregar dados:', error);
+      toast.error('Erro ao carregar dados da turma');
     }
   };
 
@@ -462,7 +529,7 @@ const CentroCustosTurmaPage = () => {
 
             <Slide direction="right" in={onLoad} mountOnEnter>
               <Grid container spacing={4}>
-                <Grid item xs={12} md={6}>
+                <Grid item xs={24} md={6}>
                   <Card>
                     <CardContent>
                       <Typography
@@ -473,13 +540,13 @@ const CentroCustosTurmaPage = () => {
                         Distribuição de Custos por Categoria
                       </Typography>
                       <Box display="flex" justifyContent="center">
-                        <CustomPieChart data={pieData} COLORS={pieColors} />
+                        <CustomPieChart data={custosData.pieData} COLORS={pieColors} />
                       </Box>
                     </CardContent>
                   </Card>
                 </Grid>
 
-                <Grid item xs={12} md={6}>
+                {/* <Grid item xs={12} md={6}>
                   <Card>
                     <CardContent>
                       <Typography
@@ -556,8 +623,85 @@ const CentroCustosTurmaPage = () => {
                       </Stack>
                     </CardContent>
                   </Card>
-                </Grid>
+                </Grid> */}
               </Grid>
+            </Slide>
+
+            <Slide direction="right" in={onLoad} mountOnEnter timeout={300}>
+              <Box>
+                <Card>
+                  <CardContent>
+                    <Typography
+                      color="primary"
+                      fontFamily={'Poppins'}
+                      sx={{ fontWeight: 600, mb: 3 }}
+                    >
+                      Histórico de Movimentações
+                    </Typography>
+                    <TableContainer component={Paper} sx={{ maxHeight: 500 }}>
+                      <Table stickyHeader>
+                        <TableHead>
+                          <TableRow>
+                            <TableCell sx={{ fontWeight: 600, backgroundColor: '#f5f5f5' }}>Data</TableCell>
+                            <TableCell sx={{ fontWeight: 600, backgroundColor: '#f5f5f5' }}>Tipo</TableCell>
+                            <TableCell sx={{ fontWeight: 600, backgroundColor: '#f5f5f5' }}>Categoria</TableCell>
+                            <TableCell sx={{ fontWeight: 600, backgroundColor: '#f5f5f5' }}>Descrição</TableCell>
+                            <TableCell sx={{ fontWeight: 600, backgroundColor: '#f5f5f5' }} align="right">Valor</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {custosData.custosLista.length === 0 ? (
+                            <TableRow>
+                              <TableCell colSpan={5} align="center" sx={{ py: 4, color: 'text.secondary' }}>
+                                Nenhuma movimentação encontrada
+                              </TableCell>
+                            </TableRow>
+                          ) : (
+                            custosData.custosLista
+                              .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime())
+                              .map((custo) => (
+                                <TableRow
+                                  key={custo.id}
+                                  sx={{
+                                    '&:hover': { backgroundColor: '#f9f9f9' },
+                                    '&:last-child td, &:last-child th': { border: 0 }
+                                  }}
+                                >
+                                  <TableCell>
+                                    {new Date(custo.data).toLocaleDateString('pt-BR')}
+                                  </TableCell>
+                                  <TableCell>
+                                    <Chip
+                                      label={custo.tipo === 'entrada' ? 'Entrada' : 'Saída'}
+                                      color={custo.tipo === 'entrada' ? 'success' : 'error'}
+                                      size="small"
+                                      sx={{ fontWeight: 600 }}
+                                    />
+                                  </TableCell>
+                                  <TableCell>{custo.categoria}</TableCell>
+                                  <TableCell>{custo.descrição || custo.descricao}</TableCell>
+                                  <TableCell align="right" sx={{ fontWeight: 600 }}>
+                                    <Typography
+                                      sx={{
+                                        color: custo.tipo === 'entrada' ? 'success.main' : 'error.main',
+                                        fontWeight: 600
+                                      }}
+                                    >
+                                      {new Intl.NumberFormat('pt-BR', {
+                                        style: 'currency',
+                                        currency: 'BRL',
+                                      }).format(parseFloat(custo.valor))}
+                                    </Typography>
+                                  </TableCell>
+                                </TableRow>
+                              ))
+                          )}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  </CardContent>
+                </Card>
+              </Box>
             </Slide>
           </>
         )}

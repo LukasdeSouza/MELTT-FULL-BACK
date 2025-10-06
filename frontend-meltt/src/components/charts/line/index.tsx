@@ -82,9 +82,13 @@ const CustomLineChart = ({ data }: { data: any }) => {
         margin={{ top: 20, right: 30, left: 20, bottom: 10 }}
       >
         <defs>
-          <linearGradient id="colorValores" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="10%" stopColor="#DB1F8D" stopOpacity={0.4} />
-            <stop offset="90%" stopColor="#DB1F8D" stopOpacity={0} />
+          <linearGradient id="colorEntradas" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="10%" stopColor="#10B981" stopOpacity={0.4} />
+            <stop offset="90%" stopColor="#10B981" stopOpacity={0} />
+          </linearGradient>
+          <linearGradient id="colorSaidas" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="10%" stopColor="#EF4444" stopOpacity={0.4} />
+            <stop offset="90%" stopColor="#EF4444" stopOpacity={0} />
           </linearGradient>
         </defs>
 
@@ -136,14 +140,30 @@ const CustomLineChart = ({ data }: { data: any }) => {
 
         <Area
           type="monotone"
-          dataKey="valor_pago"
-          stroke="#DB1F8D"
+          dataKey="entradas"
+          stroke="#10B981"
           strokeWidth={2}
-          fill="url(#colorValores)"
+          fill="url(#colorEntradas)"
           fillOpacity={1}
           activeDot={{
             r: 6,
-            fill: "#DB1F8D",
+            fill: "#10B981",
+            stroke: "#FFF",
+            strokeWidth: 2
+          }}
+          animationDuration={400}
+        />
+
+        <Area
+          type="monotone"
+          dataKey="saidas"
+          stroke="#EF4444"
+          strokeWidth={2}
+          fill="url(#colorSaidas)"
+          fillOpacity={1}
+          activeDot={{
+            r: 6,
+            fill: "#EF4444",
             stroke: "#FFF",
             strokeWidth: 2
           }}

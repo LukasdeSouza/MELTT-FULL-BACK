@@ -234,12 +234,13 @@ class CustosController {
       valor,
       valor_pago_parcial,
       vencimento,
-      situacao
+      situacao,
+      chave_pix
     } = req.body;
     console.log(req.body, "req.body custos");
     const query =
-      `INSERT INTO custos (tipo_custo, turma_id, evento, fornecedor_id, beneficiario, categoria, valor, valor_pago_parcial, vencimento, situacao)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+      `INSERT INTO custos (tipo_custo, turma_id, evento, fornecedor_id, beneficiario, categoria, valor, valor_pago_parcial, vencimento, situacao, chave_pix)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
     try {
       const [result] = await pool.query(query, [
         tipo_custo,
@@ -251,7 +252,8 @@ class CustosController {
         valor,
         valor_pago_parcial,
         vencimento,
-        situacao
+        situacao,
+        chave_pix ?? null
       ]);
       res.status(201).json(result);
     } catch (err) {
@@ -271,10 +273,11 @@ class CustosController {
       valor,
       valor_pago_parcial,
       vencimento,
-      situacao
+      situacao,
+      chave_pix
     } = req.body;
     const query =
-      `UPDATE custos SET tipo_custo = ?, turma_id = ?, evento = ?, fornecedor_id = ?, beneficiario = ?, categoria = ?, valor = ?, valor_pago_parcial = ?, vencimento = ?, situacao = ? WHERE id_custo = ?`;
+      `UPDATE custos SET tipo_custo = ?, turma_id = ?, evento = ?, fornecedor_id = ?, beneficiario = ?, categoria = ?, valor = ?, valor_pago_parcial = ?, vencimento = ?, situacao = ?, chave_pix = ? WHERE id_custo = ?`;
     try {
       await pool.query(query, [
         tipo_custo,
@@ -287,6 +290,7 @@ class CustosController {
         valor_pago_parcial,
         vencimento,
         situacao,
+        chave_pix ?? null,
         id
       ]);
       res.status(200).json({

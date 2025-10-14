@@ -4,6 +4,8 @@ class CustosController {
   async getAllCustos(req, res) {
     const page = parseInt(req.query.page) || 1;
     let limit = req.query.limit === 'all' ? null : parseInt(req.query.limit) || 10;
+
+    // NÃO calcular offset quando limit=all
     let offset = limit ? (page - 1) * limit : 0;
 
     const situacao = req.query.situacao;
@@ -15,7 +17,6 @@ class CustosController {
 
     try {
       let query = "SELECT * FROM custos";
-
       let countQuery = `SELECT COUNT(*) AS total FROM custos`;
 
       const conditions = [];
@@ -46,21 +47,25 @@ class CustosController {
         countQuery += whereClause;
       }
 
+      // Aplicar LIMIT e OFFSET APENAS quando há limite definido (não é 'all')
       if (limit) {
         query += ` LIMIT ? OFFSET ?`;
         params.push(limit, offset);
       }
+      // Quando limit=all, não adiciona LIMIT/OFFSET - traz TUDO
 
       const [results] = await pool.query(query, params);
       const [countResult] = await pool.query(countQuery, countParams);
       const total = countResult[0].total;
+
+      // Quando limit=all, totalPages deve ser 1
       const totalPages = limit ? Math.ceil(total / limit) : 1;
 
       res.status(200).json({
         page: limit ? page : 1,
         totalPages,
         totalItems: total,
-        itemsPerPage: limit || total,
+        itemsPerPage: limit || total, // Quando limit=all, mostra o total real
         data: results,
       });
     } catch (err) {

@@ -197,13 +197,29 @@ const CustosTemporadaPage = () => {
                 onClick={() => setExpandido(expandido === custo.id_custo ? null : custo.id_custo)}
               >
                 <ListItemText
-                  primary={custo.evento}
+                  primary={
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <Typography fontFamily="Poppins" fontWeight={600} color="secondary">
+                        {custo.evento}
+                      </Typography>
+                      {custo.turma_nome && (
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            bgcolor: 'primary.main',
+                            color: 'white',
+                            px: 1,
+                            py: 0.5,
+                            borderRadius: 1,
+                            fontWeight: 600
+                          }}
+                        >
+                          {custo.turma_nome}
+                        </Typography>
+                      )}
+                    </Stack>
+                  }
                   secondary={`Valor: R$ ${formatCentavosToBRL(custo.valor)} | Pago Parcial: ${formatCentavosToBRL(custo.valor_pago_parcial)} | Vencimento: ${formatDateToDDMMYYYY(custo.vencimento)} | Criado em: ${formatDateToDDMMYYYY(custo.criado_em)}`}
-                  primaryTypographyProps={{
-                    fontFamily: "Poppins",
-                    fontWeight: 600,
-                    color: 'secondary'
-                  }}
                 />
               </ListItem>
               <Collapse in={expandido === custo.id_custo} timeout="auto" unmountOnExit>

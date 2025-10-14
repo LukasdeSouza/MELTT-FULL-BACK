@@ -100,7 +100,7 @@ const CentroCustosTurmaPage = () => {
 
   const fetchCustosByTurma = async (turmaId:string) => {
     try {
-      const response = await apiGetData('academic', `/custos-turma/${turmaId}`)
+      const response = await apiGetData('academic', `/custos-turma/${turmaId}?limit=all`)
       return response.data
     } catch (error) {
       toast.error('erro ao buscar custos da turma')

@@ -42,6 +42,9 @@ const CustosTemporadaPage = () => {
   const [custosTemporada, setCustosTemporada] = useState([]);
   const [editando, setEditando] = useState<number | null>(null);
   const [novaSituacao, setNovaSituacao] = useState('');
+  const [editandoCompleto, setEditandoCompleto] = useState<number | null>(null);
+  const [fornecedores, setFornecedores] = useState([]);
+  const [dadosEdicao, setDadosEdicao] = useState<Custos | null>(null);
 
   const fetchCustosTemporada = async (searchTerm = '') => {
     const url = searchTerm
@@ -49,9 +52,16 @@ const CustosTemporadaPage = () => {
       : '/custos?limit=all&tipo_custo=Temporada';
 
     const response = await apiGetData('academic', url);
-    console.log('Response: ', response.data);
-    
     setCustosTemporada(response.data || []);
+  };
+
+  const fetchFornecedores = async () => {
+    try {
+      const response = await apiGetData('academic', '/fornecedores');
+      setFornecedores(response.data || []);
+    } catch (error) {
+      console.error('Erro ao buscar fornecedores:', error);
+    }
   };
 
   const handleEditarSituacao = (custo: Custos) => {
@@ -91,8 +101,57 @@ const CustosTemporadaPage = () => {
     setNovaSituacao('');
   };
 
+  const handleEditarCompleto = (custo: Custos) => {
+    setEditandoCompleto(custo.id_custo);
+    setDadosEdicao({
+      ...custo,
+      vencimento: custo.vencimento ? new Date(custo.vencimento).toISOString().split('T')[0] : '',
+    } as Custos);
+  };
+
+  const handleSalvarEdicaoCompleta = async () => {
+    if (!dadosEdicao) return;
+
+    try {
+      const body = {
+        id_custo: dadosEdicao.id_custo,
+        tipo_custo: dadosEdicao.tipo_custo,
+        turma_id: dadosEdicao.turma_id,
+        evento: dadosEdicao.evento,
+        fornecedor_id: dadosEdicao.fornecedor_id,
+        beneficiario: dadosEdicao.beneficiario,
+        categoria: dadosEdicao.categoria,
+        valor: dadosEdicao.valor,
+        valor_pago_parcial: dadosEdicao.valor_pago_parcial,
+        vencimento: dadosEdicao.vencimento,
+        situacao: dadosEdicao.situacao,
+      };
+
+      await apiPutData('academic', '/custos', body);
+      toast.success('Custo atualizado com sucesso!');
+      setEditandoCompleto(null);
+      setDadosEdicao(null);
+      fetchCustosTemporada(filtro);
+    } catch (error) {
+      toast.error('Erro ao atualizar custo');
+      console.error('Erro ao atualizar custo:', error);
+    }
+  };
+
+  const handleCancelarEdicaoCompleta = () => {
+    setEditandoCompleto(null);
+    setDadosEdicao(null);
+  };
+
+  const handleChangeDadosEdicao = (field: keyof Custos, value: any) => {
+    if (dadosEdicao) {
+      setDadosEdicao({ ...dadosEdicao, [field]: value });
+    }
+  };
+
   useEffect(() => {
     fetchCustosTemporada();
+    fetchFornecedores();
   }, []);
 
   useEffect(() => {
@@ -125,7 +184,7 @@ const CustosTemporadaPage = () => {
 
       />
       <Paper elevation={2}>
-        <List sx={{ mb: 4, maxHeight: '60vh', overflowY: 'auto' }}>
+        <List>
           {custosTemporada.map((custo: Custos) => (
             <React.Fragment key={custo.id_custo}>
               <ListItem
@@ -139,7 +198,7 @@ const CustosTemporadaPage = () => {
               >
                 <ListItemText
                   primary={custo.evento}
-                  secondary={`Valor: R$ ${formatCentavosToBRL(custo.valor)} | Pago Parcial: ${custo.valor_pago_parcial} | Vencimento: ${formatDateToDDMMYYYY(custo.vencimento)} | Criado em: ${formatDateToDDMMYYYY(custo.criado_em)}`}
+                  secondary={`Valor: R$ ${formatCentavosToBRL(custo.valor)} | Pago Parcial: ${formatCentavosToBRL(custo.valor_pago_parcial)} | Vencimento: ${formatDateToDDMMYYYY(custo.vencimento)} | Criado em: ${formatDateToDDMMYYYY(custo.criado_em)}`}
                   primaryTypographyProps={{
                     fontFamily: "Poppins",
                     fontWeight: 600,
@@ -149,75 +208,201 @@ const CustosTemporadaPage = () => {
               </ListItem>
               <Collapse in={expandido === custo.id_custo} timeout="auto" unmountOnExit>
                 <Box sx={{ px: 3, py: 2, bgcolor: '#F6F7FB' }}>
-                  <Stack direction={'column'} spacing={2}>
-                    <Stack direction={'row'} alignItems={'center'} justifyContent={'space-between'}>
-                      <Typography variant="body2" color="text.secondary">
-                        Categoria: {custo.categoria}
+                  {editandoCompleto === custo.id_custo && dadosEdicao ? (
+                    <Stack direction={'column'} spacing={2}>
+                      <Typography variant="h6" color="primary" fontWeight={600}>
+                        Editar Custo
                       </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Beneficiario: {custo.beneficiario}
-                      </Typography>
+
+                      <Stack direction={'row'} spacing={2}>
+                        <TextField
+                          label="Nome do Evento"
+                          fullWidth
+                          size="small"
+                          value={dadosEdicao.evento}
+                          onChange={(e) => handleChangeDadosEdicao('evento', e.target.value)}
+                        />
+                        <TextField
+                          label="Categoria"
+                          fullWidth
+                          size="small"
+                          value={dadosEdicao.categoria}
+                          onChange={(e) => handleChangeDadosEdicao('categoria', e.target.value)}
+                        />
+                      </Stack>
+
+                      <Stack direction={'row'} spacing={2}>
+                        <TextField
+                          label="Beneficiário"
+                          fullWidth
+                          size="small"
+                          value={dadosEdicao.beneficiario}
+                          onChange={(e) => handleChangeDadosEdicao('beneficiario', e.target.value)}
+                        />
+                        <TextField
+                          select
+                          label="Fornecedor"
+                          fullWidth
+                          size="small"
+                          value={dadosEdicao.fornecedor_id || ''}
+                          onChange={(e) => handleChangeDadosEdicao('fornecedor_id', e.target.value ? Number(e.target.value) : null)}
+                        >
+                          <MenuItem value="">Nenhum</MenuItem>
+                          {fornecedores.map((fornecedor: any) => (
+                            <MenuItem key={fornecedor.id} value={fornecedor.id}>
+                              {fornecedor.nome}
+                            </MenuItem>
+                          ))}
+                        </TextField>
+                      </Stack>
+
+                      <Stack direction={'row'} spacing={2}>
+                        <TextField
+                          label="Valor (R$)"
+                          fullWidth
+                          size="small"
+                          type="number"
+                          value={dadosEdicao.valor || ''}
+                          onChange={(e) => handleChangeDadosEdicao('valor', e.target.value ? Number(e.target.value) : null)}
+                        />
+                        <TextField
+                          label="Valor Pago Parcial (R$)"
+                          fullWidth
+                          size="small"
+                          type="number"
+                          value={dadosEdicao.valor_pago_parcial || ''}
+                          onChange={(e) => handleChangeDadosEdicao('valor_pago_parcial', e.target.value ? Number(e.target.value) : null)}
+                        />
+                      </Stack>
+
+                      <Stack direction={'row'} spacing={2}>
+                        <TextField
+                          label="Data de Vencimento"
+                          fullWidth
+                          size="small"
+                          type="date"
+                          slotProps={{ inputLabel: { shrink: true } }}
+                          value={dadosEdicao.vencimento}
+                          onChange={(e) => handleChangeDadosEdicao('vencimento', e.target.value)}
+                        />
+                        <TextField
+                          select
+                          label="Situação"
+                          fullWidth
+                          size="small"
+                          value={dadosEdicao.situacao}
+                          onChange={(e) => handleChangeDadosEdicao('situacao', e.target.value)}
+                        >
+                          {situacoes.map((option) => (
+                            <MenuItem key={option.value} value={option.value}>
+                              {option.label}
+                            </MenuItem>
+                          ))}
+                        </TextField>
+                      </Stack>
+
+                      <Stack direction={'row'} spacing={2} justifyContent={'flex-end'}>
+                        <Button
+                          variant="contained"
+                          startIcon={<SaveIcon />}
+                          onClick={handleSalvarEdicaoCompleta}
+                          color="primary"
+                        >
+                          Salvar Alterações
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          startIcon={<CancelIcon />}
+                          onClick={handleCancelarEdicaoCompleta}
+                          color="secondary"
+                        >
+                          Cancelar
+                        </Button>
+                      </Stack>
                     </Stack>
-                    
-                    <Stack direction={'row'} alignItems={'center'} justifyContent={'space-between'}>
-                      <Stack direction={'row'} alignItems={'center'} spacing={2}>
+                  ) : (
+                    <Stack direction={'column'} spacing={2}>
+                      <Stack direction={'row'} alignItems={'center'} justifyContent={'space-between'}>
                         <Typography variant="body2" color="text.secondary">
-                          Situação:
+                          Categoria: {custo.categoria}
                         </Typography>
-                        {editando === custo.id_custo ? (
-                          <TextField
-                            select
-                            size="small"
-                            value={novaSituacao}
-                            onChange={(e) => setNovaSituacao(e.target.value)}
-                            sx={{ minWidth: 150 }}
-                          >
-                            {situacoes.map((option) => (
-                              <MenuItem key={option.value} value={option.value}>
-                                {option.label}
-                              </MenuItem>
-                            ))}
-                          </TextField>
-                        ) : (
-                          <Typography variant="body2" color="text.secondary">
-                            {custo.situacao}
-                          </Typography>
-                        )}
+                        <Typography variant="body2" color="text.secondary">
+                          Beneficiario: {custo.beneficiario}
+                        </Typography>
                       </Stack>
-                      
-                      <Stack direction={'row'} spacing={1}>
-                        {editando === custo.id_custo ? (
-                          <>
-                            <Button
+
+                      <Stack direction={'row'} alignItems={'center'} justifyContent={'space-between'}>
+                        <Stack direction={'row'} alignItems={'center'} spacing={2}>
+                          <Typography variant="body2" color="text.secondary">
+                            Situação:
+                          </Typography>
+                          {editando === custo.id_custo ? (
+                            <TextField
+                              select
                               size="small"
-                              startIcon={<SaveIcon />}
-                              onClick={() => handleSalvarSituacao(custo)}
-                              color="primary"
+                              value={novaSituacao}
+                              onChange={(e) => setNovaSituacao(e.target.value)}
+                              sx={{ minWidth: 150 }}
                             >
-                              Salvar
-                            </Button>
-                            <Button
-                              size="small"
-                              startIcon={<CancelIcon />}
-                              onClick={handleCancelarEdicao}
-                              color="secondary"
-                            >
-                              Cancelar
-                            </Button>
-                          </>
-                        ) : (
-                          <Button
-                            size="small"
-                            startIcon={<EditIcon />}
-                            onClick={() => handleEditarSituacao(custo)}
-                            color="primary"
-                          >
-                            Editar Situação
-                          </Button>
-                        )}
+                              {situacoes.map((option) => (
+                                <MenuItem key={option.value} value={option.value}>
+                                  {option.label}
+                                </MenuItem>
+                              ))}
+                            </TextField>
+                          ) : (
+                            <Typography variant="body2" color="text.secondary">
+                              {custo.situacao}
+                            </Typography>
+                          )}
+                        </Stack>
+
+                        <Stack direction={'row'} spacing={1}>
+                          {editando === custo.id_custo ? (
+                            <>
+                              <Button
+                                size="small"
+                                startIcon={<SaveIcon />}
+                                onClick={() => handleSalvarSituacao(custo)}
+                                color="primary"
+                              >
+                                Salvar
+                              </Button>
+                              <Button
+                                size="small"
+                                startIcon={<CancelIcon />}
+                                onClick={handleCancelarEdicao}
+                                color="secondary"
+                              >
+                                Cancelar
+                              </Button>
+                            </>
+                          ) : (
+                            <>
+                              <Button
+                                size="small"
+                                startIcon={<EditIcon />}
+                                onClick={() => handleEditarCompleto(custo)}
+                                color="primary"
+                                variant="contained"
+                              >
+                                Editar Registro
+                              </Button>
+                              <Button
+                                size="small"
+                                startIcon={<EditIcon />}
+                                onClick={() => handleEditarSituacao(custo)}
+                                color="secondary"
+                                variant="outlined"
+                              >
+                                Editar Situação
+                              </Button>
+                            </>
+                          )}
+                        </Stack>
                       </Stack>
                     </Stack>
-                  </Stack>
+                  )}
                 </Box>
               </Collapse>
               <Divider />

@@ -20,10 +20,11 @@ import { CustomJwtPayload } from '../../components/customDrawer';
 
 const initialForm = {
   tipo_custo: '',
-  turma_id: '',
+  turma_id: null,
   evento: '',
   fornecedor_id: '',
   beneficiario: '',
+  chave_pix: null,
   categoria: '',
   valor: '',
   valor_pago_parcial: '',
@@ -251,17 +252,23 @@ const CustosPage = () => {
             }}>
             <div className='flex flex-col'>
               <div className='flex flex-col'>
-                <Stack direction={'column'}>
-                  <small className='text-sm text-secondary'>Evento e Data</small>
+                <Stack direction={'column'} fontFamily={'Poppins'}>
+                  <small className='text-sm text-secondary'>Categoria Vencimento e Valor</small>
                   <p className='font-medium'>{custo.evento} - {formatDateToDDMMYYYY(custo.vencimento)}</p>
                 </Stack>
-                <Stack alignItems={'center'} direction={'row'} gap={1}>
+                <Stack alignItems={'center'} direction={'row'} gap={1} fontFamily={'Poppins'}>
                   <small className='text-sm text-gray-500'>Valor:</small>
                   <p>{custo.valor ? `R$ ${(custo.valor / 100).toFixed(2)}` : 'R$ 0,00'}</p>
                 </Stack>
+                {custo.chave_pix && (
+                  <Stack alignItems={'center'} direction={'row'} gap={1} fontFamily={'Poppins'}>
+                    <small className='text-sm text-gray-500'>Chave Pix:</small>
+                    <p className='text-sm'>{custo.chave_pix}</p>
+                  </Stack>
+                )}
               </div>
             </div>
-            <IoTrashOutline className='text-red-700' onClick={() => handleDelete(custo.id_custo)} />
+            <IoTrashOutline className='text-red-700' style={{ cursor: 'pointer' }} onClick={() => handleDelete(custo.id_custo)} />
           </Card>
         )}
         </CustomCard>
@@ -302,12 +309,18 @@ const CustosPage = () => {
           }} key={custo.id_custo}>
             <div className='flex flex-col'>
               <div className='flex flex-col'>
-                <small className='text-sm text-secondary'>Evento e data</small>
+                <small className='text-sm text-secondary'>Categoria Vencimento e Valor</small>
                 <p className='font-medium'>{custo.evento} - {formatDateToDDMMYYYY(custo.vencimento)}</p>
                 <Stack direction={'row'} alignItems={'center'} gap={1}>
                   <small className='text-sm text-gray-500'>Valor</small>
                   <p>{custo.valor ? `R$ ${(custo.valor / 100).toFixed(2)}` : 'R$ 0,00'}</p>
                 </Stack>
+                {custo.chave_pix && (
+                  <Stack alignItems={'center'} direction={'row'} gap={1}>
+                    <small className='text-sm text-gray-500'>Chave Pix:</small>
+                    <p className='text-sm'>{custo.chave_pix}</p>
+                  </Stack>
+                )}
               </div>
             </div>
             <IoTrashOutline className='text-red-700' style={{ cursor: 'pointer' }} onClick={() => handleDelete(custo.id_custo)} />
@@ -354,12 +367,18 @@ const CustosPage = () => {
             }} key={custo.id_custo}>
               <div className='flex flex-col'>
                 <div className='flex flex-col'>
-                  <small className='text-sm text-secondary'>Evento e data</small>
+                  <small className='text-sm text-secondary'>Categoria Vencimento e Valor</small>
                   <p className='font-medium'>{custo.evento} - {formatDateToDDMMYYYY(custo.vencimento)}</p>
                   <Stack direction={'row'} alignItems={'center'} gap={1}>
                     <small className='text-sm text-gray-500'>Valor</small>
                     <p>{custo.valor ? `R$ ${(custo.valor / 100).toFixed(2)}` : 'R$ 0,00'}</p>
                   </Stack>
+                  {custo.chave_pix && (
+                    <Stack alignItems={'center'} direction={'row'} gap={1}>
+                      <small className='text-sm text-gray-500'>Chave Pix:</small>
+                      <p className='text-sm'>{custo.chave_pix}</p>
+                    </Stack>
+                  )}
                 </div>
               </div>
               <IoTrashOutline className='text-red-700' style={{ cursor: 'pointer' }} onClick={() => handleDelete(custo.id_custo)} />
@@ -512,6 +531,15 @@ const CustosPage = () => {
               name="beneficiario"
               placeholder='nome do beneficiário do custo'
               value={form.beneficiario}
+              onChange={handleChange}
+              size='small'
+              fullWidth
+            />
+            <TextField
+              label="Chave Pix"
+              name="chave_pix"
+              placeholder='chave pix do beneficiário '
+              value={form.chave_pix}
               onChange={handleChange}
               size='small'
               fullWidth

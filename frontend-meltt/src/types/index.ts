@@ -105,4 +105,5 @@ export interface Custos {
   valor_pago_parcial: number | null | undefined;
   valor_restante: string;
   beneficiario: string;
+  chave_pix?: string | null;
 }

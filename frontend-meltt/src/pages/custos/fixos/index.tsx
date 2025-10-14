@@ -45,8 +45,8 @@ const CustosFixosPage = () => {
 
   const fetchCustosFixo = async (searchTerm = '') => {
     const url = searchTerm
-      ? `/custos?tipo_custo=Fixo&evento=${encodeURIComponent(searchTerm)}`
-      : '/custos?tipo_custo=Fixo';
+      ? `/custos?limit=all&tipo_custo=Fixo&evento=${encodeURIComponent(searchTerm)}`
+      : '/custos?limit=all&tipo_custo=Fixo';
 
     const response = await apiGetData('academic', url);
     setCustosFixo(response.data || []);
@@ -128,7 +128,7 @@ const CustosFixosPage = () => {
         sx={{ mb: 3, width: '40%' }}
       />
       <Paper elevation={2}>
-        <List>
+        <List sx={{ mb: 4, maxHeight: '60vh', overflowY: 'auto' }}>
           {custosFixo.map((custo: Custos) => (
             <React.Fragment key={custo.id_custo}>
               <ListItem

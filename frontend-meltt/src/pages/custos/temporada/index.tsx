@@ -45,10 +45,12 @@ const CustosTemporadaPage = () => {
 
   const fetchCustosTemporada = async (searchTerm = '') => {
     const url = searchTerm
-      ? `/custos?tipo_custo=Temporada&evento=${encodeURIComponent(searchTerm)}`
-      : '/custos?tipo_custo=Temporada';
+      ? `/custos?limit=all&tipo_custo=Temporada&evento=${encodeURIComponent(searchTerm)}`
+      : '/custos?limit=all&tipo_custo=Temporada';
 
     const response = await apiGetData('academic', url);
+    console.log('Response: ', response.data);
+    
     setCustosTemporada(response.data || []);
   };
 
@@ -123,7 +125,7 @@ const CustosTemporadaPage = () => {
 
       />
       <Paper elevation={2}>
-        <List>
+        <List sx={{ mb: 4, maxHeight: '60vh', overflowY: 'auto' }}>
           {custosTemporada.map((custo: Custos) => (
             <React.Fragment key={custo.id_custo}>
               <ListItem

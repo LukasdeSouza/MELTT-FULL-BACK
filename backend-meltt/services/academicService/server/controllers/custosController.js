@@ -3,8 +3,8 @@ import pool from "../db.js";
 class CustosController {
   async getAllCustos(req, res) {
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const offset = (page - 1) * limit;
+    let limit = req.query.limit === 'all' ? null : parseInt(req.query.limit) || 10;
+    let offset = limit ? (page - 1) * limit : 0;
 
     const situacao = req.query.situacao;
     const tipoCusto = req.query.tipo_custo;
@@ -46,19 +46,21 @@ class CustosController {
         countQuery += whereClause;
       }
 
-      query += ` LIMIT ? OFFSET ?`;
-      params.push(limit, offset);
+      if (limit) {
+        query += ` LIMIT ? OFFSET ?`;
+        params.push(limit, offset);
+      }
 
       const [results] = await pool.query(query, params);
       const [countResult] = await pool.query(countQuery, countParams);
       const total = countResult[0].total;
-      const totalPages = Math.ceil(total / limit);
+      const totalPages = limit ? Math.ceil(total / limit) : 1;
 
       res.status(200).json({
-        page,
+        page: limit ? page : 1,
         totalPages,
         totalItems: total,
-        itemsPerPage: limit,
+        itemsPerPage: limit || total,
         data: results,
       });
     } catch (err) {

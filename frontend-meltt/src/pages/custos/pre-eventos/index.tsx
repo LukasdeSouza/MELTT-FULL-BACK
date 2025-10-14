@@ -48,8 +48,8 @@ const CustosPreEventosPage = () => {
     setLoading(true)
     try {
       const url = searchTerm
-        ? `/custos?tipo_custo=Pre-evento&evento=${encodeURIComponent(searchTerm)}`
-        : '/custos?tipo_custo=Pre-evento';
+        ? `/custos?limit=all&tipo_custo=Pre-evento&evento=${encodeURIComponent(searchTerm)}`
+        : '/custos?limit=all&tipo_custo=Pre-evento';
 
       const response = await apiGetData('academic', url);
       setCustosPreEvento(response.data || []);
@@ -143,7 +143,7 @@ const CustosPreEventosPage = () => {
         >
           Carregando informações de custos
         </Stack> : (
-          <List>
+          <List sx={{ mb: 4, maxHeight: '60vh', overflowY: 'auto' }}>
             {custosPreEvento.map((custo: Custos) => (
               <React.Fragment key={custo.id_custo}>
                 <ListItem

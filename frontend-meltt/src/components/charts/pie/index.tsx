@@ -35,16 +35,29 @@ const CustomizedLabel = ({
   );
 };
 
-// const CustomLegend = ({payload}) => (
-//   <ul style={{ listStyleType: 'none', padding: 0 }}>
-//     {payload.map((entry, index) => (
-//       <li key={`item-${index}`} style={{ color: entry.payload.fill }}>
-//         <span style={{ display: 'inline-block', width: 10, height: 10, backgroundColor: entry.payload.fill, marginRight: 10 }} />
-//         {entry.name}: {entry.value}
-//       </li>
-//     ))}
-//   </ul>
-// )
+const CustomTooltip = ({ active, payload }: any) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    const valorFormatado = new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    }).format(data.resultado);
+
+    return (
+      <div style={{
+        backgroundColor: 'white',
+        padding: '10px',
+        border: '1px solid #ccc',
+        borderRadius: '4px',
+        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+      }}>
+        <p style={{ margin: 0, fontWeight: 'bold', color: '#333' }}>{data.key}</p>
+        <p style={{ margin: '5px 0 0 0', color: '#666' }}>{valorFormatado}</p>
+      </div>
+    );
+  }
+  return null;
+};
 
 type PieChartData = {
   key: string;
@@ -84,7 +97,7 @@ const CustomPieChart = ({ data, COLORS }: CustomPieChartProps) => {
           />
         ))}
       </Pie>
-      <Tooltip formatter={(value, name) => [value, name]} />
+      <Tooltip content={<CustomTooltip />} />
       <Legend/>
     </PieChart>
   );

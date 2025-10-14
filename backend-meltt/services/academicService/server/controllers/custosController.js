@@ -149,6 +149,80 @@ class CustosController {
     }
   }
 
+  async getTotalCustosById(req, res) {
+    const turmaId = req.params.id; // id da turma vindo da rota
+    try {
+      const [totalResult] = await pool.query(
+        `SELECT SUM(valor) AS total 
+       FROM custos 
+       WHERE turma_id = ?`,
+        [turmaId]
+      );
+
+      const [totalByTypeResult] = await pool.query(
+        `SELECT 
+        tipo_custo,
+        SUM(valor) AS total
+       FROM custos 
+       WHERE turma_id = ?
+       GROUP BY tipo_custo`,
+        [turmaId]
+      );
+
+      const totalGeralCentavos = totalResult[0].total || 0;
+      const totalGeralReais = totalGeralCentavos / 100;
+
+      const formatToCurrency = (centavos) => {
+        const reais = centavos / 100;
+        return reais.toLocaleString('pt-BR', {
+          style: 'currency',
+          currency: 'BRL',
+        });
+      };
+
+      const totaisPorTipo = {
+        'Fixo': 0,
+        'Pre-evento': 0,
+        'Temporada': 0
+      };
+
+      totalByTypeResult.forEach(row => {
+        if (totaisPorTipo.hasOwnProperty(row.tipo_custo)) {
+          totaisPorTipo[row.tipo_custo] = row.total || 0;
+        }
+      });
+
+      const response = {
+        turmaId,
+        totalGeral: formatToCurrency(totalGeralCentavos),
+        totalGeralCentavos: totalGeralCentavos,
+        totalGeralReais: totalGeralReais,
+        totaisPorTipo: {
+          fixo: {
+            centavos: totaisPorTipo['Fixo'],
+            reais: totaisPorTipo['Fixo'] / 100,
+            formatado: formatToCurrency(totaisPorTipo['Fixo'])
+          },
+          preEvento: {
+            centavos: totaisPorTipo['Pre-evento'],
+            reais: totaisPorTipo['Pre-evento'] / 100,
+            formatado: formatToCurrency(totaisPorTipo['Pre-evento'])
+          },
+          temporada: {
+            centavos: totaisPorTipo['Temporada'],
+            reais: totaisPorTipo['Temporada'] / 100,
+            formatado: formatToCurrency(totaisPorTipo['Temporada'])
+          }
+        }
+      };
+
+      res.status(200).json(response);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+
+
   async createCustos(req, res) {
     const {
       tipo_custo,
@@ -160,12 +234,13 @@ class CustosController {
       valor,
       valor_pago_parcial,
       vencimento,
-      situacao
+      situacao,
+      chave_pix
     } = req.body;
     console.log(req.body, "req.body custos");
     const query =
-      `INSERT INTO custos (tipo_custo, turma_id, evento, fornecedor_id, beneficiario, categoria, valor, valor_pago_parcial, vencimento, situacao)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+      `INSERT INTO custos (tipo_custo, turma_id, evento, fornecedor_id, beneficiario, categoria, valor, valor_pago_parcial, vencimento, situacao, chave_pix)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
     try {
       const [result] = await pool.query(query, [
         tipo_custo,
@@ -177,7 +252,8 @@ class CustosController {
         valor,
         valor_pago_parcial,
         vencimento,
-        situacao
+        situacao,
+        chave_pix ?? null
       ]);
       res.status(201).json(result);
     } catch (err) {
@@ -197,10 +273,11 @@ class CustosController {
       valor,
       valor_pago_parcial,
       vencimento,
-      situacao
+      situacao,
+      chave_pix
     } = req.body;
     const query =
-      `UPDATE custos SET tipo_custo = ?, turma_id = ?, evento = ?, fornecedor_id = ?, beneficiario = ?, categoria = ?, valor = ?, valor_pago_parcial = ?, vencimento = ?, situacao = ? WHERE id_custo = ?`;
+      `UPDATE custos SET tipo_custo = ?, turma_id = ?, evento = ?, fornecedor_id = ?, beneficiario = ?, categoria = ?, valor = ?, valor_pago_parcial = ?, vencimento = ?, situacao = ?, chave_pix = ? WHERE id_custo = ?`;
     try {
       await pool.query(query, [
         tipo_custo,
@@ -213,6 +290,7 @@ class CustosController {
         valor_pago_parcial,
         vencimento,
         situacao,
+        chave_pix ?? null,
         id
       ]);
       res.status(200).json({

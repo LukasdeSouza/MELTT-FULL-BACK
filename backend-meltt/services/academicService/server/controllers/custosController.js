@@ -60,7 +60,6 @@ class CustosController {
       const [countResult] = await pool.query(countQuery, countParams);
       const total = countResult[0].total;
 
-      // Quando limit=all, totalPages deve ser 1
       const totalPages = limit ? Math.ceil(total / limit) : 1;
 
       res.status(200).json({

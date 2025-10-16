@@ -97,6 +97,7 @@ export interface Custos {
   evento: string;
   tipo_custo?: string;
   turma_id?: number;
+  turma_nome?: string;
   fornecedor_id?: number;
   vencimento: Date | string;
   valor: number | null | undefined;
@@ -105,4 +106,5 @@ export interface Custos {
   valor_pago_parcial: number | null | undefined;
   valor_restante: string;
   beneficiario: string;
+  chave_pix?: string | null;
 }

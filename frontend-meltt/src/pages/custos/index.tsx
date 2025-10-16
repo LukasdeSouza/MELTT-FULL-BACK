@@ -19,6 +19,7 @@ import { IoTrashOutline } from 'react-icons/io5';
 import { getToken } from '../../utils/token';
 import { jwtDecode } from 'jwt-decode';
 import { CustomJwtPayload } from '../../components/customDrawer';
+import formatCentavosToBRL from '../../utils/functions/formatCentavosToBRL';
 
 const initialForm = {
   tipo_custo: '',
@@ -319,7 +320,7 @@ const CustosPage = () => {
                 )}
                 <Stack alignItems={'center'} direction={'row'} gap={1} fontFamily={'Poppins'}>
                   <small className='text-sm text-gray-500' style={{fontFamily:'Poppins'}}>Valor:</small>
-                  <p style={{fontFamily:'Poppins'}}>{custo.valor ? `R$ ${(custo.valor / 100).toFixed(2)}` : 'R$ 0,00'}</p>
+                  <p style={{fontFamily:'Poppins'}}>{custo.valor ? `R$ ${formatCentavosToBRL(custo.valor)}` : 'R$ 0,00'}</p>
                 </Stack>
                 {custo.chave_pix && (
                   <Stack alignItems={'center'} direction={'row'} gap={1} fontFamily={'Poppins'}>
@@ -380,7 +381,7 @@ const CustosPage = () => {
                 )}
                 <Stack direction={'row'} alignItems={'center'} gap={1}>
                   <small className='text-sm text-gray-500' style={{fontFamily:'Poppins'}}>Valor:</small>
-                  <p style={{fontFamily:'Poppins'}}>{custo.valor ? `R$ ${(custo.valor / 100).toFixed(2)}` : 'R$ 0,00'}</p>
+                  <p style={{fontFamily:'Poppins'}}>{custo.valor ? `R$ ${formatCentavosToBRL(custo.valor)}` : 'R$ 0,00'}</p>
                 </Stack>
                 {custo.chave_pix && (
                   <Stack alignItems={'center'} direction={'row'} gap={1}>
@@ -444,7 +445,7 @@ const CustosPage = () => {
                   )}
                   <Stack direction={'row'} alignItems={'center'} gap={1}>
                     <small className='text-sm text-gray-500' style={{fontFamily:'Poppins'}}>Valor:</small>
-                    <p style={{fontFamily:'Poppins'}}>{custo.valor ? `R$ ${(custo.valor / 100).toFixed(2)}` : 'R$ 0,00'}</p>
+                    <p style={{fontFamily:'Poppins'}}>{custo.valor ? `R$ ${formatCentavosToBRL(custo.valor)}` : 'R$ 0,00'}</p>
                   </Stack>
                   {custo.chave_pix && (
                     <Stack alignItems={'center'} direction={'row'} gap={1}>

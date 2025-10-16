@@ -27,10 +27,13 @@ import formatDateToDDMMYYYY from '../../../utils/functions/formatDate';
 import formatCentavosToBRL from '../../../utils/functions/formatCentavosToBRL';
 import { Custos } from '../../../types';
 import toast from 'react-hot-toast';
+import { NumericFormat } from 'react-number-format';
+import parseCurrencyToCents from '../../../utils/functions/currency_to_cents';
+import { parse } from 'path';
 
 const situacoes = [
   { value: 'Pendente', label: 'Pendente' },
-  { value: 'pago', label: 'Pago' },
+  { value: 'Pago', label: 'Pago' },
   { value: 'Parcialmente Pago', label: 'Pago Parcial' },
   { value: 'Vencido', label: 'Vencido' },
 ];
@@ -66,6 +69,7 @@ const CustosFixosPage = () => {
 
   const handleEditarSituacao = (custo: Custos) => {
     setEditando(custo.id_custo);
+    console.log("Nova situação:", custo.situacao);
     setNovaSituacao(custo.situacao);
   };
 
@@ -87,7 +91,7 @@ const CustosFixosPage = () => {
         situacao: novaSituacao,
       };
 
-      await apiPutData('academic', '/custos', body);
+      await apiPutData('academic', `/custos/${custo.id_custo}`, body);
       toast.success('Situação atualizada com sucesso!');
       setEditando(null);
       setNovaSituacao('');
@@ -109,6 +113,7 @@ const CustosFixosPage = () => {
       ...custo,
       vencimento: custo.vencimento ? new Date(custo.vencimento).toISOString().split('T')[0] : '',
     } as Custos);
+    console.log(dadosEdicao?.valor);
   };
 
   const handleSalvarEdicaoCompleta = async () => {
@@ -129,7 +134,7 @@ const CustosFixosPage = () => {
         situacao: dadosEdicao.situacao,
       };
 
-      await apiPutData('academic', '/custos', body);
+      await apiPutData('academic', `/custos/${dadosEdicao.id_custo}`, body);
       toast.success('Custo atualizado com sucesso!');
       setEditandoCompleto(null);
       setDadosEdicao(null);
@@ -219,7 +224,7 @@ const CustosFixosPage = () => {
                       )}
                     </Stack>
                   }
-                  secondary={`Valor: R$ ${formatCentavosToBRL(custo.valor)} | Pago Parcial: ${custo.valor_pago_parcial} | Vencimento: ${formatDateToDDMMYYYY(custo.vencimento)} | Criado em: ${formatDateToDDMMYYYY(custo.criado_em)}`}
+                  secondary={`Valor: R$ ${formatCentavosToBRL(custo.valor)} | Pago Parcial: R$ ${formatCentavosToBRL(custo.valor_pago_parcial) || "R$ 0.00"} | Vencimento: ${formatDateToDDMMYYYY(custo.vencimento)} | Criado em: ${formatDateToDDMMYYYY(custo.criado_em)}`}
                 />
               </ListItem>
               <Collapse in={expandido === custo.id_custo} timeout="auto" unmountOnExit>
@@ -273,21 +278,51 @@ const CustosFixosPage = () => {
                       </Stack>
 
                       <Stack direction={'row'} spacing={2}>
-                        <TextField
+                        <NumericFormat
+                          value={(dadosEdicao.valor ?? 0) / 100}
+                          allowLeadingZeros
+                          thousandSeparator="."
+                          allowNegative={false}
+                          decimalSeparator=","
+                          decimalScale={2}
+                          fixedDecimalScale
+                          prefix="R$"
+                          customInput={TextField}
                           label="Valor (R$)"
-                          fullWidth
+                          name="valor"
                           size="small"
-                          type="number"
-                          value={dadosEdicao.valor || ''}
-                          onChange={(e) => handleChangeDadosEdicao('valor', e.target.value ? Number(e.target.value) : null)}
+                          fullWidth
+                          onValueChange={(values) => {
+                            const { floatValue } = values;
+                            const centavos = Math.round((floatValue || 0) * 100);
+
+                            if (centavos !== dadosEdicao.valor) {
+                              handleChangeDadosEdicao('valor', centavos);
+                            }
+                          }}
                         />
-                        <TextField
-                          label="Valor Pago Parcial (R$)"
-                          fullWidth
+                        <NumericFormat
+                          value={(dadosEdicao.valor_pago_parcial ?? 0) / 100}
+                          allowLeadingZeros
+                          thousandSeparator="."
+                          allowNegative={false}
+                          decimalSeparator=","
+                          decimalScale={2}
+                          fixedDecimalScale
+                          prefix="R$"
+                          customInput={TextField}
+                          label="Valor Pago Parcial(R$)"
+                          name="valor_pago_parcial"
                           size="small"
-                          type="number"
-                          value={dadosEdicao.valor_pago_parcial || ''}
-                          onChange={(e) => handleChangeDadosEdicao('valor_pago_parcial', e.target.value ? Number(e.target.value) : null)}
+                          fullWidth
+                          onValueChange={(values) => {
+                            const { floatValue } = values;
+                            const centavos = Math.round((floatValue || 0) * 100);
+
+                            if (centavos !== dadosEdicao.valor) {
+                              handleChangeDadosEdicao('valor_pago_parcial', centavos);
+                            }
+                          }}
                         />
                       </Stack>
 

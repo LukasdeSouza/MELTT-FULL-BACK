@@ -194,7 +194,7 @@ const CustosPreEventosPage = () => {
         sx={{ mb: 3, width: '40%' }}
 
       />
-      <Paper elevation={2}>
+      <Paper elevation={2} sx={{height: '60vh', overflow: 'auto'}}>
         {loading ? <Stack
           width={'100%'}
           height={'100%'}

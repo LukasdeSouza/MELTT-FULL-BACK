@@ -184,7 +184,7 @@ const CustosTemporadaPage = () => {
         sx={{ mb: 3, width: '40%' }}
 
       />
-      <Paper elevation={2}>
+      <Paper elevation={2} sx={{height: '60vh', overflow: 'auto'}}>
         <List>
           {custosTemporada.map((custo: Custos) => (
             <React.Fragment key={custo.id_custo}>

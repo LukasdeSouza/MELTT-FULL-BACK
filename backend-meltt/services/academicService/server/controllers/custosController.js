@@ -167,14 +167,15 @@ class CustosController {
           if (row.situacao === 'pago') {
             totalPago += valor;
           } else if (row.situacao === 'Pendente') {
-            totalPendente += valor;
+            totalPendente += valor; // Valor completo está pendente
           } else if (row.situacao === 'Parcialmente Pago') {
             const valorPagoParcial = row.total_pago_parcial || 0;
-            totalParcial += valor;
+            totalParcial += valorPagoParcial; // Valor que já foi pago parcialmente
             totalPago += valorPagoParcial; // Soma o que foi pago parcialmente
             totalPendente += (valor - valorPagoParcial); // O restante é pendente
           } else if (row.situacao === 'Vencido') {
             totalVencido += valor;
+            totalPendente += valor; // Valores vencidos também são pendentes
           }
 
           totalValor += valor;
@@ -221,14 +222,15 @@ class CustosController {
         if (row.situacao === 'pago') {
           totalGeralPago += valor;
         } else if (row.situacao === 'Pendente') {
-          totalGeralPendente += valor;
+          totalGeralPendente += valor; // Valor completo está pendente
         } else if (row.situacao === 'Parcialmente Pago') {
           const valorPagoParcial = row.total_pago_parcial || 0;
-          totalGeralParcial += valor; // Total dos valores marcados como parciais
+          totalGeralParcial += valorPagoParcial; // Valor que já foi pago parcialmente
           totalGeralPago += valorPagoParcial; // Soma o que foi pago dos parciais
           totalGeralPendente += (valor - valorPagoParcial); // Soma o que ainda falta pagar dos parciais
         } else if (row.situacao === 'Vencido') {
           totalGeralVencido += valor;
+          totalGeralPendente += valor; // Valores vencidos também são pendentes
         }
       });
 

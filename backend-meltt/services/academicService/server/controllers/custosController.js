@@ -162,14 +162,14 @@ class CustosController {
         let totalVencido = 0;
 
         details.forEach(row => {
-          const valor = row.total_valor || 0;
+          const valor = parseFloat(row.total_valor) || 0;
 
           if (row.situacao === 'pago') {
             totalPago += valor;
           } else if (row.situacao === 'Pendente') {
             totalPendente += valor; // Valor completo está pendente
           } else if (row.situacao === 'Parcialmente Pago') {
-            const valorPagoParcial = row.total_pago_parcial || 0;
+            const valorPagoParcial = parseFloat(row.total_pago_parcial) || 0;
             totalParcial += valorPagoParcial; // Valor que já foi pago parcialmente
             totalPago += valorPagoParcial; // Soma o que foi pago parcialmente
             totalPendente += (valor - valorPagoParcial); // O restante é pendente
@@ -217,14 +217,14 @@ class CustosController {
       let totalGeralVencido = 0;
 
       paymentDetailsGeneral.forEach(row => {
-        const valor = row.total_valor || 0;
+        const valor = parseFloat(row.total_valor) || 0;
 
         if (row.situacao === 'pago') {
           totalGeralPago += valor;
         } else if (row.situacao === 'Pendente') {
           totalGeralPendente += valor; // Valor completo está pendente
         } else if (row.situacao === 'Parcialmente Pago') {
-          const valorPagoParcial = row.total_pago_parcial || 0;
+          const valorPagoParcial = parseFloat(row.total_pago_parcial) || 0;
           totalGeralParcial += valorPagoParcial; // Valor que já foi pago parcialmente
           totalGeralPago += valorPagoParcial; // Soma o que foi pago dos parciais
           totalGeralPendente += (valor - valorPagoParcial); // Soma o que ainda falta pagar dos parciais

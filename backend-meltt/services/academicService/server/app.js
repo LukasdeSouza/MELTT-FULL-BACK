@@ -7,6 +7,9 @@ import FormData from 'form-data'
 // import authMiddleware from "./middlewares/auth";
 import multer from "multer";
 
+// Jobs
+import "./jobs/blingSync.js";
+
 // Routes
 import routes from "./routes/index.js";
 

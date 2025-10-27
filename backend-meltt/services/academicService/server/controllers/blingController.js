@@ -1,92 +1,54 @@
 import axios from "axios";
 import pool from "../db.js";
-import fs from 'fs';
-import { format, subMonths, addMonths } from "date-fns";
 
 class BlingController {
   async getAllContasReceber(req, res) {
     try {
-      const { authorization } = req.headers;
-      const { pagina = 1, situacoes, dataInicial, dataFinal } = req.query;
-      const token = authorization.replace(/^Bearer\s+/i, "");
-      fs.writeFileSync('.temp_bling_token', token);
+      const { pagina = 1, limit = 20, situacoes, dataInicial, dataFinal } = req.query;
+      const offset = (pagina - 1) * limit;
 
-      const params = new URLSearchParams();
-      params.append("limite", "20");
-      params.append("pagina", String(pagina));
-      params.append("tipoFiltroData", "V");
-
-      const isValidDate = (dateStr) => /^\d{4}-\d{2}-\d{2}$/.test(dateStr);
-
-      const finalDataInicial = isValidDate(dataInicial)
-        ? dataInicial
-        : format(subMonths(new Date(), 1), 'yyyy-MM-dd');
-
-      const finalDataFinal = isValidDate(dataFinal)
-        ? dataFinal
-        : format(addMonths(new Date(), 1), 'yyyy-MM-dd');
-
-      params.append("dataInicial", finalDataInicial);
-      params.append("dataFinal", finalDataFinal);
+      let query = "SELECT * FROM pagamentos";
+      const params = [];
+      const whereClauses = [];
 
       if (situacoes) {
-        if (typeof situacoes === 'string') {
-          params.append("situacoes[]", situacoes);
-        }
-
-        if (Array.isArray(situacoes)) {
-          situacoes.forEach((sit) => params.append("situacoes[]", sit));
-        }
+        const situacoesList = Array.isArray(situacoes) ? situacoes : [situacoes];
+        whereClauses.push(`situacao IN (${situacoesList.map(() => "?").join(",")})`);
+        params.push(...situacoesList);
       }
 
-      const response = await axios.get(
-        `https://www.bling.com.br/Api/v3/contas/receber?${params.toString()}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json"
-          }
-        }
-      );
-
-      const contasReceber = response.data.data;
-      let insertedCount = 0;
-      let duplicateCount = 0;
-
-      for (const conta of contasReceber) {
-        const { id: blingPaymentId, valor, vencimento, situacao, dataEmissao, linkBoleto } = conta;
-        const { id: blingContactId, numeroDocumento } = conta.contato;
-
-        try {
-          const [result] = await pool.promise().query(
-            `INSERT INTO pagamentos (
-            bling_payment_id, id_bling, valor, vencimento, situacao, dataEmissao, linkBoleto, numeroDocumento
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?) 
-          ON DUPLICATE KEY UPDATE 
-            valor = VALUES(valor), vencimento = VALUES(vencimento), situacao = VALUES(situacao),
-            dataEmissao = VALUES(dataEmissao), linkBoleto = VALUES(linkBoleto), numeroDocumento = VALUES(numeroDocumento)`,
-            [blingPaymentId, blingContactId, valor, vencimento, situacao, dataEmissao, linkBoleto || null, numeroDocumento]
-          );
-
-          if (result.affectedRows === 1) insertedCount++;
-          else duplicateCount++;
-
-        } catch (queryErr) {
-          console.error("Erro no banco:", queryErr);
-        }
+      if (dataInicial) {
+        whereClauses.push("vencimento >= ?");
+        params.push(dataInicial);
       }
 
-      res.json({
-        message: "Dados salvos com sucesso",
-        data: contasReceber,
-        inserted: insertedCount,
-        duplicates: duplicateCount,
-        success: true
-      });
+      if (dataFinal) {
+        whereClauses.push("vencimento <= ?");
+        params.push(dataFinal);
+      }
+
+      if (whereClauses.length > 0) {
+        query += ` WHERE ${whereClauses.join(" AND ")}`;
+      }
+
+      query += " ORDER BY vencimento DESC LIMIT ? OFFSET ?";
+      params.push(parseInt(limit), parseInt(offset));
+
+      const [rows] = await pool.promise().query(query, params);
+
+      let countQuery = "SELECT COUNT(*) as count FROM pagamentos";
+      if (whereClauses.length > 0) {
+        countQuery += ` WHERE ${whereClauses.join(" AND ")}`;
+        const [countRows] = await pool.promise().query(countQuery, params.slice(0, params.length - 2));
+        res.json({ data: rows, total: countRows[0].count });
+      } else {
+        const [countRows] = await pool.promise().query(countQuery);
+        res.json({ data: rows, total: countRows[0].count });
+      }
 
     } catch (error) {
-      console.error("Erro ao comunicar com Bling:", error.response?.data || error.message);
-      res.status(500).json({ message: error.message, status: error.status });
+      console.error("Erro ao buscar pagamentos:", error);
+      res.status(500).json({ message: "Erro interno do servidor" });
     }
   }
 

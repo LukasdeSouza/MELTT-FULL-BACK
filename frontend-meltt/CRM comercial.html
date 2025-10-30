@@ -1,0 +1,1257 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRM Comercial - Timeline de Turmas</title>
+    <style>
+        body {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100%;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .dashboard-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .dashboard-header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .dashboard-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .period-selector {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .period-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .period-btn.active {
+            background: white;
+            color: #667eea;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 30px;
+            background: #f8f9fa;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-icon {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .main-content {
+            padding: 30px;
+        }
+
+        .pipeline-section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #495057;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .pipeline-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .status-card {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 3px solid transparent;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .status-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+        }
+
+        .status-card.active {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .status-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+        }
+
+        .status-card.contato::before { background: #ffc107; }
+        .status-card.reuniao::before { background: #17a2b8; }
+        .status-card.proposta::before { background: #fd7e14; }
+        .status-card.negociacao::before { background: #28a745; }
+
+        .status-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            display: block;
+        }
+
+        .status-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .status-count {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #667eea;
+        }
+
+        .status-card.active .status-count {
+            color: white;
+        }
+
+        .status-subtitle {
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+
+        .turmas-list-section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            display: none;
+        }
+
+        .turmas-list-section.active {
+            display: block;
+        }
+
+        .list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .list-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #495057;
+        }
+
+        .back-btn {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .back-btn:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+
+        .turmas-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+        }
+
+        .turma-card {
+            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-left: 4px solid #667eea;
+            position: relative;
+        }
+
+        .turma-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+
+        .turma-card.contato { border-left-color: #ffc107; }
+        .turma-card.reuniao { border-left-color: #17a2b8; }
+        .turma-card.proposta { border-left-color: #fd7e14; }
+        .turma-card.negociacao { border-left-color: #28a745; }
+
+        .turma-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .turma-nome {
+            font-weight: bold;
+            color: #495057;
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+        }
+
+        .turma-status-badge {
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .turma-status-badge.contato { background: #fff3cd; color: #856404; }
+        .turma-status-badge.reuniao { background: #cce5ff; color: #004085; }
+        .turma-status-badge.proposta { background: #ffe5d0; color: #8b4513; }
+        .turma-status-badge.negociacao { background: #d4edda; color: #155724; }
+
+        .turma-info {
+            font-size: 0.9rem;
+            color: #6c757d;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .turma-stats {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.85rem;
+            color: #6c757d;
+        }
+
+        .stat-number {
+            font-weight: bold;
+            color: #495057;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+
+        .empty-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .add-turma-section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            margin-bottom: 30px;
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .add-turma-section {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+        }
+
+        .form-select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 5px;
+            background: white;
+            font-size: 0.9rem;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .reports-section {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .chart-container {
+            height: 200px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 15px 0;
+            position: relative;
+        }
+
+        .chart-placeholder {
+            color: #6c757d;
+            font-style: italic;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 600px;
+            margin: 50px auto;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #495057;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #6c757d;
+        }
+
+        .timeline {
+            margin-top: 20px;
+        }
+
+        .timeline-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .timeline-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            font-size: 0.8rem;
+        }
+
+        .timeline-content {
+            flex: 1;
+        }
+
+        .timeline-date {
+            font-size: 0.8rem;
+            color: #6c757d;
+        }
+
+        @media (max-width: 1200px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            .pipeline-columns {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .pipeline-columns {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 15px;
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 CRM Comercial</h1>
+            <p>Timeline e Controle de Turmas</p>
+        </div>
+
+        <div class="dashboard-container">
+            <div class="dashboard-header">
+                <div class="dashboard-title">Pipeline de Vendas</div>
+                <div class="period-selector">
+                    <button class="period-btn active" onclick="changePeriod('semestre')">Semestre</button>
+                    <button class="period-btn" onclick="changePeriod('ano')">Ano</button>
+                    <button class="period-btn" onclick="changePeriod('total')">Total</button>
+                </div>
+            </div>
+
+
+
+            <div class="main-content">
+                <!-- Seção Pipeline de Cards -->
+                <div id="pipeline-view" class="pipeline-section">
+                    <div class="section-title">
+                        🎯 Pipeline de Vendas
+                    </div>
+                    
+                    <div class="pipeline-cards">
+                        <div class="status-card contato" onclick="mostrarTurmas('contato')">
+                            <span class="status-icon">📞</span>
+                            <div class="status-title">Em Contato</div>
+                            <div class="status-count" id="count-contato">0</div>
+                            <div class="status-subtitle">Primeiros contatos realizados</div>
+                        </div>
+                        
+                        <div class="status-card reuniao" onclick="mostrarTurmas('reuniao')">
+                            <span class="status-icon">🤝</span>
+                            <div class="status-title">Em Reunião</div>
+                            <div class="status-count" id="count-reuniao">0</div>
+                            <div class="status-subtitle">Reuniões agendadas/realizadas</div>
+                        </div>
+                        
+                        <div class="status-card proposta" onclick="mostrarTurmas('proposta')">
+                            <span class="status-icon">📋</span>
+                            <div class="status-title">Proposta Enviada</div>
+                            <div class="status-count" id="count-proposta">0</div>
+                            <div class="status-subtitle">Aguardando retorno</div>
+                        </div>
+                        
+                        <div class="status-card negociacao" onclick="mostrarTurmas('negociacao')">
+                            <span class="status-icon">💰</span>
+                            <div class="status-title">Em Negociação</div>
+                            <div class="status-count" id="count-negociacao">0</div>
+                            <div class="status-subtitle">Ajustes e fechamento</div>
+                        </div>
+                    </div>
+
+                    <!-- Seção de Adicionar Turma -->
+                    <div class="add-turma-section" style="margin: 40px 0;">
+                        <div class="section-title">➕ Nova Turma</div>
+                        
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+                            <div class="form-group">
+                                <label class="form-label" for="turma-nome">Nome da Turma</label>
+                                <input type="text" id="turma-nome" class="form-input" placeholder="Ex: Turma Medicina 2024">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label" for="turma-instituicao">Instituição</label>
+                                <input type="text" id="turma-instituicao" class="form-input" placeholder="Ex: Universidade ABC">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label" for="turma-contato">Contato Principal</label>
+                                <input type="text" id="turma-contato" class="form-input" placeholder="Nome do responsável">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label" for="turma-telefone">Telefone</label>
+                                <input type="text" id="turma-telefone" class="form-input" placeholder="(11) 99999-9999">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label" for="turma-status">Status Inicial</label>
+                                <select id="turma-status" class="form-select">
+                                    <option value="contato">Em Contato</option>
+                                    <option value="reuniao">Em Reunião</option>
+                                    <option value="proposta">Proposta Enviada</option>
+                                    <option value="negociacao">Em Negociação</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group" style="display: flex; align-items: end;">
+                                <button class="btn btn-primary" onclick="adicionarTurma()" style="width: 100%;">
+                                    Adicionar Turma
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="reports-section">
+                        <div class="section-title">📈 Relatórios e Exportação</div>
+                        
+                        <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+                            <button class="btn btn-success" onclick="gerarRelatorio()">
+                                📊 Gerar Relatório
+                            </button>
+                            
+                            <button class="btn btn-warning" onclick="exportarDados()">
+                                📤 Exportar CSV
+                            </button>
+                            
+                            <button class="btn btn-primary" onclick="mostrarEstatisticas()">
+                                📈 Ver Estatísticas
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Seção Lista de Turmas -->
+                <div id="turmas-list-view" class="turmas-list-section">
+                    <div class="list-header">
+                        <div class="list-title" id="list-title">Turmas</div>
+                        <button class="back-btn" onclick="voltarPipeline()">← Voltar ao Pipeline</button>
+                    </div>
+                    
+                    <div id="turmas-container" class="turmas-grid">
+                        <!-- Turmas serão inseridas aqui -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Detalhes da Turma -->
+    <div id="turma-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="modal-turma-nome">Detalhes da Turma</div>
+                <button class="close-btn" onclick="fecharModal()">&times;</button>
+            </div>
+            
+            <div id="modal-content-body">
+                <!-- Conteúdo será preenchido dinamicamente -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let turmas = [];
+        let currentPeriod = 'semestre';
+        let currentView = 'pipeline'; // 'pipeline' ou 'list'
+        let currentStatus = null;
+
+        // Dados de exemplo
+        const exemploTurmas = [
+            {
+                id: 1,
+                nome: "Turma Medicina 2024",
+                instituicao: "Universidade Federal",
+                contato: "Dr. João Silva",
+                telefone: "(11) 99999-9999",
+                status: "contato",
+                dataContato: new Date('2024-01-15'),
+                propostas: 0,
+                reunioes: {agendadas: 1, realizadas: 0, remarcadas: 0},
+                timeline: [
+                    {data: new Date('2024-01-15'), acao: 'Primeiro contato realizado', tipo: 'contato'}
+                ]
+            },
+            {
+                id: 2,
+                nome: "Turma Direito 2024",
+                instituicao: "Universidade Estadual",
+                contato: "Profa. Maria Santos",
+                telefone: "(11) 88888-8888",
+                status: "reuniao",
+                dataContato: new Date('2024-01-10'),
+                propostas: 0,
+                reunioes: {agendadas: 1, realizadas: 1, remarcadas: 0},
+                timeline: [
+                    {data: new Date('2024-01-10'), acao: 'Primeiro contato realizado', tipo: 'contato'},
+                    {data: new Date('2024-01-20'), acao: 'Reunião agendada', tipo: 'reuniao'}
+                ]
+            },
+            {
+                id: 3,
+                nome: "Turma Engenharia 2024",
+                instituicao: "Instituto Tecnológico",
+                contato: "Prof. Carlos Lima",
+                telefone: "(11) 77777-7777",
+                status: "proposta",
+                dataContato: new Date('2024-01-05'),
+                propostas: 1,
+                reunioes: {agendadas: 1, realizadas: 1, remarcadas: 0},
+                timeline: [
+                    {data: new Date('2024-01-05'), acao: 'Primeiro contato realizado', tipo: 'contato'},
+                    {data: new Date('2024-01-15'), acao: 'Reunião realizada', tipo: 'reuniao'},
+                    {data: new Date('2024-01-25'), acao: 'Proposta enviada', tipo: 'proposta'}
+                ]
+            },
+            {
+                id: 4,
+                nome: "Turma Administração 2024",
+                instituicao: "Faculdade de Negócios",
+                contato: "Prof. Ana Costa",
+                telefone: "(11) 66666-6666",
+                status: "negociacao",
+                dataContato: new Date('2024-01-01'),
+                propostas: 2,
+                reunioes: {agendadas: 2, realizadas: 2, remarcadas: 1},
+                timeline: [
+                    {data: new Date('2024-01-01'), acao: 'Primeiro contato realizado', tipo: 'contato'},
+                    {data: new Date('2024-01-10'), acao: 'Reunião realizada', tipo: 'reuniao'},
+                    {data: new Date('2024-01-20'), acao: 'Primeira proposta enviada', tipo: 'proposta'},
+                    {data: new Date('2024-01-30'), acao: 'Proposta revisada enviada', tipo: 'negociacao'}
+                ]
+            },
+            {
+                id: 5,
+                nome: "Turma Psicologia 2024",
+                instituicao: "Centro Universitário",
+                contato: "Dra. Beatriz Lima",
+                telefone: "(11) 55555-5555",
+                status: "contato",
+                dataContato: new Date('2024-02-01'),
+                propostas: 0,
+                reunioes: {agendadas: 0, realizadas: 0, remarcadas: 0},
+                timeline: [
+                    {data: new Date('2024-02-01'), acao: 'Primeiro contato realizado', tipo: 'contato'}
+                ]
+            }
+        ];
+
+        turmas = [...exemploTurmas];
+
+        function adicionarTurma() {
+            const nome = document.getElementById('turma-nome').value;
+            const instituicao = document.getElementById('turma-instituicao').value;
+            const contato = document.getElementById('turma-contato').value;
+            const telefone = document.getElementById('turma-telefone').value;
+            const status = document.getElementById('turma-status').value;
+
+            if (!nome || !instituicao || !contato) {
+                alert('Por favor, preencha os campos obrigatórios');
+                return;
+            }
+
+            const novaTurma = {
+                id: Date.now(),
+                nome,
+                instituicao,
+                contato,
+                telefone,
+                status,
+                dataContato: new Date(),
+                propostas: 0,
+                reunioes: {agendadas: 0, realizadas: 0, remarcadas: 0},
+                timeline: [
+                    {data: new Date(), acao: 'Turma adicionada ao sistema', tipo: status}
+                ]
+            };
+
+            turmas.push(novaTurma);
+            
+            // Limpar formulário
+            document.getElementById('turma-nome').value = '';
+            document.getElementById('turma-instituicao').value = '';
+            document.getElementById('turma-contato').value = '';
+            document.getElementById('turma-telefone').value = '';
+            
+            atualizarDashboard();
+        }
+
+        function mostrarTurmas(status) {
+            currentView = 'list';
+            currentStatus = status;
+            
+            // Esconder pipeline e mostrar lista
+            document.getElementById('pipeline-view').style.display = 'none';
+            document.getElementById('turmas-list-view').classList.add('active');
+            
+            // Atualizar título
+            const statusLabels = {
+                contato: '📞 Turmas em Contato',
+                reuniao: '🤝 Turmas em Reunião',
+                proposta: '📋 Turmas com Proposta Enviada',
+                negociacao: '💰 Turmas em Negociação'
+            };
+            
+            document.getElementById('list-title').textContent = statusLabels[status];
+            
+            // Filtrar e mostrar turmas
+            const turmasFiltradas = turmas.filter(turma => turma.status === status);
+            renderizarListaTurmas(turmasFiltradas);
+        }
+
+        function voltarPipeline() {
+            currentView = 'pipeline';
+            currentStatus = null;
+            
+            // Mostrar pipeline e esconder lista
+            document.getElementById('pipeline-view').style.display = 'block';
+            document.getElementById('turmas-list-view').classList.remove('active');
+        }
+
+        function renderizarListaTurmas(turmasList) {
+            const container = document.getElementById('turmas-container');
+            
+            if (turmasList.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">📭</div>
+                        <h3>Nenhuma turma encontrada</h3>
+                        <p>Não há turmas neste status no momento.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = turmasList.map(turma => criarCardTurmaDetalhado(turma)).join('');
+        }
+
+        function criarCardTurmaDetalhado(turma) {
+            return `
+                <div class="turma-card ${turma.status}" onclick="abrirDetalhes(${turma.id})">
+                    <div class="turma-header">
+                        <div>
+                            <div class="turma-nome">${turma.nome}</div>
+                            <div class="turma-info">
+                                <span>🏢</span> ${turma.instituicao}
+                            </div>
+                        </div>
+                        <div class="turma-status-badge ${turma.status}">
+                            ${getStatusLabel(turma.status).replace(/[📞🤝📋💰]/g, '').trim()}
+                        </div>
+                    </div>
+                    
+                    <div class="turma-info">
+                        <span>👤</span> ${turma.contato}
+                    </div>
+                    <div class="turma-info">
+                        <span>📞</span> ${turma.telefone}
+                    </div>
+                    <div class="turma-info">
+                        <span>📅</span> Contato inicial: ${turma.dataContato.toLocaleDateString('pt-BR')}
+                    </div>
+                    
+                    <div class="turma-stats">
+                        <div class="stat-item">
+                            <span>📋</span>
+                            <span class="stat-number">${turma.propostas}</span>
+                            <span>propostas</span>
+                        </div>
+                        <div class="stat-item">
+                            <span>🤝</span>
+                            <span class="stat-number">${turma.reunioes.realizadas}</span>
+                            <span>reuniões</span>
+                        </div>
+                        <div class="stat-item">
+                            <span>🔄</span>
+                            <span class="stat-number">${turma.reunioes.remarcadas}</span>
+                            <span>remarcadas</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function atualizarDashboard() {
+            // Contadores
+            let contadores = {
+                contato: 0,
+                reuniao: 0,
+                proposta: 0,
+                negociacao: 0,
+                fechadas: 0,
+                remarcadas: 0
+            };
+
+            // Filtrar por período se necessário
+            let turmasFiltradas = turmas;
+            
+            turmasFiltradas.forEach(turma => {
+                contadores[turma.status]++;
+                contadores.remarcadas += turma.reunioes.remarcadas;
+            });
+
+            // Atualizar contadores nos cards
+            document.getElementById('count-contato').textContent = contadores.contato;
+            document.getElementById('count-reuniao').textContent = contadores.reuniao;
+            document.getElementById('count-proposta').textContent = contadores.proposta;
+            document.getElementById('count-negociacao').textContent = contadores.negociacao;
+
+            // Atualizar estatísticas do header
+            document.getElementById('total-contato').textContent = contadores.contato;
+            document.getElementById('total-reuniao').textContent = contadores.reuniao;
+            document.getElementById('total-proposta').textContent = contadores.proposta;
+            document.getElementById('total-negociacao').textContent = contadores.negociacao;
+            document.getElementById('total-fechadas').textContent = contadores.fechadas;
+            document.getElementById('total-remarcadas').textContent = contadores.remarcadas;
+
+            // Se estiver na view de lista, atualizar também
+            if (currentView === 'list' && currentStatus) {
+                const turmasFiltradas = turmas.filter(turma => turma.status === currentStatus);
+                renderizarListaTurmas(turmasFiltradas);
+            }
+        }
+
+        function abrirDetalhes(turmaId) {
+            const turma = turmas.find(t => t.id === turmaId);
+            if (!turma) return;
+
+            document.getElementById('modal-turma-nome').textContent = turma.nome;
+            
+            const modalBody = document.getElementById('modal-content-body');
+            modalBody.innerHTML = `
+                <div style="margin-bottom: 20px;">
+                    <h4>📋 Informações Gerais</h4>
+                    <p><strong>Instituição:</strong> ${turma.instituicao}</p>
+                    <p><strong>Contato:</strong> ${turma.contato}</p>
+                    <p><strong>Telefone:</strong> ${turma.telefone}</p>
+                    <p><strong>Status Atual:</strong> ${getStatusLabel(turma.status)}</p>
+                    <p><strong>Data do Primeiro Contato:</strong> ${turma.dataContato.toLocaleDateString('pt-BR')}</p>
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <h4>📊 Estatísticas</h4>
+                    <p><strong>Propostas Enviadas:</strong> ${turma.propostas}</p>
+                    <p><strong>Reuniões Agendadas:</strong> ${turma.reunioes.agendadas}</p>
+                    <p><strong>Reuniões Realizadas:</strong> ${turma.reunioes.realizadas}</p>
+                    <p><strong>Reuniões Remarcadas:</strong> ${turma.reunioes.remarcadas}</p>
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <h4>🎯 Ações</h4>
+                    <button class="btn btn-primary" onclick="moverStatus(${turma.id}, 'reuniao')" style="margin: 5px;">
+                        Agendar Reunião
+                    </button>
+                    <button class="btn btn-primary" onclick="moverStatus(${turma.id}, 'proposta')" style="margin: 5px;">
+                        Enviar Proposta
+                    </button>
+                    <button class="btn btn-success" onclick="moverStatus(${turma.id}, 'negociacao')" style="margin: 5px;">
+                        Iniciar Negociação
+                    </button>
+                </div>
+
+                <div class="timeline">
+                    <h4>📅 Timeline</h4>
+                    ${turma.timeline.map(item => `
+                        <div class="timeline-item">
+                            <div class="timeline-icon ${item.tipo}">
+                                ${getTimelineIcon(item.tipo)}
+                            </div>
+                            <div class="timeline-content">
+                                <div>${item.acao}</div>
+                                <div class="timeline-date">${item.data.toLocaleDateString('pt-BR')}</div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+
+            document.getElementById('turma-modal').style.display = 'block';
+        }
+
+        function moverStatus(turmaId, novoStatus) {
+            const turma = turmas.find(t => t.id === turmaId);
+            if (!turma) return;
+
+            const statusAnterior = turma.status;
+            turma.status = novoStatus;
+
+            // Adicionar à timeline
+            let acao = '';
+            switch(novoStatus) {
+                case 'reuniao':
+                    acao = 'Reunião agendada';
+                    turma.reunioes.agendadas++;
+                    break;
+                case 'proposta':
+                    acao = 'Proposta enviada';
+                    turma.propostas++;
+                    if (statusAnterior === 'reuniao') {
+                        turma.reunioes.realizadas++;
+                    }
+                    break;
+                case 'negociacao':
+                    acao = 'Negociação iniciada';
+                    break;
+            }
+
+            turma.timeline.push({
+                data: new Date(),
+                acao: acao,
+                tipo: novoStatus
+            });
+
+            fecharModal();
+            atualizarDashboard();
+        }
+
+        function getStatusLabel(status) {
+            const labels = {
+                contato: '📞 Em Contato',
+                reuniao: '🤝 Em Reunião',
+                proposta: '📋 Proposta Enviada',
+                negociacao: '💰 Em Negociação'
+            };
+            return labels[status] || status;
+        }
+
+        function getTimelineIcon(tipo) {
+            const icons = {
+                contato: '📞',
+                reuniao: '🤝',
+                proposta: '📋',
+                negociacao: '💰'
+            };
+            return icons[tipo] || '📌';
+        }
+
+        function fecharModal() {
+            document.getElementById('turma-modal').style.display = 'none';
+        }
+
+        function changePeriod(period) {
+            currentPeriod = period;
+            
+            // Atualizar botões
+            document.querySelectorAll('.period-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            atualizarDashboard();
+        }
+
+        function gerarRelatorio() {
+            const relatorio = {
+                periodo: currentPeriod,
+                data: new Date().toLocaleDateString('pt-BR'),
+                estatisticas: {
+                    totalTurmas: turmas.length,
+                    emContato: turmas.filter(t => t.status === 'contato').length,
+                    emReuniao: turmas.filter(t => t.status === 'reuniao').length,
+                    propostaEnviada: turmas.filter(t => t.status === 'proposta').length,
+                    emNegociacao: turmas.filter(t => t.status === 'negociacao').length,
+                    totalPropostas: turmas.reduce((sum, t) => sum + t.propostas, 0),
+                    totalReunioes: turmas.reduce((sum, t) => sum + t.reunioes.realizadas, 0),
+                    totalRemarcadas: turmas.reduce((sum, t) => sum + t.reunioes.remarcadas, 0)
+                }
+            };
+
+            console.log('Relatório gerado:', relatorio);
+            alert('Relatório gerado! Verifique o console para detalhes.');
+        }
+
+        function mostrarEstatisticas() {
+            const totalTurmas = turmas.length;
+            const totalPropostas = turmas.reduce((sum, t) => sum + t.propostas, 0);
+            const totalReunioes = turmas.reduce((sum, t) => sum + t.reunioes.realizadas, 0);
+            const totalRemarcadas = turmas.reduce((sum, t) => sum + t.reunioes.remarcadas, 0);
+            
+            const taxaConversao = {
+                contatoParaReuniao: ((turmas.filter(t => ['reuniao', 'proposta', 'negociacao'].includes(t.status)).length / totalTurmas) * 100).toFixed(1),
+                reuniaoParaProposta: ((turmas.filter(t => ['proposta', 'negociacao'].includes(t.status)).length / totalTurmas) * 100).toFixed(1),
+                propostaParaNegociacao: ((turmas.filter(t => t.status === 'negociacao').length / totalTurmas) * 100).toFixed(1)
+            };
+
+            const modalBody = document.getElementById('modal-content-body');
+            modalBody.innerHTML = `
+                <div style="margin-bottom: 25px;">
+                    <h4>📊 Estatísticas Gerais</h4>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 20px 0;">
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; text-align: center;">
+                            <div style="font-size: 1.5rem; font-weight: bold; color: #667eea;">${totalTurmas}</div>
+                            <div style="font-size: 0.9rem; color: #6c757d;">Total de Turmas</div>
+                        </div>
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; text-align: center;">
+                            <div style="font-size: 1.5rem; font-weight: bold; color: #fd7e14;">${totalPropostas}</div>
+                            <div style="font-size: 0.9rem; color: #6c757d;">Propostas Enviadas</div>
+                        </div>
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; text-align: center;">
+                            <div style="font-size: 1.5rem; font-weight: bold; color: #17a2b8;">${totalReunioes}</div>
+                            <div style="font-size: 0.9rem; color: #6c757d;">Reuniões Realizadas</div>
+                        </div>
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; text-align: center;">
+                            <div style="font-size: 1.5rem; font-weight: bold; color: #dc3545;">${totalRemarcadas}</div>
+                            <div style="font-size: 0.9rem; color: #6c757d;">Reuniões Remarcadas</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 25px;">
+                    <h4>📈 Taxa de Conversão</h4>
+                    <div style="margin: 15px 0;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <span>Contato → Reunião</span>
+                            <span style="font-weight: bold;">${taxaConversao.contatoParaReuniao}%</span>
+                        </div>
+                        <div style="background: #e9ecef; height: 8px; border-radius: 4px;">
+                            <div style="background: #17a2b8; height: 100%; width: ${taxaConversao.contatoParaReuniao}%; border-radius: 4px;"></div>
+                        </div>
+                    </div>
+                    <div style="margin: 15px 0;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <span>Reunião → Proposta</span>
+                            <span style="font-weight: bold;">${taxaConversao.reuniaoParaProposta}%</span>
+                        </div>
+                        <div style="background: #e9ecef; height: 8px; border-radius: 4px;">
+                            <div style="background: #fd7e14; height: 100%; width: ${taxaConversao.reuniaoParaProposta}%; border-radius: 4px;"></div>
+                        </div>
+                    </div>
+                    <div style="margin: 15px 0;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <span>Proposta → Negociação</span>
+                            <span style="font-weight: bold;">${taxaConversao.propostaParaNegociacao}%</span>
+                        </div>
+                        <div style="background: #e9ecef; height: 8px; border-radius: 4px;">
+                            <div style="background: #28a745; height: 100%; width: ${taxaConversao.propostaParaNegociacao}%; border-radius: 4px;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h4>🎯 Insights Estratégicos</h4>
+                    <ul style="margin: 15px 0; padding-left: 20px;">
+                        <li style="margin-bottom: 8px;">Média de propostas por turma: <strong>${(totalPropostas / totalTurmas).toFixed(1)}</strong></li>
+                        <li style="margin-bottom: 8px;">Taxa de remarcação: <strong>${((totalRemarcadas / totalReunioes) * 100).toFixed(1)}%</strong></li>
+                        <li style="margin-bottom: 8px;">Turmas em negociação: <strong>${turmas.filter(t => t.status === 'negociacao').length}</strong> (${((turmas.filter(t => t.status === 'negociacao').length / totalTurmas) * 100).toFixed(1)}%)</li>
+                    </ul>
+                </div>
+            `;
+
+            document.getElementById('modal-turma-nome').textContent = '📊 Estatísticas e Relatórios';
+            document.getElementById('turma-modal').style.display = 'block';
+        }
+
+        function exportarDados() {
+            const dados = turmas.map(turma => ({
+                Nome: turma.nome,
+                Instituicao: turma.instituicao,
+                Contato: turma.contato,
+                Telefone: turma.telefone,
+                Status: getStatusLabel(turma.status),
+                Propostas: turma.propostas,
+                ReuniaoesRealizadas: turma.reunioes.realizadas,
+                ReuniaoesRemarcadas: turma.reunioes.remarcadas,
+                DataContato: turma.dataContato.toLocaleDateString('pt-BR')
+            }));
+
+            const csv = [
+                Object.keys(dados[0]).join(','),
+                ...dados.map(row => Object.values(row).join(','))
+            ].join('\n');
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `crm-comercial-${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }
+
+        // Fechar modal ao clicar fora
+        window.onclick = function(event) {
+            const modal = document.getElementById('turma-modal');
+            if (event.target === modal) {
+                fecharModal();
+            }
+        }
+
+        // Inicializar dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            atualizarDashboard();
+        });
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'993308f421180d27',t:'MTc2MTI0MTM4OC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>

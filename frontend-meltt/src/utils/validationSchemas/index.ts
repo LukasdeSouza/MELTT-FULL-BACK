@@ -32,6 +32,7 @@ export const validateTurmaSchema = Yup.object({
   identificador: Yup.string().required("o campo identificador é obrigatório."),
   ano_formatura: Yup.string().required("o campo ano de formatura é obrigatório."),
   regras_adesao: Yup.string().required("o campo regras de adesão é obrigatório."),
+  tem_brinde: Yup.string().required("o campo tem brinde é obrigatório."),
 });
 
 export const validateAdesaoSchema = Yup.object({

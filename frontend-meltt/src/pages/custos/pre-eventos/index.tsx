@@ -40,20 +40,31 @@ const CustosPreEventosPage = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false)
   const [filtro, setFiltro] = useState('');
+  const [filtroTurma, setFiltroTurma] = useState('');
+  const [filtroData, setFiltroData] = useState('');
   const [expandido, setExpandido] = useState<number | null>(null);
   const [custosPreEvento, setCustosPreEvento] = useState([]);
   const [editando, setEditando] = useState<number | null>(null);
   const [novaSituacao, setNovaSituacao] = useState('');
   const [editandoCompleto, setEditandoCompleto] = useState<number | null>(null);
   const [fornecedores, setFornecedores] = useState([]);
+  const [turmas, setTurmas] = useState([]);
   const [dadosEdicao, setDadosEdicao] = useState<Custos | null>(null);
 
-  const fetchCustosPreEvento = async (searchTerm = '') => {
+  const fetchCustosPreEvento = async (searchTerm = '', turmaId = '', dataVencimento = '') => {
     setLoading(true)
     try {
-      const url = searchTerm
-        ? `/custos?limit=all&tipo_custo=Pre-evento&evento=${encodeURIComponent(searchTerm)}`
-        : '/custos?limit=all&tipo_custo=Pre-evento';
+      let url = `/custos?limit=all&tipo_custo=Pre-evento`;
+
+      if (searchTerm) {
+        url += `&evento=${encodeURIComponent(searchTerm)}`;
+      }
+      if (turmaId) {
+        url += `&turma_id=${turmaId}`;
+      }
+      if (dataVencimento) {
+        url += `&vencimento=${dataVencimento}`;
+      }
 
       const response = await apiGetData('academic', url);
       setCustosPreEvento(response.data || []);
@@ -70,6 +81,15 @@ const CustosPreEventosPage = () => {
       setFornecedores(response.data || []);
     } catch (error) {
       console.error('Erro ao buscar fornecedores:', error);
+    }
+  };
+
+  const fetchTurmas = async () => {
+    try {
+      const response = await apiGetData('academic', '/turmas?all=true');
+      setTurmas(response.data || []);
+    } catch (error) {
+      console.error('Erro ao buscar turmas:', error);
     }
   };
 
@@ -163,17 +183,18 @@ const CustosPreEventosPage = () => {
   useEffect(() => {
     fetchCustosPreEvento();
     fetchFornecedores();
+    fetchTurmas();
   }, []);
 
   useEffect(() => {
     const handler = setTimeout(() => {
-      fetchCustosPreEvento(filtro);
+      fetchCustosPreEvento(filtro, filtroTurma, filtroData);
     }, 500);
 
     return () => {
       clearTimeout(handler);
     };
-  }, [filtro]);
+  }, [filtro, filtroTurma, filtroData]);
 
   return (
     <Box sx={{ width: '100%', mx: 'auto', mt: 4 }}>
@@ -183,17 +204,41 @@ const CustosPreEventosPage = () => {
       <Typography color='primary' variant="h5" fontWeight={700} mb={2}>
         Custos de Pré-Eventos
       </Typography>
-      <TextField
-        label="Filtrar por nome do custo"
-        variant="outlined"
-        size="small"
-        placeholder='busque pelo nome atribuído ao custo'
-        fullWidth
-        value={filtro}
-        onChange={e => setFiltro(e.target.value)}
-        sx={{ mb: 3, width: '40%' }}
-
-      />
+      <Stack direction="row" spacing={2} sx={{ mb: 3 }}>
+        <TextField
+          label="Filtrar por nome do custo"
+          variant="outlined"
+          size="small"
+          placeholder='busque pelo nome atribuído ao custo'
+          value={filtro}
+          onChange={e => setFiltro(e.target.value)}
+          sx={{ flex: 1 }}
+        />
+        <TextField
+          select
+          label="Filtrar por Turma"
+          variant="outlined"
+          size="small"
+          value={filtroTurma}
+          onChange={e => setFiltroTurma(e.target.value)}
+          sx={{ minWidth: 200 }}
+        >
+          <MenuItem value="">Todas</MenuItem>
+          {turmas.map((turma: any) => (
+            <MenuItem key={turma.id} value={turma.id}>{turma.nome}</MenuItem>
+          ))}
+        </TextField>
+        <TextField
+          label="Filtrar por Data de Vencimento"
+          variant="outlined"
+          size="small"
+          type="date"
+          value={filtroData}
+          onChange={e => setFiltroData(e.target.value)}
+          InputLabelProps={{ shrink: true }}
+          sx={{ minWidth: 200 }}
+        />
+      </Stack>
       <Paper elevation={2} sx={{height: '60vh', overflow: 'auto'}}>
         {loading ? <Stack
           width={'100%'}

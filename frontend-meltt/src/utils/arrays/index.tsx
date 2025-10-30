@@ -49,7 +49,7 @@ export const menuListAdmin = [
     ]
   },
   {
-    title: "Turmas",
+    title: "Gestão e Produção",
     route: "/turmas",
     icon: <LiaSchoolSolid size={22} />,
   },

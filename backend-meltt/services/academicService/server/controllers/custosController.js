@@ -11,6 +11,8 @@ class CustosController {
     const situacao = req.query.situacao;
     const tipoCusto = req.query.tipo_custo;
     const evento = req.query.evento;
+    const turmaId = req.query.turma_id;
+    const vencimento = req.query.vencimento;
 
     const situacoesValidas = ["Pendente", "Pago", "Parcialmente Pago", "Vencido"];
     const tiposValidos = ["Fixo", "Pre-evento", "Temporada"];
@@ -19,7 +21,7 @@ class CustosController {
       let query = `SELECT custos.*, turmas.nome AS turma_nome
                    FROM custos
                    LEFT JOIN turmas ON custos.turma_id = turmas.id`;
-      let countQuery = `SELECT COUNT(*) AS total FROM custos`;
+      let countQuery = `SELECT COUNT(*) AS total FROM custos LEFT JOIN turmas ON custos.turma_id = turmas.id`;
 
       const conditions = [];
       const params = [];
@@ -41,6 +43,18 @@ class CustosController {
         conditions.push("custos.evento LIKE ?");
         params.push(`%${evento}%`);
         countParams.push(`%${evento}%`);
+      }
+
+      if (turmaId) {
+        conditions.push("custos.turma_id = ?");
+        params.push(turmaId);
+        countParams.push(turmaId);
+      }
+
+      if (vencimento) {
+        conditions.push("custos.vencimento = ?");
+        params.push(vencimento);
+        countParams.push(vencimento);
       }
 
       if (conditions.length > 0) {

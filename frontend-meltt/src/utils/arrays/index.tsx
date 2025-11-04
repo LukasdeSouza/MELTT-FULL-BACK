@@ -11,6 +11,11 @@ import { TbPigMoney } from "react-icons/tb";
 
 export const menuListAdmin = [
   {
+    title: "CRM Comercial",
+    route: "/comercial",
+    icon: <IoBarChartOutline size={22} />,
+  },
+  {
     title: "Gestão de Contratos",
     route: "/processos-internos",
     icon: <MdOutlineWorkOutline size={22} className="text-white" />,
@@ -49,7 +54,7 @@ export const menuListAdmin = [
     ]
   },
   {
-    title: "Turmas",
+    title: "Gestão e Produção",
     route: "/turmas",
     icon: <LiaSchoolSolid size={22} />,
   },
@@ -122,6 +127,11 @@ export const menuListAssociacao = [
 ];
 
 export const menuListComercial = [
+  {
+    title: "CRM Comercial",
+    route: "/comercial",
+    icon: <IoBarChartOutline size={22} />,
+  },
   {
     title: "Gestão de Contratos",
     route: "/processos-internos",
@@ -256,6 +266,11 @@ export const menuListAdesoes = [
 ];
 
 export const menuListFinanceiro = [
+  {
+    title: "CRM Comercial",
+    route: "/comercial",
+    icon: <IoBarChartOutline size={22} />,
+  },
   {
     title: "Gestão de Contratos",
     route: "/processos-internos",

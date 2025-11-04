@@ -236,6 +236,32 @@ const TurmasEditPage = () => {
                           ))}
                         </Select>
                       </FormControl>
+
+                      <FormControl fullWidth>
+                        <InputLabel id="tem_brinde">Tem Brinde?</InputLabel>
+                        <Select
+                          name="tem_brinde"
+                          label="Tem Brinde?"
+                          value={values.tem_brinde}
+                          onChange={handleChange}
+                          variant="filled"
+                          MenuProps={{
+                            PaperProps: {
+                              sx: {
+                                borderRadius: 2,
+                                mt: 1,
+                                '& .MuiMenuItem-root': {
+                                  py: 1.5,
+                                  '&:hover': { bgcolor: 'primary.light', color: 'white' }
+                                }
+                              }
+                            }
+                          }}
+                        >
+                          <MenuItem value="sim">Sim</MenuItem>
+                          <MenuItem value="nao">Não</MenuItem>
+                        </Select>
+                      </FormControl>
                     </Stack>
 
                     <Stack direction="row" spacing={2}>

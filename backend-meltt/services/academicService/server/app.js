@@ -7,8 +7,12 @@ import FormData from 'form-data'
 // import authMiddleware from "./middlewares/auth";
 import multer from "multer";
 
+// Jobs
+import "./jobs/blingSync.js";
+
 // Routes
 import routes from "./routes/index.js";
+import comercialRoutes from "./routes/comercialRoutes.js";
 
 const uploadMiddleware = multer({ storage: multer.memoryStorage() });
 
@@ -24,6 +28,7 @@ app.use(cors(corsOptions));
 
 // Rotas - /api
 app.use("/api", routes);
+app.use("/api/comercial", comercialRoutes);
 
 // MOMENTÂNEO AQUI NA APP.JS
 app.post("/api/d4sign/upload", uploadMiddleware.single('file'), async (req, res) => {

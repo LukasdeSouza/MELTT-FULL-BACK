@@ -17,6 +17,7 @@ export const initialValuesTurma = {
   regras_rescisao: "",
   regras_renegociacao: "",
   planos_formatura: [],
+  tem_brinde: "nao",
 };
 
 export const initialValuesAdesao = {

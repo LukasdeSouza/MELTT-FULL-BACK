@@ -91,10 +91,11 @@ class TurmaController {
       meltt_contrato_url,
       ano_formatura,
       estatuto_uuid,
-      meltt_contrato_uuid
+      meltt_contrato_uuid,
+      tem_brinde
     } = req.body;
     const query =
-      "INSERT INTO turmas (nome, identificador, regras_adesao, regras_renegociacao, regras_rescisao, arquivo_url, meltt_contrato_url, ano_formatura, estatuto_uuid, meltt_contrato_uuid ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+      "INSERT INTO turmas (nome, identificador, regras_adesao, regras_renegociacao, regras_rescisao, arquivo_url, meltt_contrato_url, ano_formatura, estatuto_uuid, meltt_contrato_uuid, tem_brinde ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     try {
       const [result] = await pool.query(query, [
         nome,
@@ -106,7 +107,8 @@ class TurmaController {
         meltt_contrato_url,
         ano_formatura,
         estatuto_uuid,
-        meltt_contrato_uuid
+        meltt_contrato_uuid,
+        tem_brinde ?? "nao"
       ]);
       res.status(201).json({ id: result.insertId, ...req.body });
     } catch (err) {
@@ -124,10 +126,11 @@ class TurmaController {
       regras_rescisao,
       ano_formatura,
       arquivo_url,
-      meltt_contrato_url
+      meltt_contrato_url,
+      tem_brinde
     } = req.body;
     const query =
-      "UPDATE turmas SET nome = ?, identificador = ?, regras_adesao = ?, regras_renegociacao = ?, regras_rescisao = ?, ano_formatura = ?, arquivo_url = ?, meltt_contrato_url = ? WHERE id = ?";
+      "UPDATE turmas SET nome = ?, identificador = ?, regras_adesao = ?, regras_renegociacao = ?, regras_rescisao = ?, ano_formatura = ?, arquivo_url = ?, meltt_contrato_url = ?, tem_brinde = ? WHERE id = ?";
     try {
       await pool.query(query, [
         nome,
@@ -138,6 +141,7 @@ class TurmaController {
         ano_formatura,
         arquivo_url,
         meltt_contrato_url,
+        tem_brinde ?? "nao",
         id,
       ]);
       res.status(200).json({ message: "Turma atualizado com sucesso!" });

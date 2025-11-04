@@ -1,25 +1,18 @@
 
-
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { NumericFormat } from 'react-number-format';
-import { Box, IconButton, Stack, Tooltip, Button, TextField, MenuItem, Card, Divider, Typography, Collapse } from '@mui/material';
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import { Box, Button, TextField, MenuItem, Card, Divider, Typography, Stack, Grid } from '@mui/material';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import { BiSend } from 'react-icons/bi';
+import { MdEventNote, MdCalendarMonth } from 'react-icons/md';
+import { FaMoneyBillWave } from 'react-icons/fa';
 import CustomModal from '../../components/modal';
 import { useNavigate } from 'react-router-dom';
-import CustomCard from '../../components/card';
-import { apiDeleteData, apiGetData, apiPostData } from '../../services/api';
-import formatDateToDDMMYYYY from '../../utils/functions/formatDate';
-import { Custos } from '../../types';
+import { apiGetData, apiPostData } from '../../services/api';
 import toast from 'react-hot-toast';
-import { BiCalculator } from 'react-icons/bi';
-import { IoTrashOutline } from 'react-icons/io5';
 import { getToken } from '../../utils/token';
 import { jwtDecode } from 'jwt-decode';
 import { CustomJwtPayload } from '../../components/customDrawer';
-import formatCentavosToBRL from '../../utils/functions/formatCentavosToBRL';
 
 const initialForm = {
   tipo_custo: '',
@@ -68,48 +61,12 @@ const CustosPage = () => {
   const decoded = token ? jwtDecode<CustomJwtPayload>(token) : null;
 
   const navigate = useNavigate();
-  const [openModal, setOpenModal] = React.useState(false);
-  const [form, setForm] = React.useState(initialForm);
-  const [loading, setLoading] = React.useState(false);
-  const [totalizadorExpanded, setTotalizadorExpanded] = React.useState(false);
+  const [openModal, setOpenModal] = useState(false);
+  const [form, setForm] = useState(initialForm);
+  const [loading, setLoading] = useState(false);
 
   const [turmas, setTurmas] = useState([]);
   const [fornecedores, setFornecedores] = useState([]);
-  const [custosPreEvento, setCustosPreEvento] = useState([]);
-  const [custosTemporada, setCustosTemporada] = useState([]);
-  const [custosFixo, setCustosFixo] = useState([]);
-  const [totais, setTotais] = useState<any>({
-    geral: 'R$ 0,00',
-    detalhamentoGeral: {
-      pago: { formatado: 'R$ 0,00' },
-      pendente: { formatado: 'R$ 0,00' },
-      parcial: { formatado: 'R$ 0,00' },
-      vencido: { formatado: 'R$ 0,00' }
-    },
-    totaisPorTipo: {
-      fixo: {
-        total: { formatado: 'R$ 0,00' },
-        pago: { formatado: 'R$ 0,00' },
-        pendente: { formatado: 'R$ 0,00' },
-        parcial: { formatado: 'R$ 0,00' },
-        vencido: { formatado: 'R$ 0,00' }
-      },
-      preEvento: {
-        total: { formatado: 'R$ 0,00' },
-        pago: { formatado: 'R$ 0,00' },
-        pendente: { formatado: 'R$ 0,00' },
-        parcial: { formatado: 'R$ 0,00' },
-        vencido: { formatado: 'R$ 0,00' }
-      },
-      temporada: {
-        total: { formatado: 'R$ 0,00' },
-        pago: { formatado: 'R$ 0,00' },
-        pendente: { formatado: 'R$ 0,00' },
-        parcial: { formatado: 'R$ 0,00' },
-        vencido: { formatado: 'R$ 0,00' }
-      }
-    }
-  });
 
 
   const handleOpenModal = () => setOpenModal(true);
@@ -128,34 +85,25 @@ const CustosPage = () => {
     const valorCentavos = Math.round(valorNumero * 100);
     const valorPagoParcialNumero = parseFloat(form.valor_pago_parcial.replace(/\./g, '').replace('R$', '').replace(',', '.'));
     const valorPagoParcialCentavos = Math.round(valorPagoParcialNumero * 100);
-    console.log("Turma id: ", form.turma_id);
+
     const dataObj = {
       ...form,
       valor: valorCentavos,
       valor_pago_parcial: valorPagoParcialCentavos ?? 0,
     };
-    console.log(dataObj);
+
     try {
       const response = await apiPostData('academic', '/custos', dataObj);
       if (response.affectedRows > 0) {
-        toast.success('Informação salva com sucesso')
-        await fetchAll();
+        toast.success('Custo cadastrado com sucesso!');
+        handleCloseModal();
       }
     } catch (error) {
       console.error('Error creating custo:', error);
+      toast.error('Erro ao cadastrar custo');
     } finally {
       setLoading(false);
-      setOpenModal(false);
-      setForm(initialForm);
     }
-  };
-
-  const handleDelete = async (id: number) => {
-    const response = await apiDeleteData('academic', `/custos/${id}`);
-    if (response.message.includes('sucesso')) {
-      toast.success('Registro excluído com sucesso')
-    }
-    await fetchAll();
   };
 
   const fetchTurmas = async () => {
@@ -168,81 +116,40 @@ const CustosPage = () => {
     setFornecedores(response.data || []);
   };
 
-  const fetchCustosPreEvento = async () => {
-    const response = await apiGetData('academic', '/custos?tipo_custo=Pre-evento');
-    setCustosPreEvento(response.data || []);
-  };
-
-  const fetchCustosTemporada = async () => {
-    const response = await apiGetData('academic', '/custos?tipo_custo=Temporada');
-    setCustosTemporada(response.data || []);
-  };
-
-  const fetchCustosFixo = async () => {
-    const response = await apiGetData('academic', '/custos?tipo_custo=Fixo');
-    setCustosFixo(response.data || []);
-  };
-
-  const fetchValorTotal = async () => {
-    const response = await apiGetData('academic', '/custos/valor-total');
-
-    setTotais({
-      geral: response.totalGeral || 'R$ 0,00',
-      detalhamentoGeral: response.detalhamentoGeral || {
-        pago: { formatado: 'R$ 0,00' },
-        pendente: { formatado: 'R$ 0,00' },
-        parcial: { formatado: 'R$ 0,00' },
-        vencido: { formatado: 'R$ 0,00' }
-      },
-      totaisPorTipo: response.totaisPorTipo || {
-        fixo: {
-          total: { formatado: 'R$ 0,00' },
-          pago: { formatado: 'R$ 0,00' },
-          pendente: { formatado: 'R$ 0,00' },
-          parcial: { formatado: 'R$ 0,00' },
-          vencido: { formatado: 'R$ 0,00' }
-        },
-        preEvento: {
-          total: { formatado: 'R$ 0,00' },
-          pago: { formatado: 'R$ 0,00' },
-          pendente: { formatado: 'R$ 0,00' },
-          parcial: { formatado: 'R$ 0,00' },
-          vencido: { formatado: 'R$ 0,00' }
-        },
-        temporada: {
-          total: { formatado: 'R$ 0,00' },
-          pago: { formatado: 'R$ 0,00' },
-          pendente: { formatado: 'R$ 0,00' },
-          parcial: { formatado: 'R$ 0,00' },
-          vencido: { formatado: 'R$ 0,00' }
-        }
-      }
-    });
-  };
-
-  const fetchAll = async () => {
-    await Promise.all([
-      fetchTurmas(),
-      fetchFornecedores(),
-      fetchCustosPreEvento(),
-      fetchCustosTemporada(),
-      fetchCustosFixo(),
-      fetchValorTotal()
-    ]);
-  };
-
-  useEffect(() => {
-    fetchAll();
+  React.useEffect(() => {
+    fetchTurmas();
+    fetchFornecedores();
   }, []);
 
+  const custosPages = [
+    {
+      nome: 'Pré-Eventos',
+      descricao: 'Gerencie custos relacionados a pré-eventos',
+      icon: MdEventNote,
+      link: '/custos/pre-eventos'
+    },
+    {
+      nome: 'Temporada',
+      descricao: 'Gerencie custos da temporada',
+      icon: MdCalendarMonth,
+      link: '/custos/temporada'
+    },
+    ...(decoded?.tipo !== 'GESTAO_PRODUCAO' ? [{
+      nome: 'Custos Fixos',
+      descricao: 'Gerencie custos fixos da organização',
+      icon: FaMoneyBillWave,
+      link: '/custos/fixos'
+    }] : [])
+  ];
+
   return (
-    <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: '#F6F7FB', p: { xs: 2, md: 6 }, pb: '140px' }}>
-      <Stack width={'100%'} direction={'row'} alignItems={'center'} justifyContent={'space-between'}>
+    <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: '#F6F7FB', p: { xs: 2, md: 2 } }}>
+      <Stack width={'100%'} direction={'row'} alignItems={'center'} justifyContent={'space-between'} mb={2}>
         <Typography
           color='secondary'
-          variant='h5'
+          variant='h4'
           fontFamily={'Poppins'}
-          fontWeight={600}
+          fontWeight={700}
         >
           Centro de Custos
         </Typography>
@@ -251,7 +158,7 @@ const CustosPage = () => {
             variant="contained"
             color="secondary"
             onClick={() => navigate('/fornecedores')}
-            sx={{ mb: 2, borderRadius: 2 }}
+            sx={{ borderRadius: 2 }}
           >
             Cadastrar Fornecedor
           </Button>
@@ -260,410 +167,121 @@ const CustosPage = () => {
             color="primary"
             startIcon={<AddCircleOutlineIcon />}
             onClick={handleOpenModal}
-            sx={{ mb: 2, borderRadius: 2 }}
+            sx={{ borderRadius: 2 }}
           >
-            Novo custo
+            Novo Custo
           </Button>
         </Stack>
       </Stack>
-      <Stack direction="row" spacing={4} sx={{ height: 'calc(65vh - 48px)' }}>
-        <CustomCard
-          title="Pré-Eventos"
-          sxProps={{
-            flex: 1,
-            maxHeight: '500px',
-            overflowY: 'auto',
-            '&::-webkit-scrollbar': {
-              width: '8px',
-            },
-            '&::-webkit-scrollbar-track': {
-              background: '#f1f1f1',
-              borderRadius: '4px',
-            },
-            '&::-webkit-scrollbar-thumb': {
-              background: '#c1c1c1',
-              borderRadius: '4px',
-            }
-          }}
-          headerActionContent={
-            <Tooltip title="Ver detalhes de custos de pré-eventos">
-              <IconButton color="primary" onClick={() => navigate('/custos/pre-eventos')}>
-                <InfoOutlinedIcon />
-              </IconButton>
-            </Tooltip>
-          }
-        >{custosPreEvento.map((custo: Custos) =>
-          <Card
-            key={custo.id_custo}
-            sx={{
-              m: 1,
-              p: 2,
-              boxShadow: 1,
-              borderRadius: "8px",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              minHeight: "60px",
-              flexShrink: 0
-            }}>
-            <div className='flex flex-col'>
-              <div className='flex flex-col'>
-                <Stack direction={'column'} fontFamily={'Poppins'}>
-                  <small className='text-sm text-secondary' style={{fontFamily:'Poppins'}}>Categoria, Vencimento e Valor</small>
-                  <p className='font-medium' style={{fontFamily:'Poppins'}}>{custo.evento} - {formatDateToDDMMYYYY(custo.vencimento)}</p>
-                </Stack>
-                {custo.turma_nome && (
-                  <Stack alignItems={'center'} direction={'row'} gap={1} fontFamily={'Poppins'}>
-                    <small className='text-sm text-gray-500' style={{fontFamily:'Poppins'}}>Turma:</small>
-                    <p className='text-sm' style={{fontFamily:'Poppins', fontWeight: 600}}>{custo.turma_nome}</p>
-                  </Stack>
-                )}
-                <Stack alignItems={'center'} direction={'row'} gap={1} fontFamily={'Poppins'}>
-                  <small className='text-sm text-gray-500' style={{fontFamily:'Poppins'}}>Valor:</small>
-                  <p style={{fontFamily:'Poppins'}}>{custo.valor ? `R$ ${formatCentavosToBRL(custo.valor)}` : 'R$ 0,00'}</p>
-                </Stack>
-                {custo.chave_pix && (
-                  <Stack alignItems={'center'} direction={'row'} gap={1} fontFamily={'Poppins'}>
-                    <small className='text-sm text-gray-500' style={{fontFamily:'Poppins'}}>Chave Pix:</small>
-                    <p className='text-sm' style={{fontFamily:'Poppins'}}>{custo.chave_pix}</p>
-                  </Stack>
-                )}
-              </div>
-            </div>
-            <IoTrashOutline className='text-red-700' style={{ cursor: 'pointer' }} onClick={() => handleDelete(custo.id_custo)} />
-          </Card>
-        )}
-        </CustomCard>
-        <CustomCard
-          title="Temporada"
-          sxProps={{
-            flex: 1,
-            maxHeight: '500px',
-            overflowY: 'auto',
-            '&::-webkit-scrollbar': {
-              width: '8px',
-            },
-            '&::-webkit-scrollbar-track': {
-              background: '#f1f1f1',
-              borderRadius: '4px',
-            },
-            '&::-webkit-scrollbar-thumb': {
-              background: '#c1c1c1',
-              borderRadius: '4px',
-            }
-          }}
-          headerActionContent={
-            <IconButton color="primary" onClick={() => navigate('/custos/temporada')}>
-              <InfoOutlinedIcon />
-            </IconButton>
-          }
-        >{custosTemporada.map((custo: Custos) =>
-          <Card sx={{
-            m: 1,
-            p: 2,
-            boxShadow: 1,
-            borderRadius: "8px",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            minHeight: "60px",
-            flexShrink: 0
-          }} key={custo.id_custo}>
-            <div className='flex flex-col'>
-              <div className='flex flex-col'>
-                <small className='text-sm text-secondary' style={{fontFamily:'Poppins'}}>Categoria, Vencimento e Valor</small>
-                <p className='font-medium' style={{fontFamily:'Poppins'}}>{custo.evento} - {formatDateToDDMMYYYY(custo.vencimento)}</p>
-                {custo.turma_nome && (
-                  <Stack alignItems={'center'} direction={'row'} gap={1} fontFamily={'Poppins'}>
-                    <small className='text-sm text-gray-500' style={{fontFamily:'Poppins'}}>Turma:</small>
-                    <p className='text-sm' style={{fontFamily:'Poppins', fontWeight: 600}}>{custo.turma_nome}</p>
-                  </Stack>
-                )}
-                <Stack direction={'row'} alignItems={'center'} gap={1}>
-                  <small className='text-sm text-gray-500' style={{fontFamily:'Poppins'}}>Valor:</small>
-                  <p style={{fontFamily:'Poppins'}}>{custo.valor ? `R$ ${formatCentavosToBRL(custo.valor)}` : 'R$ 0,00'}</p>
-                </Stack>
-                {custo.chave_pix && (
-                  <Stack alignItems={'center'} direction={'row'} gap={1}>
-                    <small className='text-sm text-gray-500' style={{fontFamily:'Poppins'}}>Chave Pix:</small>
-                    <p className='text-sm' style={{fontFamily:'Poppins'}}>{custo.chave_pix}</p>
-                  </Stack>
-                )}
-              </div>
-            </div>
-            <IoTrashOutline className='text-red-700' style={{ cursor: 'pointer' }} onClick={() => handleDelete(custo.id_custo)} />
-          </Card>
-        )}
-        </CustomCard>
-        {decoded?.tipo !== 'GESTAO_PRODUCAO' && (
-          <CustomCard
-            title="Fixos"
-            sxProps={{
-              flex: 1,
-              maxHeight: '500px',
-              overflowY: 'auto',
-              '&::-webkit-scrollbar': {
-                width: '8px',
-              },
-              '&::-webkit-scrollbar-track': {
-                background: '#f1f1f1',
-                borderRadius: '4px',
-              },
-              '&::-webkit-scrollbar-thumb': {
-                background: '#c1c1c1',
-                borderRadius: '4px',
-              }
-            }}
-            headerActionContent={
-              <Tooltip title="Ver detalhes de custos fixos">
-                <IconButton color="primary" onClick={() => navigate('/custos/fixos')}>
-                  <InfoOutlinedIcon />
-                </IconButton>
-              </Tooltip>
-            }
-          >{custosFixo.map((custo: Custos) =>
-            <Card sx={{
-              m: 1,
-              p: 2,
-              boxShadow: 1,
-              borderRadius: "8px",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              minHeight: "60px",
-              flexShrink: 0
-            }} key={custo.id_custo}>
-              <div className='flex flex-col'>
-                <div className='flex flex-col'>
-                  <small className='text-sm text-secondary' style={{fontFamily:'Poppins'}}>Categoria, Vencimento e Valor</small>
-                  <p className='font-medium' style={{fontFamily:'Poppins'}}>{custo.evento} - {formatDateToDDMMYYYY(custo.vencimento)}</p>
-                  {custo.turma_nome && (
-                    <Stack alignItems={'center'} direction={'row'} gap={1} fontFamily={'Poppins'}>
-                      <small className='text-sm text-gray-500' style={{fontFamily:'Poppins'}}>Turma:</small>
-                      <p className='text-sm' style={{fontFamily:'Poppins', fontWeight: 600}}>{custo.turma_nome}</p>
-                    </Stack>
-                  )}
-                  <Stack direction={'row'} alignItems={'center'} gap={1}>
-                    <small className='text-sm text-gray-500' style={{fontFamily:'Poppins'}}>Valor:</small>
-                    <p style={{fontFamily:'Poppins'}}>{custo.valor ? `R$ ${formatCentavosToBRL(custo.valor)}` : 'R$ 0,00'}</p>
-                  </Stack>
-                  {custo.chave_pix && (
-                    <Stack alignItems={'center'} direction={'row'} gap={1}>
-                      <small className='text-sm text-gray-500' style={{fontFamily:'Poppins'}}>Chave Pix:</small>
-                      <p className='text-sm' style={{fontFamily:'Poppins'}}>{custo.chave_pix}</p>
-                    </Stack>
-                  )}
-                </div>
-              </div>
-              <IoTrashOutline className='text-red-700' style={{ cursor: 'pointer' }} onClick={() => handleDelete(custo.id_custo)} />
-            </Card>
-          )}
-          </CustomCard>
-        )}
-      </Stack>
-      {/* Totalizador fixo na parte inferior */}
-      <Box
-        sx={{
-          position: 'fixed',
-          bottom: 0,
-          right: 0,
-          zIndex: 1000,
-          p: 2,
-          maxWidth: 500,
-          width: '100%',
-        }}
-      >
-        <Card
-          sx={{
-            p: 2,
-            backgroundColor: "#fff",
-            borderRadius: "12px 12px 0 0",
-            boxShadow: "0 -4px 20px rgba(0,0,0,0.1)",
-            border: "1px solid #e0e0e0",
-            maxHeight: '80vh',
-            overflowY: 'auto',
-            '&::-webkit-scrollbar': {
-              width: '8px',
-            },
-            '&::-webkit-scrollbar-track': {
-              background: '#f1f1f1',
-              borderRadius: '4px',
-            },
-            '&::-webkit-scrollbar-thumb': {
-              background: '#c1c1c1',
-              borderRadius: '4px',
-            }
-          }}>
-          <Stack
-            direction={'row'}
-            gap={1}
-            alignItems={'center'}
-            mb={1}
-            justifyContent={'space-between'}
-            sx={{ cursor: 'pointer' }}
-            onClick={() => setTotalizadorExpanded(!totalizadorExpanded)}
-          >
-            <Stack direction={'row'} gap={1} alignItems={'center'}>
-              <BiCalculator className='text-secondary' />
-              <Typography variant='body1' color='secondary' fontWeight={600} fontFamily={'Poppins'}>
-                Totalizador de Custos
-              </Typography>
-            </Stack>
-            <IconButton size="small">
-              {totalizadorExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-            </IconButton>
-          </Stack>
-          <Divider sx={{ mb: 1.5 }} />
 
-          {/* Total Geral - Sempre visível */}
-          <Stack direction={'column'} spacing={1} mb={2}>
-            <Typography variant='subtitle2' color='primary' fontWeight={700} fontFamily={'Poppins'}>
-              TOTAL GERAL: {totais.geral}
-            </Typography>
-            <Collapse in={totalizadorExpanded}>
-            <Stack direction={'column'} spacing={0.5} pl={2}>
-              <Stack direction={'row'} justifyContent={'space-between'}>
-                <Typography variant='caption' fontFamily={'Poppins'} sx={{ color: '#4caf50' }}>
-                  Pago:
-                </Typography>
-                <Typography variant='caption' fontFamily={'Poppins'} fontWeight={600} sx={{ color: '#4caf50' }}>
-                  {totais.detalhamentoGeral?.pago?.formatado || 'R$ 0,00'}
-                </Typography>
-              </Stack>
-              <Stack direction={'row'} justifyContent={'space-between'}>
-                <Typography variant='caption' fontFamily={'Poppins'} sx={{ color: '#ff9800' }}>
-                  Pendente:
-                </Typography>
-                <Typography variant='caption' fontFamily={'Poppins'} fontWeight={600} sx={{ color: '#ff9800' }}>
-                  {totais.detalhamentoGeral?.pendente?.formatado || 'R$ 0,00'}
-                </Typography>
-              </Stack>
-              <Stack direction={'row'} justifyContent={'space-between'}>
-                <Typography variant='caption' fontFamily={'Poppins'} sx={{ color: '#2196f3' }}>
-                  Parcial:
-                </Typography>
-                <Typography variant='caption' fontFamily={'Poppins'} fontWeight={600} sx={{ color: '#2196f3' }}>
-                  {totais.detalhamentoGeral?.parcial?.formatado || 'R$ 0,00'}
-                </Typography>
-              </Stack>
-              <Stack direction={'row'} justifyContent={'space-between'}>
-                <Typography variant='caption' fontFamily={'Poppins'} sx={{ color: '#f44336' }}>
-                  Vencido:
-                </Typography>
-                <Typography variant='caption' fontFamily={'Poppins'} fontWeight={600} sx={{ color: '#f44336' }}>
-                  {totais.detalhamentoGeral?.vencido?.formatado || 'R$ 0,00'}
-                </Typography>
-              </Stack>
-            </Stack>
-            </Collapse>
-          </Stack>
+      <Grid container spacing={3} justifyContent="center">
+        {custosPages.map((pagina, index) => {
+          const IconComponent = pagina.icon;
+          return (
+            <Grid key={index} item xs={12} sm={6} md={4} lg={3}>
+              <Card
+                sx={{
+                  height: '75vh',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  background: 'linear-gradient(145deg, #ffffff 0%, #f8f7ff 100%)',
+                  borderRadius: 4,
+                  boxShadow: '0px 8px 24px rgba(45, 28, 99, 0.1)',
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    transform: 'translateY(-5px)',
+                    boxShadow: '0px 12px 32px rgba(45, 28, 99, 0.2)',
+                    '& .card-icon': {
+                      transform: 'scale(1.1)',
+                      filter: 'drop-shadow(0 4px 8px rgba(45, 28, 99, 0.15))'
+                    }
+                  }
+                }}
+              >
+                <Stack
+                  spacing={3}
+                  justifyContent={'center'}
+                  alignItems="center"
+                  p={4}
+                  sx={{ height: '100%' }}
+                >
+                  {/* Ícone decorativo */}
+                  <Box
+                    className="card-icon"
+                    sx={{
+                      width: 80,
+                      height: 80,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      bgcolor: 'primary.light',
+                      borderRadius: '50%',
+                      transition: 'all 0.3s ease',
+                      mb: 2
+                    }}
+                  >
+                    <IconComponent size={32} color="#2D1C63" />
+                  </Box>
 
-          <Collapse in={totalizadorExpanded}>
-          <Divider sx={{ mb: 1.5 }} />
+                  {/* Conteúdo textual */}
+                  <Stack textAlign="center" spacing={1}>
+                    <Typography
+                      variant="h5"
+                      fontWeight={800}
+                      fontFamily="Poppins"
+                      sx={{
+                        background: 'linear-gradient(45deg, #2D1C63 30%, #4A3C8B 90%)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent'
+                      }}
+                    >
+                      {pagina.nome}
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{
+                        lineHeight: 1.6,
+                        minHeight: 60,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                    >
+                      {pagina.descricao}
+                    </Typography>
+                  </Stack>
 
-          {/* Pré-Eventos */}
-          {/* <Stack direction={'column'} spacing={0.5} mb={2}>
-            <Typography variant='body2' fontWeight={600} fontFamily={'Poppins'}>
-              Pré-Eventos: {totais.totaisPorTipo?.preEvento?.total?.formatado || 'R$ 0,00'}
-            </Typography>
-            <Stack direction={'column'} spacing={0.3} pl={2}>
-              <Stack direction={'row'} justifyContent={'space-between'}>
-                <Typography variant='caption' fontFamily={'Poppins'} fontSize={'0.7rem'}>Pago:</Typography>
-                <Typography variant='caption' fontFamily={'Poppins'} fontSize={'0.7rem'} sx={{ color: '#4caf50' }}>
-                  {totais.totaisPorTipo?.preEvento?.pago?.formatado || 'R$ 0,00'}
-                </Typography>
-              </Stack>
-              <Stack direction={'row'} justifyContent={'space-between'}>
-                <Typography variant='caption' fontFamily={'Poppins'} fontSize={'0.7rem'}>Pendente:</Typography>
-                <Typography variant='caption' fontFamily={'Poppins'} fontSize={'0.7rem'} sx={{ color: '#ff9800' }}>
-                  {totais.totaisPorTipo?.preEvento?.pendente?.formatado || 'R$ 0,00'}
-                </Typography>
-              </Stack>
-              <Stack direction={'row'} justifyContent={'space-between'}>
-                <Typography variant='caption' fontFamily={'Poppins'} fontSize={'0.7rem'}>Parcial:</Typography>
-                <Typography variant='caption' fontFamily={'Poppins'} fontSize={'0.7rem'} sx={{ color: '#2196f3' }}>
-                  {totais.totaisPorTipo?.preEvento?.parcial?.formatado || 'R$ 0,00'}
-                </Typography>
-              </Stack>
-              <Stack direction={'row'} justifyContent={'space-between'}>
-                <Typography variant='caption' fontFamily={'Poppins'} fontSize={'0.7rem'}>Vencido:</Typography>
-                <Typography variant='caption' fontFamily={'Poppins'} fontSize={'0.7rem'} sx={{ color: '#f44336' }}>
-                  {totais.totaisPorTipo?.preEvento?.vencido?.formatado || 'R$ 0,00'}
-                </Typography>
-              </Stack>
-            </Stack>
-          </Stack> */}
+                  {/* Botão de ação */}
+                  <Button
+                    variant="contained"
+                    endIcon={<BiSend style={{ marginLeft: 8 }} />}
+                    onClick={() => navigate(pagina.link)}
+                    sx={{
+                      mt: 'auto',
+                      width: '100%',
+                      maxWidth: 200,
+                      borderRadius: 2,
+                      py: 1.5,
+                      background: 'linear-gradient(45deg, #2D1C63 30%, #4A3C8B 90%)',
+                      '&:hover': {
+                        opacity: 0.9,
+                        transform: 'scale(1.02)'
+                      },
+                      transition: 'all 0.3s ease'
+                    }}
+                  >
+                    Acessar
+                  </Button>
+                </Stack>
+              </Card>
+            </Grid>
+          );
+        })}
+      </Grid>
 
-          {/* Temporada */}
-          {/* <Stack direction={'column'} spacing={0.5} mb={2}>
-            <Typography variant='body2' fontWeight={600} fontFamily={'Poppins'}>
-              Temporada: {totais.totaisPorTipo?.temporada?.total?.formatado || 'R$ 0,00'}
-            </Typography>
-            <Stack direction={'column'} spacing={0.3} pl={2}>
-              <Stack direction={'row'} justifyContent={'space-between'}>
-                <Typography variant='caption' fontFamily={'Poppins'} fontSize={'0.7rem'}>Pago:</Typography>
-                <Typography variant='caption' fontFamily={'Poppins'} fontSize={'0.7rem'} sx={{ color: '#4caf50' }}>
-                  {totais.totaisPorTipo?.temporada?.pago?.formatado || 'R$ 0,00'}
-                </Typography>
-              </Stack>
-              <Stack direction={'row'} justifyContent={'space-between'}>
-                <Typography variant='caption' fontFamily={'Poppins'} fontSize={'0.7rem'}>Pendente:</Typography>
-                <Typography variant='caption' fontFamily={'Poppins'} fontSize={'0.7rem'} sx={{ color: '#ff9800' }}>
-                  {totais.totaisPorTipo?.temporada?.pendente?.formatado || 'R$ 0,00'}
-                </Typography>
-              </Stack>
-              <Stack direction={'row'} justifyContent={'space-between'}>
-                <Typography variant='caption' fontFamily={'Poppins'} fontSize={'0.7rem'}>Parcial:</Typography>
-                <Typography variant='caption' fontFamily={'Poppins'} fontSize={'0.7rem'} sx={{ color: '#2196f3' }}>
-                  {totais.totaisPorTipo?.temporada?.parcial?.formatado || 'R$ 0,00'}
-                </Typography>
-              </Stack>
-              <Stack direction={'row'} justifyContent={'space-between'}>
-                <Typography variant='caption' fontFamily={'Poppins'} fontSize={'0.7rem'}>Vencido:</Typography>
-                <Typography variant='caption' fontFamily={'Poppins'} fontSize={'0.7rem'} sx={{ color: '#f44336' }}>
-                  {totais.totaisPorTipo?.temporada?.vencido?.formatado || 'R$ 0,00'}
-                </Typography>
-              </Stack>
-            </Stack>
-          </Stack> */}
-
-          {/* Fixos */}
-          {/* {decoded?.tipo !== 'GESTAO_PRODUCAO' && (
-            <Stack direction={'column'} spacing={0.5}>
-              <Typography variant='body2' fontWeight={600} fontFamily={'Poppins'}>
-                Fixos: {totais.totaisPorTipo?.fixo?.total?.formatado || 'R$ 0,00'}
-              </Typography>
-              <Stack direction={'column'} spacing={0.3} pl={2}>
-                <Stack direction={'row'} justifyContent={'space-between'}>
-                  <Typography variant='caption' fontFamily={'Poppins'} fontSize={'0.7rem'}>Pago:</Typography>
-                  <Typography variant='caption' fontFamily={'Poppins'} fontSize={'0.7rem'} sx={{ color: '#4caf50' }}>
-                    {totais.totaisPorTipo?.fixo?.pago?.formatado || 'R$ 0,00'}
-                  </Typography>
-                </Stack>
-                <Stack direction={'row'} justifyContent={'space-between'}>
-                  <Typography variant='caption' fontFamily={'Poppins'} fontSize={'0.7rem'}>Pendente:</Typography>
-                  <Typography variant='caption' fontFamily={'Poppins'} fontSize={'0.7rem'} sx={{ color: '#ff9800' }}>
-                    {totais.totaisPorTipo?.fixo?.pendente?.formatado || 'R$ 0,00'}
-                  </Typography>
-                </Stack>
-                <Stack direction={'row'} justifyContent={'space-between'}>
-                  <Typography variant='caption' fontFamily={'Poppins'} fontSize={'0.7rem'}>Parcial:</Typography>
-                  <Typography variant='caption' fontFamily={'Poppins'} fontSize={'0.7rem'} sx={{ color: '#2196f3' }}>
-                    {totais.totaisPorTipo?.fixo?.parcial?.formatado || 'R$ 0,00'}
-                  </Typography>
-                </Stack>
-                <Stack direction={'row'} justifyContent={'space-between'}>
-                  <Typography variant='caption' fontFamily={'Poppins'} fontSize={'0.7rem'}>Vencido:</Typography>
-                  <Typography variant='caption' fontFamily={'Poppins'} fontSize={'0.7rem'} sx={{ color: '#f44336' }}>
-                    {totais.totaisPorTipo?.fixo?.vencido?.formatado || 'R$ 0,00'}
-                  </Typography>
-                </Stack>
-              </Stack>
-            </Stack>
-          )} */}
-          </Collapse>
-        </Card>
-      </Box>
       <CustomModal
         title="Novo custo"
         openModal={openModal}

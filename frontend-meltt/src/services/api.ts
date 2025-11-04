@@ -128,4 +128,15 @@ export const apiPutData = (serviceType: string, url: string, data?: any, headers
 export const apiDeleteData = (serviceType: string, url: string, data?: any, headers?: any) =>
   apiRequest(serviceType, "DELETE", url, data, null, headers);
 
+// --- Comercial API ---
 
+export const getComercialTurmas = (params?: any) =>
+  apiGetData('academic', '/comercial/turmas', params);
+
+export const addTurmaToPipeline = (data: any) =>
+  apiPostData('academic', '/comercial/turmas', data);
+
+export const updateComercialTurmaStatus = (id: string, data: any) =>
+  apiPatchData('academic', `/comercial/turmas/${id}`, data);
+
+export const getComercialStats = () => apiGetData('academic', '/comercial/stats');

@@ -230,6 +230,18 @@ class TurmaController {
     });
   }
 
+  async getEventosByTurmaId(req, res) {
+    const turma_id = req.params.id;
+    try {
+      const [result] = await pool.query(
+        "SELECT * FROM eventos WHERE turma_id = ?",
+        [turma_id]
+      );
+      res.status(200).json({ data: result });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  }
 
 }
 

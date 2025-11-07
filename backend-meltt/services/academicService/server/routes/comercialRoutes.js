@@ -5,21 +5,13 @@ import {
   updateTurmaStatus,
   getPipelineStats,
 } from '../controllers/comercialController.js';
-// import { protect, admin } from '../middleware/authMiddleware.js'; // Assuming you have auth middleware
 
 const router = express.Router();
 
-// All routes here are prefixed with /api/comercial
+router.get('/stats', getPipelineStats);
 
-router.route('/stats').get(getPipelineStats); // Add protect middleware later
-
-router
-  .route('/turmas')
-  .post(addTurmaToPipeline) // Add protect middleware later
-  .get(getPipelineTurmas); // Add protect middleware later
-
-router
-  .route('/turmas/:id')
-  .patch(updateTurmaStatus); // Add protect middleware later
+router.post('/turmas', addTurmaToPipeline)
+router.get('/turmas', getPipelineTurmas)
+router.patch('/turmas/:id', updateTurmaStatus)
 
 export default router;

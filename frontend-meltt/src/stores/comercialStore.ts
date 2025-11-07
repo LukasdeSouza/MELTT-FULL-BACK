@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { getComercialTurmas, addTurmaToPipeline, updateComercialTurmaStatus, getComercialStats } from '../services/api';
+import { getComercialTurmas, addTurmaToPipeline, updateComercialTurmaStatus, getComercialStats, apiPostData } from '../services/api';
 import toast from 'react-hot-toast';
 
 export interface TurmaComercial {
@@ -59,14 +59,35 @@ export const useComercialStore = create<ComercialState>((set, get) => ({
 
   addTurma: async (data) => {
     set({ loading: true, error: null });
+
     try {
-      await addTurmaToPipeline(data);
-      toast.success('Turma adicionada ao pipeline com sucesso!');
+      const { nome, instituicao, contatoPrincipal, telefone, status } = data;
+
+      const turmaResponse = await apiPostData('academic', '/turmas', {
+        nome,
+        instituicao,
+      });
+
+      const turmaId = turmaResponse.id;
+
+      await addTurmaToPipeline({
+        turma_id: turmaId,
+        contatoPrincipal,
+        telefone,
+        status,
+      });
+
       await get().fetchTurmas();
+      await get().fetchStats();
+
+      toast.success('Turma adicionada ao pipeline com sucesso!');
     } catch (err: any) {
       const message = err.response?.data?.message || 'Falha ao adicionar turma.';
+      console.error('Erro ao criar turma:', err);
       toast.error(message);
-      set({ loading: false, error: message });
+      set({ error: message });
+    } finally {
+      set({ loading: false });
     }
   },
 
@@ -88,6 +109,7 @@ export const useComercialStore = create<ComercialState>((set, get) => ({
     try {
       const response = await getComercialStats();
       set({ stats: response, loadingStats: false });
+      return response;
     } catch (err) {
       const message = 'Falha ao buscar estatísticas.';
       toast.error(message);

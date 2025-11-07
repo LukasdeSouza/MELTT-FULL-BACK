@@ -26,7 +26,7 @@ import informativosRoutes from './informativosRoutes.js';
 import custosRoutes from './custosRoutes.js';
 import custosTurmaRoutes from './custosTurmaRoutes.js';
 import d4SignRoutes from './d4SignRoutes.js';
-
+import comercialRoutes from './comercialRoutes.js';
 
 
 const router = express.Router();
@@ -44,7 +44,7 @@ router.use("/bling", blingRoutes);
 router.use("/uniticket", uniticketRoutes);
 router.use("/s3/uploads", s3Routes)
 router.use("/planos-formatura", planosFormaturaRoutes);
-router.use("/tarefas", tarefasRoutes )
+router.use("/tarefas", tarefasRoutes)
 router.use("/adesoes", adesoesRoutes)
 router.use("/usuarios", usuariosRoutes);
 router.use("/pagamentos", pagamentosRoutes);
@@ -57,6 +57,7 @@ router.use("/informativos", informativosRoutes);
 router.use("/custos-turma", custosTurmaRoutes);
 router.use("/custos", custosRoutes);
 router.use("/d4sign", d4SignRoutes);
+router.use("/comercial", comercialRoutes);
 
 
 export default router;

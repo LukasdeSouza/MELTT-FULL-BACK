@@ -9,6 +9,8 @@ interface TurmaComercialListProps {
 }
 
 const TurmaComercialList: React.FC<TurmaComercialListProps> = ({ turmas, onTurmaClick }) => {
+  console.log(turmas);
+  
   if (turmas.length === 0) {
     return (
       <Paper sx={{ p: 3, textAlign: 'center' }}>

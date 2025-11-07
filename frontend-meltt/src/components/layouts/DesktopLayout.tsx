@@ -64,7 +64,15 @@ const DesktopLayout = ({ children }: DesktopLayoutProps) => {
   };
 
   return (
-    <Box width={"100%"}>
+    <Box
+      sx={{
+        width: "100%",
+        height: "100vh",
+        overflowY: "auto",
+        overflowX: "hidden",
+        scrollbarWidth: "none",
+      }}
+    >
       <CustomDrawer
         pageTitle={pathNameTransform}
         openModalChangePassword={openModalChangePassword}

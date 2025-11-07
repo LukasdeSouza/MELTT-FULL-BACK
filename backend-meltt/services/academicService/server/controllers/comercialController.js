@@ -55,15 +55,27 @@ export const addTurmaToPipeline = async (req, res) => {
 export const getPipelineTurmas = async (req, res) => {
   const { status } = req.query;
 
+  const safeJsonParse = (value, fallback) => {
+    try {
+      if (value === null || value === undefined) return fallback;
+      if (typeof value === 'object') return value; // já é objeto
+      return JSON.parse(value);
+    } catch {
+      return fallback;
+    }
+  };
+
+  let connection;
+
   try {
-    const connection = await pool.getConnection();
-    
+    connection = await pool.getConnection();
+
     let query = `
       SELECT 
         tc.id,
         tc.turma_id,
         t.nome,
-        t.instituicao, -- Supondo que a tabela turmas tem a coluna instituicao
+        t.instituicao,
         tc.contatoPrincipal,
         tc.telefone,
         tc.status,
@@ -71,7 +83,7 @@ export const getPipelineTurmas = async (req, res) => {
         tc.estatisticas,
         tc.dataPrimeiroContato,
         tc.createdAt,
-        tc.updatedAt
+        tc.updateAt
       FROM turmas_comercial tc
       JOIN turmas t ON tc.turma_id = t.id
     `;
@@ -85,19 +97,19 @@ export const getPipelineTurmas = async (req, res) => {
     query += ' ORDER BY tc.createdAt DESC';
 
     const [rows] = await connection.query(query, params);
-    connection.release();
 
-    // Parse JSON fields
     const results = rows.map(row => ({
       ...row,
-      timeline: JSON.parse(row.timeline || '[]'),
-      estatisticas: JSON.parse(row.estatisticas || '{}'),
+      timeline: safeJsonParse(row.timeline, []),
+      estatisticas: safeJsonParse(row.estatisticas, {}),
     }));
 
     res.status(200).json(results);
   } catch (error) {
-    console.error('Erro ao obter turmas do pipeline:', error);
-    res.status(500).json({ message: 'Erro de servidor' });
+    console.error('Erro ao obter turmas do pipeline:', error.message);
+    res.status(500).json({ message: error.message || 'Erro de servidor' });
+  } finally {
+    if (connection) connection.release();
   }
 };
 

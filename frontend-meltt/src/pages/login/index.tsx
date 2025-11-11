@@ -18,6 +18,7 @@ import { LoadingButton } from "@mui/lab";
 import { BsArrowRight, BsEye, BsEyeSlash } from "react-icons/bs";
 import { MdOutlineMail } from "react-icons/md";
 import { BiLock } from "react-icons/bi";
+import usuarioStore from "../../stores/usuarioStore";
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -48,6 +49,7 @@ const LoginPage = () => {
       if (data.error) {
         toast.error(data.error);
       } else {
+        usuarioStore.setUsuario(data.user);
         setToken(data.token);
         toast.success("Login efetuado com sucesso");
         navigate("/splash");

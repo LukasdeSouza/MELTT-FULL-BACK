@@ -136,7 +136,32 @@ export const updateTurmaStatus = async (req, res) => {
     }
 
     const turma = turmas[0];
-    const timeline = JSON.parse(turma.timeline || '[]');
+
+    let timeline = [];
+    try {
+      // Pode ser JSON válido ou [object Object]
+      if (typeof turma.timeline === 'string') {
+        timeline = JSON.parse(turma.timeline);
+      } else if (Array.isArray(turma.timeline)) {
+        timeline = turma.timeline;
+      } else {
+        timeline = [];
+      }
+    } catch (e) {
+      console.warn('Timeline inválida, redefinindo para []');
+      timeline = [];
+    }
+
+    let estatisticas = {};
+    try {
+      estatisticas =
+        typeof turma.estatisticas === 'string'
+          ? JSON.parse(turma.estatisticas)
+          : turma.estatisticas || {};
+    } catch (e) {
+      console.warn('Estatísticas inválidas, redefinindo para {}');
+      estatisticas = {};
+    }
 
     // Adicionar novo evento à timeline
     timeline.push({
@@ -147,9 +172,10 @@ export const updateTurmaStatus = async (req, res) => {
     });
 
     // Lógica para atualizar estatísticas (exemplo)
-    const estatisticas = JSON.parse(turma.estatisticas || '{}');
+    if (!estatisticas.reunioes) estatisticas.reunioes = { agendadas: 0 };
     if (status === 'reuniao') {
-      estatisticas.reunioes.agendadas = (estatisticas.reunioes.agendadas || 0) + 1;
+      estatisticas.reunioes.agendadas =
+        (estatisticas.reunioes.agendadas || 0) + 1;
     } else if (status === 'proposta') {
       estatisticas.propostas = (estatisticas.propostas || 0) + 1;
     }

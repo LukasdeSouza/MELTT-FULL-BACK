@@ -33,7 +33,7 @@ interface ComercialState {
   error: string | null;
   fetchTurmas: (status?: string) => Promise<void>;
   addTurma: (data: { turma_id: number; contatoPrincipal: string; telefone?: string; status?: string; createdBy: string }) => Promise<void>;
-  updateStatus: (id: string, status: string, acao: string) => Promise<void>;
+  updateStatus: (id: string, status: string, acao: string, responsavel: string) => Promise<void>;
   fetchStats: () => Promise<void>;
 }
 
@@ -91,10 +91,10 @@ export const useComercialStore = create<ComercialState>((set, get) => ({
     }
   },
 
-  updateStatus: async (id, status, acao) => {
+  updateStatus: async (id, status, acao, responsavel) => {
     set({ loading: true, error: null });
     try {
-      await updateComercialTurmaStatus(id, { status, acao });
+      await updateComercialTurmaStatus(id, { status, acao, responsavel });
       toast.success('Status da turma atualizado!');
       await get().fetchTurmas();
     } catch (err) {

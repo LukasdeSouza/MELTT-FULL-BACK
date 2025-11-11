@@ -5,6 +5,9 @@ import TurmaComercialList from './TurmaComercialList';
 import TurmaComercialModal from './TurmaComercialModal';
 import StatsModal from './StatsModal';
 import { exportToCsv } from '../../utils/functions/export';
+import phoneMask from '../../utils/functions/phoneMask';
+import usuarioStore from '../../stores/usuarioStore';
+import { toJS } from 'mobx';
 
 const pipelineStatus: TurmaComercial['status'][] = ['contato', 'reuniao', 'proposta', 'negociacao', 'fechada', 'perdida'];
 
@@ -22,6 +25,7 @@ const ComercialPage = () => {
   const [statusFilter, setStatusFilter] = useState<TurmaComercial['status'] | null>(null);
   const [selectedTurma, setSelectedTurma] = useState<TurmaComercial | null>(null);
   const [isStatsModalOpen, setIsStatsModalOpen] = useState(false);
+  const { usuarioLogado } = usuarioStore;
   const [stats, setStats] = useState<{
     stats: Record<string, number>;
     conversionRates: Record<string, number>;
@@ -88,8 +92,10 @@ const ComercialPage = () => {
   };
 
   const handleUpdateStatus = async (id: string, status: string, acao: string) => {
-    await updateStatus(id, status, acao);
+    const responsavel = toJS(usuarioLogado.id);
+    await updateStatus(id, status, acao, responsavel);
     handleCloseModal();
+    window.location.reload();
   };
 
   const handleExport = () => {
@@ -107,6 +113,17 @@ const ComercialPage = () => {
   ) => {
     const { name, value } = event.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleChangePhone = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = event.target;
+
+    const maskedValue = name === "telefone" ? phoneMask(value) : value;
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]: maskedValue,
+    }));
   };
 
   const handleAddTurma = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -132,7 +149,8 @@ const ComercialPage = () => {
     };
 
     await addTurma(data);
-    fetchStats();
+    await fetchStats();
+    window.location.reload();
   };
 
   if (loading && turmas.length === 0) {
@@ -228,7 +246,7 @@ const ComercialPage = () => {
             <Grid item xs={12} sm={5}>
               <TextField
                 name="contatoPrincipal"
-                label="Contato Principal"
+                label="Nome do Contato Principal"
                 fullWidth
                 required
                 variant="outlined"
@@ -244,7 +262,7 @@ const ComercialPage = () => {
                 fullWidth
                 variant="outlined"
                 value={formData.telefone}
-                onChange={handleChange}
+                onChange={handleChangePhone}
               />
             </Grid>
           </Grid>

@@ -32,7 +32,6 @@ export type StudentInitialValuesFn = (
 
 const UsuariosPageView = () => {
   const navigate = useNavigate();
-  const { stateAluno } = useAlunoContext();
 
   const [turma, setTurma] = useState<
     {

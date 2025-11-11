@@ -54,12 +54,12 @@ const createApiInstance = (serviceType: string): AxiosInstance => {
       if (status === 401 && isBlingRequest) {
         localStorage.removeItem("bling-access-token");
         localStorage.removeItem("bling-refresh-token");
-        
+
         toast.error("Sessão do Bling expirada. Faça login novamente no Bling!", {
           duration: 10000,
           icon: '🔒'
         });
-        
+
         window.location.href = "/configuracoes-bling"; // Ajuste para sua rota
         return Promise.reject(error);
       }
@@ -67,7 +67,7 @@ const createApiInstance = (serviceType: string): AxiosInstance => {
       // Tratamento geral para 401
       if (status === 401) {
         localStorage.removeItem("@meltt-user-token");
-        
+
         toast.error("Sessão expirada. Redirecionando para login...", {
           duration: 4000,
           icon: "🔒"

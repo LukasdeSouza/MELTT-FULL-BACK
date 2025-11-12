@@ -64,7 +64,13 @@ const CustosTemporadaPage = () => {
     }
 
     const response = await apiGetData('academic', url);
-    setCustosTemporada(response.data || []);
+    const data: Custos[] = response.data || [];
+    const sortedData = [...data].sort((a, b) => {
+      const timeA = a?.criado_em ? new Date(a.criado_em).getTime() : 0;
+      const timeB = b?.criado_em ? new Date(b.criado_em).getTime() : 0;
+      return timeB - timeA;
+    });
+    setCustosTemporada(sortedData);
   };
 
   const fetchFornecedores = async () => {

@@ -14,7 +14,7 @@ import BasicTable from "../../components/table";
 import { useEffect, useState } from "react";
 import { useTurmaContext, Turma } from "../../providers/turmaContext";
 import { useNavigate } from "react-router-dom";
-import { apiGetData, apiPostData } from "../../services/api";
+import { apiDeleteData, apiGetData, apiPostData } from "../../services/api";
 import { IoIosDocument, IoMdAdd } from "react-icons/io";
 import { jwtDecode } from "jwt-decode";
 import { getToken } from "../../utils/token";
@@ -28,8 +28,9 @@ import { format, parseISO } from 'date-fns';
 import { FaEye } from "react-icons/fa6";
 import CustomModal from "../../components/modal";
 import { PiSignature } from "react-icons/pi";
-import { MdOutlineModeEdit } from "react-icons/md";
+import { MdDelete, MdOutlineModeEdit } from "react-icons/md";
 import { BiSearch } from "react-icons/bi";
+import { log } from "console";
 
 
 const TurmasPage = () => {
@@ -136,6 +137,28 @@ const TurmasPage = () => {
     setPage(value);
   };
 
+  const handleDeleteTurma = async (id: number) => {
+    const confirmed = window.confirm("Tem certeza que deseja excluir esta turma?");
+    if (!confirmed) return;
+
+    try {
+      await apiDeleteData("academic", `/turmas/${id}`);
+      toast.success("Turma excluída com sucesso!");
+
+      const shouldGoToPreviousPage = page > 1 && turmas.length === 1;
+      const nextPage = shouldGoToPreviousPage ? page - 1 : page;
+
+      if (shouldGoToPreviousPage) {
+        setPage(nextPage);
+      }
+
+      await fetchTurmas(nextPage);
+    } catch (error) {
+      console.error("Erro ao deletar turma:", error);
+      toast.error("Erro ao deletar turma");
+    }
+  };
+
   const dataRowAdmin = (row: Turma) => {
     return (
       <TableRow
@@ -172,6 +195,11 @@ const TurmasPage = () => {
                 setOpenModal(true)
               }}>
               <PiSignature />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title='Excluir Turma'>
+            <IconButton onClick={() => handleDeleteTurma(row.id)}>
+              <MdDelete />
             </IconButton>
           </Tooltip>
           <Tooltip title="Visualizar Turma">

@@ -57,6 +57,7 @@ import CustosPreEventosPage from "../pages/custos/pre-eventos";
 import CustosTemporadaPage from "../pages/custos/temporada";
 import CentroCustosTurmaPage from "../pages/dashboards/centro-custos";
 import ComercialPage from "../pages/comercial";
+import PainelTemporadaPage from "../pages/painel-temporada";
 
 export const router = createBrowserRouter([
   {
@@ -130,6 +131,10 @@ export const router = createBrowserRouter([
       {
         path: "/comercial",
         element: <ComercialPage />,
+      },
+      {
+        path: "/painel-temporada",
+        element: <PainelTemporadaPage />,
       },
       {
         path: "/usuarios",

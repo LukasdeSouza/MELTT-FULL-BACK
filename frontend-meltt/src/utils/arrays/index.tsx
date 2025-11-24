@@ -16,6 +16,11 @@ export const menuListAdmin = [
     icon: <IoBarChartOutline size={22} />,
   },
   {
+    title: "Painel Temporadas",
+    route: "/painel-temporada",
+    icon: <IoBarChartOutline size={22} />,
+  },
+  {
     title: "Gestão de Contratos",
     route: "/processos-internos",
     icon: <MdOutlineWorkOutline size={22} className="text-white" />,
@@ -133,6 +138,11 @@ export const menuListComercial = [
     icon: <IoBarChartOutline size={22} />,
   },
   {
+    title: "Painel Temporadas",
+    route: "/painel-temporada",
+    icon: <IoBarChartOutline size={22} />,
+  },
+  {
     title: "Gestão de Contratos",
     route: "/processos-internos",
     icon: <MdOutlineWorkOutline size={22} className="text-white" />,
@@ -178,6 +188,11 @@ export const menuListComercial = [
 ];
 
 export const menuListGestaoProducao = [
+  {
+    title: "Painel Temporadas",
+    route: "/painel-temporada",
+    icon: <IoBarChartOutline size={22} />,
+  },
   {
     title: "Gestão de Contratos",
     route: "/processos-internos",
@@ -269,6 +284,11 @@ export const menuListFinanceiro = [
   {
     title: "CRM Comercial",
     route: "/comercial",
+    icon: <IoBarChartOutline size={22} />,
+  },
+  {
+    title: "Painel Temporadas",
+    route: "/painel-temporada",
     icon: <IoBarChartOutline size={22} />,
   },
   {

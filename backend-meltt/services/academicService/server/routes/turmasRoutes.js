@@ -10,6 +10,7 @@ router.post("/vincular-planos", authMiddleware, turmaController.vincularPlanoFor
 router.delete("/desvincular-planos", authMiddleware, turmaController.desvincularPlanoFormatura);
 router.post("/", authMiddleware, turmaController.createTurma);
 router.get("/", authMiddleware, turmaController.getAllTurmas);
+router.get("/:id/eventos", authMiddleware, turmaController.getEventosByTurmaId);
 router.get("/:id", authMiddleware, turmaController.getTurmaById);
 router.patch("/:id", authMiddleware, turmaController.updateTurma);
 router.delete("/:id", authMiddleware, turmaController.deleteTurma);

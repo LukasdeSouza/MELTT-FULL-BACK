@@ -298,7 +298,9 @@ const ComercialPage = () => {
         <Typography variant="h6" gutterBottom fontFamily={'Poppins'}>
           {statusFilter ? `Turmas em ${statusLabels[statusFilter]}` : 'Todas as Turmas no Pipeline'}
         </Typography>
-        <TurmaComercialList turmas={filteredTurmas} onTurmaClick={handleTurmaClick} />
+        <Box sx={{ maxHeight: 500, overflowY: 'auto', pr: 1 }}>
+          <TurmaComercialList turmas={filteredTurmas} onTurmaClick={handleTurmaClick} />
+        </Box>
       </Paper>
 
       {/* Modals */}

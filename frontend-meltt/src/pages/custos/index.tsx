@@ -1,9 +1,11 @@
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { NumericFormat } from 'react-number-format';
-import { Box, Button, TextField, MenuItem, Card, Divider, Typography, Stack, Grid } from '@mui/material';
+import { Box, Button, TextField, MenuItem, Card, Divider, Typography, Stack, Grid, Collapse, IconButton } from '@mui/material';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
-import { BiSend } from 'react-icons/bi';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import { BiCalculator, BiSend } from 'react-icons/bi';
 import { MdEventNote, MdCalendarMonth } from 'react-icons/md';
 import { FaMoneyBillWave } from 'react-icons/fa';
 import CustomModal from '../../components/modal';
@@ -68,6 +70,42 @@ const CustosPage = () => {
   const [turmas, setTurmas] = useState([]);
   const [fornecedores, setFornecedores] = useState([]);
 
+  const [custosPreEvento, setCustosPreEvento] = useState([]);
+  const [custosTemporada, setCustosTemporada] = useState([]);
+  const [custosFixo, setCustosFixo] = useState([]);
+  const [totais, setTotais] = useState<any>({
+    geral: 'R$ 0,00',
+    detalhamentoGeral: {
+      pago: { formatado: 'R$ 0,00' },
+      pendente: { formatado: 'R$ 0,00' },
+      parcial: { formatado: 'R$ 0,00' },
+      vencido: { formatado: 'R$ 0,00' }
+    },
+    totaisPorTipo: {
+      fixo: {
+        total: { formatado: 'R$ 0,00' },
+        pago: { formatado: 'R$ 0,00' },
+        pendente: { formatado: 'R$ 0,00' },
+        parcial: { formatado: 'R$ 0,00' },
+        vencido: { formatado: 'R$ 0,00' }
+      },
+      preEvento: {
+        total: { formatado: 'R$ 0,00' },
+        pago: { formatado: 'R$ 0,00' },
+        pendente: { formatado: 'R$ 0,00' },
+        parcial: { formatado: 'R$ 0,00' },
+        vencido: { formatado: 'R$ 0,00' }
+      },
+      temporada: {
+        total: { formatado: 'R$ 0,00' },
+        pago: { formatado: 'R$ 0,00' },
+        pendente: { formatado: 'R$ 0,00' },
+        parcial: { formatado: 'R$ 0,00' },
+        vencido: { formatado: 'R$ 0,00' }
+      }
+    }
+  });
+
 
   const handleOpenModal = () => setOpenModal(true);
   const handleCloseModal = () => {
@@ -121,6 +159,73 @@ const CustosPage = () => {
     fetchFornecedores();
   }, []);
 
+  const fetchCustosPreEvento = async () => {
+    const response = await apiGetData('academic', '/custos?tipo_custo=Pre-evento');
+    setCustosPreEvento(response.data || []);
+  };
+
+  const fetchCustosTemporada = async () => {
+    const response = await apiGetData('academic', '/custos?tipo_custo=Temporada');
+    setCustosTemporada(response.data || []);
+  };
+
+  const fetchCustosFixo = async () => {
+    const response = await apiGetData('academic', '/custos?tipo_custo=Fixo');
+    setCustosFixo(response.data || []);
+  };
+
+  const fetchValorTotal = async () => {
+    const response = await apiGetData('academic', '/custos/valor-total');
+
+    setTotais({
+      geral: response.totalGeral || 'R$ 0,00',
+      detalhamentoGeral: response.detalhamentoGeral || {
+        pago: { formatado: 'R$ 0,00' },
+        pendente: { formatado: 'R$ 0,00' },
+        parcial: { formatado: 'R$ 0,00' },
+        vencido: { formatado: 'R$ 0,00' }
+      },
+      totaisPorTipo: response.totaisPorTipo || {
+        fixo: {
+          total: { formatado: 'R$ 0,00' },
+          pago: { formatado: 'R$ 0,00' },
+          pendente: { formatado: 'R$ 0,00' },
+          parcial: { formatado: 'R$ 0,00' },
+          vencido: { formatado: 'R$ 0,00' }
+        },
+        preEvento: {
+          total: { formatado: 'R$ 0,00' },
+          pago: { formatado: 'R$ 0,00' },
+          pendente: { formatado: 'R$ 0,00' },
+          parcial: { formatado: 'R$ 0,00' },
+          vencido: { formatado: 'R$ 0,00' }
+        },
+        temporada: {
+          total: { formatado: 'R$ 0,00' },
+          pago: { formatado: 'R$ 0,00' },
+          pendente: { formatado: 'R$ 0,00' },
+          parcial: { formatado: 'R$ 0,00' },
+          vencido: { formatado: 'R$ 0,00' }
+        }
+      }
+    });
+  };
+
+  const fetchAll = async () => {
+    await Promise.all([
+      fetchTurmas(),
+      fetchFornecedores(),
+      fetchCustosPreEvento(),
+      fetchCustosTemporada(),
+      fetchCustosFixo(),
+      fetchValorTotal()
+    ]);
+  };
+
+  useEffect(() => {
+    fetchAll();
+  }, []);
+
   const custosPages = [
     {
       nome: 'Pré-Eventos',
@@ -141,8 +246,7 @@ const CustosPage = () => {
       link: '/custos/fixos'
     }] : [])
   ];
-
-  return (
+  const [totalizadorExpanded, setTotalizadorExpanded] = useState<boolean>(false); return (
     <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: '#F6F7FB', p: { xs: 2, md: 2 } }}>
       <Stack width={'100%'} direction={'row'} alignItems={'center'} justifyContent={'space-between'} mb={2}>
         <Typography
@@ -282,6 +386,210 @@ const CustosPage = () => {
         })}
       </Grid>
 
+      {/* Totalizador fixo na parte inferior */}
+      <Box
+        sx={{
+          position: 'fixed',
+          bottom: 0,
+          right: 0,
+          zIndex: 1000,
+          p: 2,
+          maxWidth: 500,
+          width: '100%',
+        }}
+      >
+        <Card
+          sx={{
+            p: 2,
+            backgroundColor: "#fff",
+            borderRadius: "12px 12px 0 0",
+            boxShadow: "0 -4px 20px rgba(0,0,0,0.1)",
+            border: "1px solid #e0e0e0",
+            maxHeight: '80vh',
+            overflowY: 'auto',
+            '&::-webkit-scrollbar': {
+              width: '8px',
+            },
+            '&::-webkit-scrollbar-track': {
+              background: '#f1f1f1',
+              borderRadius: '4px',
+            },
+            '&::-webkit-scrollbar-thumb': {
+              background: '#c1c1c1',
+              borderRadius: '4px',
+            }
+          }}>
+          <Stack
+            direction={'row'}
+            gap={1}
+            alignItems={'center'}
+            mb={1}
+            justifyContent={'space-between'}
+            sx={{ cursor: 'pointer' }}
+            onClick={() => setTotalizadorExpanded(!totalizadorExpanded)}
+          >
+            <Stack direction={'row'} gap={1} alignItems={'center'}>
+              <BiCalculator className='text-secondary' />
+              <Typography variant='body1' color='secondary' fontWeight={600} fontFamily={'Poppins'}>
+                Totalizador de Custos
+              </Typography>
+            </Stack>
+            <IconButton size="small">
+              {totalizadorExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+            </IconButton>
+          </Stack>
+          <Divider sx={{ mb: 1.5 }} />
+
+          {/* Total Geral - Sempre visível */}
+          <Stack direction={'column'} spacing={1} mb={2}>
+            <Typography variant='subtitle2' color='primary' fontWeight={700} fontFamily={'Poppins'}>
+              TOTAL GERAL: {totais.geral}
+            </Typography>
+            <Collapse in={totalizadorExpanded}>
+              <Stack direction={'column'} spacing={0.5} pl={2}>
+                <Stack direction={'row'} justifyContent={'space-between'}>
+                  <Typography variant='caption' fontFamily={'Poppins'} sx={{ color: '#4caf50' }}>
+                    Pago:
+                  </Typography>
+                  <Typography variant='caption' fontFamily={'Poppins'} fontWeight={600} sx={{ color: '#4caf50' }}>
+                    {totais.detalhamentoGeral?.pago?.formatado || 'R$ 0,00'}
+                  </Typography>
+                </Stack>
+                <Stack direction={'row'} justifyContent={'space-between'}>
+                  <Typography variant='caption' fontFamily={'Poppins'} sx={{ color: '#ff9800' }}>
+                    Pendente:
+                  </Typography>
+                  <Typography variant='caption' fontFamily={'Poppins'} fontWeight={600} sx={{ color: '#ff9800' }}>
+                    {totais.detalhamentoGeral?.pendente?.formatado || 'R$ 0,00'}
+                  </Typography>
+                </Stack>
+                <Stack direction={'row'} justifyContent={'space-between'}>
+                  <Typography variant='caption' fontFamily={'Poppins'} sx={{ color: '#2196f3' }}>
+                    Parcial:
+                  </Typography>
+                  <Typography variant='caption' fontFamily={'Poppins'} fontWeight={600} sx={{ color: '#2196f3' }}>
+                    {totais.detalhamentoGeral?.parcial?.formatado || 'R$ 0,00'}
+                  </Typography>
+                </Stack>
+                <Stack direction={'row'} justifyContent={'space-between'}>
+                  <Typography variant='caption' fontFamily={'Poppins'} sx={{ color: '#f44336' }}>
+                    Vencido:
+                  </Typography>
+                  <Typography variant='caption' fontFamily={'Poppins'} fontWeight={600} sx={{ color: '#f44336' }}>
+                    {totais.detalhamentoGeral?.vencido?.formatado || 'R$ 0,00'}
+                  </Typography>
+                </Stack>
+              </Stack>
+            </Collapse>
+          </Stack>
+
+          <Collapse in={totalizadorExpanded}>
+            <Divider sx={{ mb: 1.5 }} />
+
+            {/* Pré-Eventos */}
+            <Stack direction={'column'} spacing={0.5} mb={2}>
+              <Typography variant='body2' fontWeight={600} fontFamily={'Poppins'}>
+                Pré-Eventos: {totais.totaisPorTipo?.preEvento?.total?.formatado || 'R$ 0,00'}
+              </Typography>
+              <Stack direction={'column'} spacing={0.3} pl={2}>
+                <Stack direction={'row'} justifyContent={'space-between'}>
+                  <Typography variant='caption' fontFamily={'Poppins'} fontSize={'0.7rem'}>Pago:</Typography>
+                  <Typography variant='caption' fontFamily={'Poppins'} fontSize={'0.7rem'} sx={{ color: '#4caf50' }}>
+                    {totais.totaisPorTipo?.preEvento?.pago?.formatado || 'R$ 0,00'}
+                  </Typography>
+                </Stack>
+                <Stack direction={'row'} justifyContent={'space-between'}>
+                  <Typography variant='caption' fontFamily={'Poppins'} fontSize={'0.7rem'}>Pendente:</Typography>
+                  <Typography variant='caption' fontFamily={'Poppins'} fontSize={'0.7rem'} sx={{ color: '#ff9800' }}>
+                    {totais.totaisPorTipo?.preEvento?.pendente?.formatado || 'R$ 0,00'}
+                  </Typography>
+                </Stack>
+                <Stack direction={'row'} justifyContent={'space-between'}>
+                  <Typography variant='caption' fontFamily={'Poppins'} fontSize={'0.7rem'}>Parcial:</Typography>
+                  <Typography variant='caption' fontFamily={'Poppins'} fontSize={'0.7rem'} sx={{ color: '#2196f3' }}>
+                    {totais.totaisPorTipo?.preEvento?.parcial?.formatado || 'R$ 0,00'}
+                  </Typography>
+                </Stack>
+                <Stack direction={'row'} justifyContent={'space-between'}>
+                  <Typography variant='caption' fontFamily={'Poppins'} fontSize={'0.7rem'}>Vencido:</Typography>
+                  <Typography variant='caption' fontFamily={'Poppins'} fontSize={'0.7rem'} sx={{ color: '#f44336' }}>
+                    {totais.totaisPorTipo?.preEvento?.vencido?.formatado || 'R$ 0,00'}
+                  </Typography>
+                </Stack>
+              </Stack>
+            </Stack>
+
+            {/* Temporada */}
+            <Stack direction={'column'} spacing={0.5} mb={2}>
+              <Typography variant='body2' fontWeight={600} fontFamily={'Poppins'}>
+                Temporada: {totais.totaisPorTipo?.temporada?.total?.formatado || 'R$ 0,00'}
+              </Typography>
+              <Stack direction={'column'} spacing={0.3} pl={2}>
+                <Stack direction={'row'} justifyContent={'space-between'}>
+                  <Typography variant='caption' fontFamily={'Poppins'} fontSize={'0.7rem'}>Pago:</Typography>
+                  <Typography variant='caption' fontFamily={'Poppins'} fontSize={'0.7rem'} sx={{ color: '#4caf50' }}>
+                    {totais.totaisPorTipo?.temporada?.pago?.formatado || 'R$ 0,00'}
+                  </Typography>
+                </Stack>
+                <Stack direction={'row'} justifyContent={'space-between'}>
+                  <Typography variant='caption' fontFamily={'Poppins'} fontSize={'0.7rem'}>Pendente:</Typography>
+                  <Typography variant='caption' fontFamily={'Poppins'} fontSize={'0.7rem'} sx={{ color: '#ff9800' }}>
+                    {totais.totaisPorTipo?.temporada?.pendente?.formatado || 'R$ 0,00'}
+                  </Typography>
+                </Stack>
+                <Stack direction={'row'} justifyContent={'space-between'}>
+                  <Typography variant='caption' fontFamily={'Poppins'} fontSize={'0.7rem'}>Parcial:</Typography>
+                  <Typography variant='caption' fontFamily={'Poppins'} fontSize={'0.7rem'} sx={{ color: '#2196f3' }}>
+                    {totais.totaisPorTipo?.temporada?.parcial?.formatado || 'R$ 0,00'}
+                  </Typography>
+                </Stack>
+                <Stack direction={'row'} justifyContent={'space-between'}>
+                  <Typography variant='caption' fontFamily={'Poppins'} fontSize={'0.7rem'}>Vencido:</Typography>
+                  <Typography variant='caption' fontFamily={'Poppins'} fontSize={'0.7rem'} sx={{ color: '#f44336' }}>
+                    {totais.totaisPorTipo?.temporada?.vencido?.formatado || 'R$ 0,00'}
+                  </Typography>
+                </Stack>
+              </Stack>
+            </Stack>
+
+            {/* Fixos */}
+            {decoded?.tipo !== 'GESTAO_PRODUCAO' && (
+              <Stack direction={'column'} spacing={0.5}>
+                <Typography variant='body2' fontWeight={600} fontFamily={'Poppins'}>
+                  Fixos: {totais.totaisPorTipo?.fixo?.total?.formatado || 'R$ 0,00'}
+                </Typography>
+                <Stack direction={'column'} spacing={0.3} pl={2}>
+                  <Stack direction={'row'} justifyContent={'space-between'}>
+                    <Typography variant='caption' fontFamily={'Poppins'} fontSize={'0.7rem'}>Pago:</Typography>
+                    <Typography variant='caption' fontFamily={'Poppins'} fontSize={'0.7rem'} sx={{ color: '#4caf50' }}>
+                      {totais.totaisPorTipo?.fixo?.pago?.formatado || 'R$ 0,00'}
+                    </Typography>
+                  </Stack>
+                  <Stack direction={'row'} justifyContent={'space-between'}>
+                    <Typography variant='caption' fontFamily={'Poppins'} fontSize={'0.7rem'}>Pendente:</Typography>
+                    <Typography variant='caption' fontFamily={'Poppins'} fontSize={'0.7rem'} sx={{ color: '#ff9800' }}>
+                      {totais.totaisPorTipo?.fixo?.pendente?.formatado || 'R$ 0,00'}
+                    </Typography>
+                  </Stack>
+                  <Stack direction={'row'} justifyContent={'space-between'}>
+                    <Typography variant='caption' fontFamily={'Poppins'} fontSize={'0.7rem'}>Parcial:</Typography>
+                    <Typography variant='caption' fontFamily={'Poppins'} fontSize={'0.7rem'} sx={{ color: '#2196f3' }}>
+                      {totais.totaisPorTipo?.fixo?.parcial?.formatado || 'R$ 0,00'}
+                    </Typography>
+                  </Stack>
+                  <Stack direction={'row'} justifyContent={'space-between'}>
+                    <Typography variant='caption' fontFamily={'Poppins'} fontSize={'0.7rem'}>Vencido:</Typography>
+                    <Typography variant='caption' fontFamily={'Poppins'} fontSize={'0.7rem'} sx={{ color: '#f44336' }}>
+                      {totais.totaisPorTipo?.fixo?.vencido?.formatado || 'R$ 0,00'}
+                    </Typography>
+                  </Stack>
+                </Stack>
+              </Stack>
+            )}
+          </Collapse>
+        </Card>
+      </Box>
+
       <CustomModal
         title="Novo custo"
         openModal={openModal}
@@ -408,17 +716,17 @@ const CustosPage = () => {
               onChange={handleChange}
               size='small'
               fullWidth
-              // SelectProps={{
-              //   MenuProps: {
-              //     PaperProps: {
-              //       style: {
-              //         maxHeight: 200
-              //       },
-              //     },
-              //   },
-              // }}
+            // SelectProps={{
+            //   MenuProps: {
+            //     PaperProps: {
+            //       style: {
+            //         maxHeight: 200
+            //       },
+            //     },
+            //   },
+            // }}
             />
-              {/* {categorias.map((option) => (
+            {/* {categorias.map((option) => (
                 <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
               ))} */}
             {/* </TextField> */}

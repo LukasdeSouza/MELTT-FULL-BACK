@@ -67,7 +67,13 @@ const CustosPreEventosPage = () => {
       }
 
       const response = await apiGetData('academic', url);
-      setCustosPreEvento(response.data || []);
+      const data: Custos[] = response.data || [];
+      const sortedData = [...data].sort((a, b) => {
+        const timeA = a?.criado_em ? new Date(a.criado_em).getTime() : 0;
+        const timeB = b?.criado_em ? new Date(b.criado_em).getTime() : 0;
+        return timeB - timeA;
+      });
+      setCustosPreEvento(sortedData);
 
     } catch (error) {
       toast.error('erro ao buscar pré evento')

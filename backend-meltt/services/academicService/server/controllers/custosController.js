@@ -63,6 +63,8 @@ class CustosController {
         countQuery += whereClause;
       }
 
+      query += " ORDER BY custos.criado_em DESC";
+
       // Aplicar LIMIT e OFFSET APENAS quando há limite definido (não é 'all')
       if (limit) {
         query += ` LIMIT ? OFFSET ?`;

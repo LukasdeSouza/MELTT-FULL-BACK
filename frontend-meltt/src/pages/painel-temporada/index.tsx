@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   Box,
-  Breadcrumbs,
   Button,
   Chip,
   Dialog,
@@ -12,7 +11,6 @@ import {
   Divider,
   Grid,
   LinearProgress,
-  Link,
   MenuItem,
   Paper,
   Stack,
@@ -22,9 +20,8 @@ import {
 import { styled } from '@mui/material/styles';
 import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
-import { IoBarChartOutline } from 'react-icons/io5';
 import toast from 'react-hot-toast';
-import { apiGetData } from '../../services/api';
+import { apiGetData, apiPostData } from '../../services/api';
 
 type SeasonStatus = 'planejamento' | 'andamento' | 'finalizando' | 'concluido';
 
@@ -145,21 +142,6 @@ const SeasonCard = ({ season, onViewDetails }: SeasonCardProps) => {
   const progress = calcSeasonProgress(season);
   const revenue = calcSeasonRevenue(season);
   const students = calcSeasonStudents(season);
-
-  const [turmas, setTurmas] = useState([]);
-
-  const fetchTurmas = async () => {
-    try {
-      const response = await apiGetData("academic", `/turmas`);
-      setTurmas(response.data);
-    } catch (error) {
-      toast.error("Erro ao buscar turmas");
-    }
-  };
-
-  useEffect(() => {
-    fetchTurmas();
-  }, []);
 
   return (
     <CardContainer>
@@ -337,23 +319,45 @@ const SeasonDetailsDialog = ({ season, onClose }: SeasonDetailsDialogProps) => {
 interface CreateSeasonDialogProps {
   open: boolean;
   onClose: () => void;
-  onCreate: (season: Season) => void;
+  onCreate: () => void;
 }
 
 const CreateSeasonDialog = ({ open, onClose, onCreate }: CreateSeasonDialogProps) => {
-  const [year, setYear] = useState<number>(2031);
-  const [status, setStatus] = useState<SeasonStatus>('planejamento');
+  const [year, setYear] = useState<number>(2025);
+  const [status, setStatus] = useState<SeasonStatus>("planejamento");
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    const newSeason: Season = {
-      ano: year,
-      status,
-      turmas: []
-    };
-    onCreate(newSeason);
-    onClose();
+
+    try {
+      const response = await apiPostData("academic", "/temporadas", {
+        ano: year,
+        status: status,
+      });
+
+      if (response.status === 201) {
+        toast.success("Temporada criada com sucesso!");
+        onCreate();
+        onClose();
+
+        // reset depois de fechar
+        setYear(2024);
+        setStatus("planejamento");
+      }
+
+    } catch (error: any) {
+      console.error("Erro:", error);
+
+      const message =
+        error.response?.data?.error ||
+        error.message ||
+        "Erro ao criar temporada.";
+
+      toast.error(message);
+    }
+
   };
+
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
@@ -401,33 +405,82 @@ const CreateSeasonDialog = ({ open, onClose, onCreate }: CreateSeasonDialogProps
 
 const PainelTemporadaPage = () => {
   const [seasons, setSeasons] = useState<Season[]>(INITIAL_SEASONS);
+  const [seasonsDetails, setSeasonsDetails] = useState([]);
   const [selectedSeason, setSelectedSeason] = useState<Season | null>(null);
   const [seasonFilter, setSeasonFilter] = useState<'todas' | string>('todas');
   const [statusFilter, setStatusFilter] = useState<'todos' | SeasonStatus>('todos');
   const [createModalOpen, setCreateModalOpen] = useState(false);
 
   const filteredSeasons = useMemo(() =>
-    seasons.filter((season) => {
+    seasonsDetails.filter((season) => {
       const matchesSeason = seasonFilter === 'todas' || season.ano.toString() === seasonFilter;
       const matchesStatus = statusFilter === 'todos' || season.status === statusFilter;
       return matchesSeason && matchesStatus;
-    }), [seasonFilter, statusFilter, seasons]
+    }), [seasonFilter, statusFilter, seasonsDetails]
   );
 
-  const overview = useMemo(() => {
-    const totalTemporadas = seasons.length;
-    const totalTurmas = seasons.reduce((acc, season) => acc + season.turmas.length, 0);
-    const totalReceita = seasons.reduce((acc, season) => acc + calcSeasonRevenue(season), 0);
-    const totalEmAndamento = seasons.filter((season) => season.status === 'andamento').length;
-    const mediaProgresso = Math.round(
-      seasons.reduce((acc, season) => acc + calcSeasonProgress(season), 0) / (seasons.length || 1)
-    );
-    return { totalTemporadas, totalTurmas, totalReceita, totalEmAndamento, mediaProgresso };
-  }, [seasons]);
+  // Seasons
 
-  const handleCreateSeason = (season: Season) => {
-    setSeasons((prev) => [...prev, season]);
+  const fetchSeasons = async () => {
+    try {
+      const response = await apiGetData("academic", `/temporadas`);
+      setSeasons(response);
+    } catch (error) {
+      toast.error("Erro ao buscar temporadas");
+    }
+  }
+
+  // ------
+
+  // Seasons Details
+
+  const fetchSeasonsDetails = async () => {
+    try {
+      const response = await apiGetData("academic", `/temporadas/details`);
+      setSeasonsDetails(response);
+    } catch (error) {
+      toast.error("Erro ao buscar temporadas");
+    }
+  }
+
+  // ------
+
+  const handleCreateSeason = () => {
+    fetchSeasons();
   };
+
+  // Turmas
+
+  const [turmas, setTurmas] = useState([]);
+
+  const fetchTurmas = async () => {
+    try {
+      const response = await apiGetData("academic", `/turmas?all=true`);
+      setTurmas(response.data);
+    } catch (error) {
+      toast.error("Erro ao buscar turmas");
+    }
+  };
+
+  // -------
+
+  const [receitaTotal, setReceitaTotal] = useState({});
+
+  const fetchReceitaTotal = async () => {
+    try {
+      const response = await apiGetData("academic", `/custos/valor-total`);
+      setReceitaTotal(response.receitaTotal);
+    } catch (error) {
+      toast.error("Erro ao buscar turmas");
+    }
+  };
+
+  useEffect(() => {
+    fetchSeasonsDetails();
+    fetchSeasons();
+    fetchTurmas();
+    fetchReceitaTotal();
+  }, []);
 
   return (
     <Box sx={{ px: 3, py: 4 }}>
@@ -439,11 +492,6 @@ const PainelTemporadaPage = () => {
           <Typography color="text.secondary">
             Monitoramento integrado das temporadas, turmas e indicadores financeiros.
           </Typography>
-          <Breadcrumbs aria-label="breadcrumb" sx={{ color: 'text.secondary' }}>
-            <Link underline="hover" color="inherit">Home</Link>
-            <Link underline="hover" color="inherit">Dashboards</Link>
-            <Typography color="primary">Painel Temporadas</Typography>
-          </Breadcrumbs>
         </Stack>
 
         <Paper
@@ -457,11 +505,6 @@ const PainelTemporadaPage = () => {
           <Stack direction={{ xs: 'column', md: 'row' }} spacing={3} alignItems={{ xs: 'flex-start', md: 'center' }}>
             <Stack spacing={0.5}>
               <Typography variant="subtitle1" color="text.secondary">Estatísticas Gerais</Typography>
-              {/* <Typography variant="h3" fontWeight={700}>{overview.mediaProgresso}% de progresso médio</Typography> */}
-              <Stack direction="row" spacing={1}>
-                <Chip icon={<IoBarChartOutline size={16} />} label={`${overview.totalTemporadas} temporadas`} color="primary" />
-                <Chip label={`${overview.totalTurmas} turmas`} variant="outlined" color="primary" />
-              </Stack>
             </Stack>
             <Box flexGrow={1} />
             <Button
@@ -481,22 +524,22 @@ const PainelTemporadaPage = () => {
                 <Typography variant="h4" color="#16A34A">{overview.mediaProgresso}%</Typography>
               </SummaryCard>
             </Grid> */}
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid item xs={12} sm={6} md={6}>
               <SummaryCard sx={{ borderLeft: '5px solid #2563EB' }}>
                 <Typography variant="caption" color="text.secondary">Total de turmas</Typography>
-                <Typography variant="h4" color="#2563EB">{overview.totalTurmas}</Typography>
+                <Typography variant="h4" color="#2563EB">{turmas.length}</Typography>
               </SummaryCard>
             </Grid>
-            <Grid item xs={12} sm={6} md={3}>
+            {/* <Grid item xs={12} sm={6} md={3}>
               <SummaryCard sx={{ borderLeft: '5px solid #F97316' }}>
                 <Typography variant="caption" color="text.secondary">Em andamento</Typography>
                 <Typography variant="h4" color="#F97316">{overview.totalEmAndamento}</Typography>
               </SummaryCard>
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
+            </Grid> */}
+            <Grid item xs={12} sm={6} md={6}>
               <SummaryCard sx={{ borderLeft: '5px solid #DB2777' }}>
                 <Typography variant="caption" color="text.secondary">Receita total</Typography>
-                <Typography variant="h5" color="#DB2777">{formatCurrency(overview.totalReceita)}</Typography>
+                <Typography variant="h4" color="#DB2777">{receitaTotal.formatado}</Typography>
               </SummaryCard>
             </Grid>
           </Grid>

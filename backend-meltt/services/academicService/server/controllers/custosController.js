@@ -259,6 +259,13 @@ class CustosController {
         totalGeralCentavos
       });
 
+      // Receita total (somente pagos e parcialmente pagos)
+      const receitaTotalCentavos =
+        (paymentDetailsGeneral.find(r => r.situacao === 'Pago')?.total_valor || 0) +
+        (paymentDetailsGeneral.find(r => r.situacao === 'Parcialmente Pago')?.total_pago_parcial || 0);
+
+      const receitaTotal = totalGeralPago + totalGeralParcial
+
       const response = {
         totalGeral: formatToCurrency(totalGeralCentavos),
         totalGeralCentavos: totalGeralCentavos,
@@ -289,6 +296,11 @@ class CustosController {
           fixo: getPaymentDetails('Fixo'),
           preEvento: getPaymentDetails('Pre-evento'),
           temporada: getPaymentDetails('Temporada')
+        },
+        receitaTotal: {
+          centavos: receitaTotal,
+          reais: receitaTotal / 100,
+          formatado: formatToCurrency(receitaTotal)
         }
       };
 

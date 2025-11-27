@@ -70,6 +70,7 @@ const TurmasPageNew = () => {
   const [fileContratoMeltt, setFileContratoMeltt] = useState<File | null>(null);
 
   const [planos, setPlanos] = useState<any[]>([]);
+  const [temporadas, setTemporadas] = useState<any[]>([]);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
@@ -172,14 +173,23 @@ const TurmasPageNew = () => {
     }
   };
 
-    useEffect(() => {
-    const getPlanos = async () => {
-      const response = await apiGetData("academic", "/planos-formatura");
-      if (response.data) {
-        setPlanos(response.data);
-      }
-    };
+  const getPlanos = async () => {
+    const response = await apiGetData("academic", "/planos-formatura");
+    if (response.data) {
+      setPlanos(response.data);
+    }
+  };
+
+  const getTemporadas = async () => {
+    const response = await apiGetData("academic", "/temporadas");
+    if (response) {
+      setTemporadas(response);
+    }
+  };
+
+  useEffect(() => {
     getPlanos();
+    getTemporadas();
   }, []);
 
   return (
@@ -366,6 +376,35 @@ const TurmasPageNew = () => {
                             />
                           )}
                         />
+                      </FormControl>
+
+                      <FormControl fullWidth>
+                        <InputLabel id="temporada_id">Ano de Formatura</InputLabel>
+                        <Select
+                          name="temporada_id"
+                          label="Temporada"
+                          value={values.temporada_id}
+                          onChange={handleChange}
+                          variant="filled"
+                          MenuProps={{
+                            PaperProps: {
+                              sx: {
+                                borderRadius: 2,
+                                mt: 1,
+                                '& .MuiMenuItem-root': {
+                                  py: 1.5,
+                                  '&:hover': { bgcolor: 'primary.light', color: 'white' }
+                                }
+                              }
+                            }
+                          }}
+                        >
+                          {temporadas.map((option) => (
+                            <MenuItem key={option.ano} value={option.id}>
+                              {option.ano}
+                            </MenuItem>
+                          ))}
+                        </Select>
                       </FormControl>
                     </Stack>
 

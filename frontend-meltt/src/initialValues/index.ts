@@ -18,6 +18,7 @@ export const initialValuesTurma = {
   regras_renegociacao: "",
   planos_formatura: [],
   tem_brinde: "nao",
+  temporada_id: null
 };
 
 export const initialValuesAdesao = {

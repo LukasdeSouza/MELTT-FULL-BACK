@@ -78,14 +78,16 @@ class TemporadaController {
             const [temporadas] = await pool.query(`
         SELECT id, ano, status
         FROM temporadas
-        ORDER BY ano ASC
+        ORDER BY ano DESC
       `);
 
-      
+            console.log('[Temporadas] Total de temporadas encontradas:', temporadas.length);
 
             const resultado = [];
 
             for (const temporada of temporadas) {
+                console.log(`\n[Temporadas] Processando temporada ${temporada.id} (${temporada.ano}) com status '${temporada.status}'`);
+
                 // 2. Buscar as turmas da temporada
                 const [turmas] = await pool.query(`
           SELECT id, nome
@@ -93,25 +95,38 @@ class TemporadaController {
           WHERE temporada_id = ?
         `, [temporada.id]);
 
+                console.log(`[Temporadas] Turmas encontradas para a temporada ${temporada.id}:`, turmas.length);
+
                 // 3. Para cada turma, calcular receita total
                 const turmasDetalhadas = [];
 
                 for (const turma of turmas) {
+                    console.log(`  [Temporadas] Calculando dados da turma ${turma.id} (${turma.nome})`);
+
                     const [receitaRows] = await pool.query(`
-            SELECT SUM(valor) as receita
+            SELECT SUM(valor) AS receita
             FROM custos
             WHERE turma_id = ?
-              AND status IN ('pago', 'parcialmente_pago')
+              AND situacao IN ('pago', 'Parcialmente Pago')
           `, [turma.id]);
 
-      console.log("TEMPORADAS:", turmasDetalhadas);
+                    const receita = Number(receitaRows[0]?.receita) || 0;
 
+                    if (!receitaRows[0] || receitaRows[0].receita === null) {
+                        console.log(`    [Temporadas] Nenhum custo pago/parcial localizado para a turma ${turma.id}.`);
+                    } else {
+                        console.log(`    [Temporadas] Receita agregada para a turma ${turma.id}:`, receita);
+                    }
 
                     turmasDetalhadas.push({
                         nome: turma.nome,
-                        receita: receitaRows[0].receita || 0,
-                        alunos: turma.alunos
+                        receita,
+                        alunos: 0
                     });
+                }
+
+                if (!turmas.length) {
+                    console.log(`[Temporadas] Temporada ${temporada.id} não possui turmas vinculadas.`);
                 }
 
                 // 4. Adiciona ao resultado final
@@ -122,9 +137,11 @@ class TemporadaController {
                 });
             }
 
+            console.log('\n[Temporadas] Resposta final montada com', resultado.length, 'temporadas.');
+
             res.json(resultado);
         } catch (error) {
-            console.error("Erro ao buscar temporadas detalhadas:", error);
+            console.error('[Temporadas] Erro ao buscar temporadas detalhadas:', error);
             res.status(500).json({ error: "Erro ao buscar temporadas" });
         }
     }

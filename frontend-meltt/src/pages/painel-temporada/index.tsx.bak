@@ -152,13 +152,9 @@ interface SeasonCardProps {
 const SeasonCard = ({ season, onViewDetails }: SeasonCardProps) => {
   const statusInfo = STATUS_CONFIG[season.statusKey] ?? STATUS_CONFIG.planejamento;
   const seasonTurmas = season.turmas ?? [];
-  const totalReceitaCentavos = calcSeasonRevenue(season);
-  const totalReceita = totalReceitaCentavos / 100;
+  const progress = calcSeasonProgress(season);
+  const revenue = calcSeasonRevenue(season);
   const students = calcSeasonStudents(season);
-  const hasProgressData = seasonTurmas.some(
-    (turma) => typeof turma.progresso === 'number' && turma.progresso > 0
-  );
-  const averageProgress = hasProgressData ? calcSeasonProgress(season) : null;
 
   return (
     <CardContainer>
@@ -201,24 +197,22 @@ const SeasonCard = ({ season, onViewDetails }: SeasonCardProps) => {
           </Grid>
         </Grid>
 
-        {averageProgress !== null && (
-          <Stack spacing={1}>
-            <Stack direction="row" justifyContent="space-between" alignItems="center">
-              <Typography variant="body2" fontWeight={600}>Progresso Geral</Typography>
-              <Typography variant="body2" fontWeight={600}>{averageProgress}%</Typography>
-            </Stack>
-            <LinearProgress
-              variant="determinate"
-              value={averageProgress}
-              sx={{ height: 10, borderRadius: 5, backgroundColor: '#E5E7EB' }}
-              color="primary"
-            />
+        <Stack spacing={1}>
+          <Stack direction="row" justifyContent="space-between" alignItems="center">
+            <Typography variant="body2" fontWeight={600}>Progresso Geral</Typography>
+            <Typography variant="body2" fontWeight={600}>{progress}%</Typography>
           </Stack>
-        )}
+          <LinearProgress
+            variant="determinate"
+            value={progress}
+            sx={{ height: 10, borderRadius: 5, backgroundColor: '#E5E7EB' }}
+            color="primary"
+          />
+        </Stack>
 
         <Stack spacing={1}>
           <Typography variant="caption" color="text.secondary">Receita Estimada</Typography>
-          <Typography variant="h5" color="success.main" fontWeight={700}>{formatCurrency(totalReceita)}</Typography>
+          <Typography variant="h5" color="success.main" fontWeight={700}>{formatCurrency(revenue)}</Typography>
         </Stack>
 
         <Stack spacing={1}>
@@ -236,10 +230,7 @@ const SeasonCard = ({ season, onViewDetails }: SeasonCardProps) => {
               }}
             >
               <Typography variant="body2" fontWeight={600}>{turma.nome}</Typography>
-              <Chip
-                label={formatCurrency((turma.receita ?? 0) / 100)}
-                size="small"
-              />
+              <Chip label={`${turma.progresso ?? 0}%`} size="small" />
             </Paper>
           ))}
           {seasonTurmas.length > 3 && (

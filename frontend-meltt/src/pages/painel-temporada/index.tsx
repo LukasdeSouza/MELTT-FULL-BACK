@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Box,
   Button,
-  Chip,
   Dialog,
   DialogActions,
   DialogContent,
@@ -21,37 +20,57 @@ import { styled } from '@mui/material/styles';
 import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
 import toast from 'react-hot-toast';
-import { apiGetData, apiPostData } from '../../services/api';
+import { apiGetData, apiPostData, apiPutData } from '../../services/api';
 
 type SeasonStatus = 'planejamento' | 'andamento' | 'finalizando' | 'concluido';
 
 type StatusConfig = Record<SeasonStatus, { label: string; color: string; emoji: string }>;
 
 interface SeasonClass {
+  id: number;
   nome: string;
-  receita: number;
-  alunos: number;
+  totalAlunos: number;
+  receitaCentavos: number;
+  receitaPagoCentavos?: number;
+  receitaParcialCentavos?: number;
   progresso: number;
 }
 
 interface Season {
+  id?: number;
   ano: number;
   statusKey: SeasonStatus;
   statusLabel: string;
   rawStatus: string;
+  totais: {
+    alunos: number;
+    receitaCentavos: number;
+    receitaPagoCentavos?: number;
+    receitaParcialCentavos?: number;
+  };
   turmas: SeasonClass[];
 }
 
 interface RawSeasonClass {
+  id: number;
   nome: string;
-  receita?: number | string | null;
-  alunos?: number | null;
+  totalAlunos?: number | null;
+  receitaCentavos?: number | null;
+  receitaPagoCentavos?: number | null;
+  receitaParcialCentavos?: number | null;
   progresso?: number | null;
 }
 
 interface RawSeasonDetail {
+  id?: number;
   ano: number;
   status?: string | null;
+  totais?: {
+    alunos?: number | null;
+    receitaCentavos?: number | null;
+    receitaPagoCentavos?: number | null;
+    receitaParcialCentavos?: number | null;
+  };
   turmas?: RawSeasonClass[];
 }
 
@@ -101,17 +120,29 @@ const normalizeSeasonDetail = (detail: RawSeasonDetail): Season => {
   const statusLabel = STATUS_CONFIG[statusKey].label;
 
   const turmas = (detail.turmas ?? []).map((turma) => ({
+    id: typeof turma.id === 'number' ? turma.id : 0,
     nome: typeof turma.nome === 'string' && turma.nome.trim() ? turma.nome : 'Turma sem nome',
-    receita: safeNumber(turma.receita),
-    alunos: typeof turma.alunos === 'number' ? turma.alunos : 0,
+    totalAlunos: typeof turma.totalAlunos === 'number' ? turma.totalAlunos : 0,
+    receitaCentavos: safeNumber(turma.receitaCentavos),
+    receitaPagoCentavos: safeNumber(turma.receitaPagoCentavos),
+    receitaParcialCentavos: safeNumber(turma.receitaParcialCentavos),
     progresso: typeof turma.progresso === 'number' ? turma.progresso : 0
   }));
+
+  const totais = {
+    alunos: safeNumber(detail.totais?.alunos),
+    receitaCentavos: safeNumber(detail.totais?.receitaCentavos),
+    receitaPagoCentavos: safeNumber(detail.totais?.receitaPagoCentavos),
+    receitaParcialCentavos: safeNumber(detail.totais?.receitaParcialCentavos)
+  };
 
   return {
     ano: detail.ano,
     statusKey,
     statusLabel,
     rawStatus,
+    totais,
+    id: detail?.id,
     turmas
   };
 };
@@ -119,15 +150,16 @@ const normalizeSeasonDetail = (detail: RawSeasonDetail): Season => {
 const calcSeasonProgress = (season: Season) => {
   const turmas = season.turmas ?? [];
   if (!turmas.length) return 0;
-  const total = turmas.reduce((acc, turma) => acc + (turma.progresso ?? 0), 0);
-  return Math.round(total / turmas.length);
+  const withProgress = turmas.filter((turma) => typeof turma.progresso === 'number' && turma.progresso > 0);
+  if (!withProgress.length) {
+    return 0;
+  }
+  const total = withProgress.reduce((acc, turma) => acc + turma.progresso, 0);
+  return Math.round(total / withProgress.length);
 };
 
-const calcSeasonRevenue = (season: Season) =>
-  (season.turmas ?? []).reduce((acc, turma) => acc + (turma.receita ?? 0), 0);
-
-const calcSeasonStudents = (season: Season) =>
-  (season.turmas ?? []).reduce((acc, turma) => acc + (turma.alunos ?? 0), 0);
+const calcSeasonRevenueTotal = (season: Season) => season.totais?.receitaCentavos ?? 0;
+const calcSeasonStudents = (season: Season) => season.totais?.alunos ?? 0;
 
 const CardContainer = styled(Paper)(({ theme }) => ({
   borderRadius: theme.spacing(3),
@@ -147,18 +179,45 @@ const SummaryCard = styled(Paper)(({ theme }) => ({
 interface SeasonCardProps {
   season: Season;
   onViewDetails: (season: Season) => void;
+  onStatusChange?: (season: Season, nextStatus: SeasonStatus) => Promise<void>;
 }
 
-const SeasonCard = ({ season, onViewDetails }: SeasonCardProps) => {
-  const statusInfo = STATUS_CONFIG[season.statusKey] ?? STATUS_CONFIG.planejamento;
+const SeasonCard = ({ season, onViewDetails, onStatusChange }: SeasonCardProps) => {
+  const [selectedStatus, setSelectedStatus] = useState<SeasonStatus>(season.statusKey);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+
+  useEffect(() => {
+    setSelectedStatus(season.statusKey);
+  }, [season.statusKey, season.id]);
+
+  const statusInfo = STATUS_CONFIG[selectedStatus] ?? STATUS_CONFIG.planejamento;
   const seasonTurmas = season.turmas ?? [];
-  const totalReceitaCentavos = calcSeasonRevenue(season);
-  const totalReceita = totalReceitaCentavos / 100;
+  const receitaTotal = calcSeasonRevenueTotal(season) / 100;
   const students = calcSeasonStudents(season);
-  const hasProgressData = seasonTurmas.some(
-    (turma) => typeof turma.progresso === 'number' && turma.progresso > 0
-  );
-  const averageProgress = hasProgressData ? calcSeasonProgress(season) : null;
+
+  const handleStatusChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const nextStatus = event.target.value as SeasonStatus;
+    setSelectedStatus(nextStatus);
+
+    if (!season.id) {
+      toast.error('Não foi possível identificar a temporada.');
+      setSelectedStatus(season.statusKey);
+      return;
+    }
+
+    if (!onStatusChange) {
+      return;
+    }
+
+    try {
+      setIsUpdatingStatus(true);
+      await onStatusChange(season, nextStatus);
+    } catch (error) {
+      setSelectedStatus(season.statusKey);
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
 
   return (
     <CardContainer>
@@ -170,18 +229,39 @@ const SeasonCard = ({ season, onViewDetails }: SeasonCardProps) => {
           py: 2
         }}
       >
-        <Stack direction="row" justifyContent="space_between" alignItems="center">
+        <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2}>
           <Stack spacing={0.5}>
             <Typography variant="h6" fontWeight={700}>
               Temporada {season.ano}
             </Typography>
             <Typography variant="body2" sx={{ opacity: 0.9 }}>
-              {season.statusLabel}
+              {STATUS_CONFIG[selectedStatus]?.label ?? season.statusLabel}
             </Typography>
           </Stack>
-          <Typography variant="h4" component="span">
-            {statusInfo.emoji}
-          </Typography>
+          <TextField
+            select
+            size="small"
+            label="Status"
+            value={selectedStatus}
+            onChange={handleStatusChange}
+            disabled={isUpdatingStatus}
+            sx={{
+              minWidth: 160,
+              backgroundColor: 'rgba(255,255,255,0.1)',
+              borderRadius: 2,
+              '& .MuiInputLabel-root': { color: '#fff' },
+              '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.4)' },
+              '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#fff' },
+              '& .MuiSvgIcon-root': { color: '#fff' },
+              '& .MuiInputBase-input': { color: '#fff' }
+            }}
+          >
+            {Object.entries(STATUS_CONFIG).map(([key, value]) => (
+              <MenuItem key={key} value={key}>
+                {value.label}
+              </MenuItem>
+            ))}
+          </TextField>
         </Stack>
       </Box>
 
@@ -201,24 +281,12 @@ const SeasonCard = ({ season, onViewDetails }: SeasonCardProps) => {
           </Grid>
         </Grid>
 
-        {averageProgress !== null && (
-          <Stack spacing={1}>
-            <Stack direction="row" justifyContent="space-between" alignItems="center">
-              <Typography variant="body2" fontWeight={600}>Progresso Geral</Typography>
-              <Typography variant="body2" fontWeight={600}>{averageProgress}%</Typography>
-            </Stack>
-            <LinearProgress
-              variant="determinate"
-              value={averageProgress}
-              sx={{ height: 10, borderRadius: 5, backgroundColor: '#E5E7EB' }}
-              color="primary"
-            />
-          </Stack>
-        )}
 
         <Stack spacing={1}>
-          <Typography variant="caption" color="text.secondary">Receita Estimada</Typography>
-          <Typography variant="h5" color="success.main" fontWeight={700}>{formatCurrency(totalReceita)}</Typography>
+          <Typography variant="caption" color="text.secondary">Receita Total</Typography>
+          <Typography variant="h5" color="success.main" fontWeight={700}>
+            {formatCurrency(receitaTotal)}
+          </Typography>
         </Stack>
 
         <Stack spacing={1}>
@@ -236,10 +304,14 @@ const SeasonCard = ({ season, onViewDetails }: SeasonCardProps) => {
               }}
             >
               <Typography variant="body2" fontWeight={600}>{turma.nome}</Typography>
-              <Chip
-                label={formatCurrency((turma.receita ?? 0) / 100)}
-                size="small"
-              />
+              <Stack spacing={0.5} alignItems="flex-end">
+                <Typography variant="body2" fontWeight={600}>
+                  {formatCurrency((turma.receitaCentavos ?? 0) / 100)}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {turma.totalAlunos} alunos
+                </Typography>
+              </Stack>
             </Paper>
           ))}
           {seasonTurmas.length > 3 && (
@@ -265,10 +337,13 @@ interface SeasonDetailsDialogProps {
 const SeasonDetailsDialog = ({ season, onClose }: SeasonDetailsDialogProps) => {
   if (!season) return null;
 
+  const receitaTotal = (season.totais?.receitaCentavos ?? 0) / 100;
+  const receitaPago = (season.totais?.receitaPagoCentavos ?? 0) / 100;
+  const receitaParcial = (season.totais?.receitaParcialCentavos ?? 0) / 100;
   const statusInfo = STATUS_CONFIG[season.statusKey] ?? STATUS_CONFIG.planejamento;
 
   return (
-    <Dialog open={Boolean(season)} onClose={onClose} maxWidth="lg" fullWidth>
+    <Dialog open={Boolean(season)} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <Typography variant="h6" fontWeight={700}>
           Temporada {season.ano} — Detalhes
@@ -279,27 +354,37 @@ const SeasonDetailsDialog = ({ season, onClose }: SeasonDetailsDialogProps) => {
       </DialogTitle>
       <DialogContent dividers>
         <Grid container spacing={2} mb={2}>
-          <Grid item xs={12} md={4}>
-            <Paper sx={{ p: 2, borderRadius: 2, background: '#EEF2FF' }}>
-              <Typography variant="caption" color="text.secondary">Status</Typography>
-              <Typography variant="h6" fontWeight={700}>
-                {statusInfo.emoji} {season.statusLabel}
-              </Typography>
-            </Paper>
-          </Grid>
-          <Grid item xs={12} md={4}>
-            <Paper sx={{ p: 2, borderRadius: 2, background: '#F0FDF4' }}>
+          <Grid item xs={12} md={6}>
+            <Paper sx={{ p: 3, borderRadius: 2, background: '#F0FDF4', height: '100%' }}>
               <Typography variant="caption" color="text.secondary">Receita Total</Typography>
-              <Typography variant="h6" fontWeight={700} color="success.main">
-                {formatCurrency(calcSeasonRevenue(season))}
+              <Typography variant="h5" fontWeight={700} color="success.main" sx={{ mt: 0.5 }}>
+                {formatCurrency(receitaTotal)}
               </Typography>
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} mt={2}>
+                <Stack spacing={0.5}>
+                  <Typography variant="caption" color="text.secondary">Pago</Typography>
+                  <Typography variant="body1" fontWeight={600}>{formatCurrency(receitaPago)}</Typography>
+                </Stack>
+                <Stack spacing={0.5}>
+                  <Typography variant="caption" color="text.secondary">Parcial</Typography>
+                  <Typography variant="body1" fontWeight={600}>{formatCurrency(receitaParcial)}</Typography>
+                </Stack>
+              </Stack>
             </Paper>
           </Grid>
-          <Grid item xs={12} md={4}>
-            <Paper sx={{ p: 2, borderRadius: 2, background: '#ECFEFF' }}>
-              <Typography variant="caption" color="text.secondary">Alunos Envolvidos</Typography>
-              <Typography variant="h6" fontWeight={700} color="primary">{calcSeasonStudents(season)} alunos</Typography>
-            </Paper>
+          <Grid item xs={12} md={6}>
+            <Stack spacing={2} height="100%">
+              <Paper sx={{ p: 3, borderRadius: 2, background: '#EEF2FF' }}>
+                <Stack spacing={0.5}>
+                  <Typography variant="caption" color="text.secondary">Status</Typography>
+                  <Typography variant="h6" fontWeight={700}>{statusInfo.label}</Typography>
+                </Stack>
+              </Paper>
+              <Paper sx={{ p: 3, borderRadius: 2, background: '#ECFEFF' }}>
+                <Typography variant="caption" color="text.secondary">Alunos Envolvidos</Typography>
+                <Typography variant="h6" fontWeight={700} color="primary">{calcSeasonStudents(season)} alunos</Typography>
+              </Paper>
+            </Stack>
           </Grid>
         </Grid>
 
@@ -310,28 +395,38 @@ const SeasonDetailsDialog = ({ season, onClose }: SeasonDetailsDialogProps) => {
         </Typography>
 
         <Grid container spacing={2}>
-          {(season.turmas ?? []).map((turma) => (
-            <Grid item xs={12} md={6} key={`${season.ano}-${turma.nome}`}>
-              <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
-                <Stack spacing={1}>
-                  <Typography variant="subtitle2" fontWeight={700}>{turma.nome}</Typography>
-                  <Stack direction="row" justifyContent="space-between">
-                    <Typography variant="body2" color="text.secondary">Progresso</Typography>
-                    <Typography variant="body2" fontWeight={600}>{turma.progresso ?? 0}%</Typography>
+          {(season.turmas ?? []).map((turma) => {
+            const turmaReceitaTotal = (turma.receitaCentavos ?? 0) / 100;
+            const turmaReceitaPago = (turma.receitaPagoCentavos ?? 0) / 100;
+            const turmaReceitaParcial = (turma.receitaParcialCentavos ?? 0) / 100;
+            const turmaAlunos = turma.totalAlunos ?? 0;
+
+            return (
+              <Grid item xs={12} md={6} key={`${season.ano}-${turma.nome}`}>
+                <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+                  <Stack spacing={1}>
+                    <Typography variant="subtitle2" fontWeight={700}>{turma.nome}</Typography>
+                    <Stack direction="row" justifyContent="space-between">
+                      <Typography variant="body2" color="text.secondary">Receita Total</Typography>
+                      <Typography variant="body2" fontWeight={600}>{formatCurrency(turmaReceitaTotal)}</Typography>
+                    </Stack>
+                    <Stack direction="row" justifyContent="space-between">
+                      <Typography variant="body2" color="text.secondary">Pago</Typography>
+                      <Typography variant="body2" fontWeight={600}>{formatCurrency(turmaReceitaPago)}</Typography>
+                    </Stack>
+                    <Stack direction="row" justifyContent="space-between">
+                      <Typography variant="body2" color="text.secondary">Parcial</Typography>
+                      <Typography variant="body2" fontWeight={600}>{formatCurrency(turmaReceitaParcial)}</Typography>
+                    </Stack>
+                    <Stack direction="row" justifyContent="space-between">
+                      <Typography variant="body2" color="text.secondary">Alunos</Typography>
+                      <Typography variant="body2" fontWeight={600}>{turmaAlunos}</Typography>
+                    </Stack>
                   </Stack>
-                  <LinearProgress variant="determinate" value={turma.progresso ?? 0} sx={{ height: 8, borderRadius: 4 }} />
-                  <Stack direction="row" justifyContent="space-between">
-                    <Typography variant="body2" color="text.secondary">Receita</Typography>
-                    <Typography variant="body2" fontWeight={600}>{formatCurrency(turma.receita ?? 0)}</Typography>
-                  </Stack>
-                  <Stack direction="row" justifyContent="space-between">
-                    <Typography variant="body2" color="text.secondary">Alunos</Typography>
-                    <Typography variant="body2" fontWeight={600}>{turma.alunos ?? 0}</Typography>
-                  </Stack>
-                </Stack>
-              </Paper>
-            </Grid>
-          ))}
+                </Paper>
+              </Grid>
+            );
+          })}
         </Grid>
       </DialogContent>
     </Dialog>
@@ -442,7 +537,7 @@ const PainelTemporadaPage = () => {
   const [receitaTotal, setReceitaTotal] = useState<ReceitaResumo | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const filteredSeasons = useMemo(
+  const filteredSeasonDetails = useMemo(
     () =>
       seasonDetails.filter((season) => {
         const matchesSeason = seasonFilter === 'todas' || season.ano.toString() === seasonFilter;
@@ -473,6 +568,7 @@ const PainelTemporadaPage = () => {
     try {
       const response = await apiGetData('academic', '/temporadas/details');
       const details = Array.isArray(response) ? response : [];
+
       setSeasonDetails(details.map(normalizeSeasonDetail));
     } catch (error) {
       console.error('Erro ao buscar detalhes das temporadas:', error);
@@ -525,6 +621,28 @@ const PainelTemporadaPage = () => {
 
   const handleCreateSeason = () => {
     loadAllData();
+  };
+
+  const handleSeasonStatusChange = async (season: Season, nextStatus: SeasonStatus) => {
+    if (!season.id) {
+      throw new Error('Temporada inválida.');
+    }
+
+    try {
+      await apiPutData('academic', `/temporadas/${season.id}/status`, { status: nextStatus });
+      toast.success('Status atualizado com sucesso.');
+      await loadAllData();
+    } catch (error: any) {
+      console.error('Erro ao atualizar status da temporada:', error);
+
+      const message =
+        error?.response?.data?.error ||
+        error?.message ||
+        'Não foi possível atualizar o status da temporada.';
+
+      toast.error(message);
+      throw error;
+    }
   };
 
   return (
@@ -620,20 +738,21 @@ const PainelTemporadaPage = () => {
                   </MenuItem>
                 ))}
               </TextField>
-              <Button variant="outlined" sx={{ borderRadius: 3 }}>
-                Exportar Relatório
-              </Button>
             </Stack>
           </Stack>
         </Paper>
 
         <Grid container spacing={3}>
-          {filteredSeasons.map((season) => (
+          {filteredSeasonDetails.map((season) => (
             <Grid item xs={12} md={6} xl={4} key={`season-${season.ano}`}>
-              <SeasonCard season={season} onViewDetails={setSelectedSeason} />
+              <SeasonCard
+                season={season}
+                onViewDetails={setSelectedSeason}
+                onStatusChange={handleSeasonStatusChange}
+              />
             </Grid>
           ))}
-          {filteredSeasons.length === 0 && (
+          {filteredSeasonDetails.length === 0 && (
             <Grid item xs={12}>
               <Paper sx={{ p: 4, textAlign: 'center', borderRadius: 3 }}>
                 <Typography variant="h6" gutterBottom>

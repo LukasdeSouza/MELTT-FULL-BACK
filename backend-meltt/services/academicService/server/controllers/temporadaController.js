@@ -89,11 +89,13 @@ class TemporadaController {
                 console.log(`\n[Temporadas] Processando temporada ${temporada.id} (${temporada.ano}) com status '${temporada.status}'`);
 
                 // 2. Buscar as turmas da temporada
-                const [turmas] = await pool.query(`
-          SELECT id, nome
-          FROM turmas
-          WHERE temporada_id = ?
-        `, [temporada.id]);
+                const [turmas] = await pool.query(
+                    `SELECT id, nome
+                     FROM turmas
+                     WHERE temporada_id = ?
+                     ORDER BY nome ASC`,
+                    [temporada.id]
+                );
 
                 console.log(`[Temporadas] Turmas encontradas para a temporada ${temporada.id}:`, turmas.length);
 
@@ -103,25 +105,38 @@ class TemporadaController {
                 for (const turma of turmas) {
                     console.log(`  [Temporadas] Calculando dados da turma ${turma.id} (${turma.nome})`);
 
-                    const [receitaRows] = await pool.query(`
-            SELECT SUM(valor) AS receita
-            FROM custos
-            WHERE turma_id = ?
-              AND situacao IN ('pago', 'Parcialmente Pago')
-          `, [turma.id]);
+                    const [alunosRows] = await pool.query(
+                        `SELECT COUNT(*) AS total_alunos
+                         FROM usuarios
+                         WHERE tipo = 'ALUNO' AND turma_id = ?`,
+                        [turma.id]
+                    );
 
-                    const receita = Number(receitaRows[0]?.receita) || 0;
+                    const totalAlunos = Number(alunosRows[0]?.total_alunos) || 0;
 
-                    if (!receitaRows[0] || receitaRows[0].receita === null) {
-                        console.log(`    [Temporadas] Nenhum custo pago/parcial localizado para a turma ${turma.id}.`);
-                    } else {
-                        console.log(`    [Temporadas] Receita agregada para a turma ${turma.id}:`, receita);
-                    }
+                    const [custosRows] = await pool.query(
+                        `SELECT
+                            SUM(CASE WHEN situacao = 'Pago' THEN valor ELSE 0 END) AS total_pago,
+                            SUM(CASE WHEN situacao = 'Parcialmente Pago' THEN valor ELSE 0 END) AS total_parcial
+                         FROM custos
+                         WHERE turma_id = ?
+                           AND situacao IN ('Pago', 'Parcialmente Pago')`,
+                        [turma.id]
+                    );
+
+                    const receitaPago = Number(custosRows[0]?.total_pago) || 0;
+                    const receitaParcial = Number(custosRows[0]?.total_parcial) || 0;
+                    const receitaTotal = receitaPago + receitaParcial;
+
+                    console.log(`    [Temporadas] Totais calculados -> alunos: ${totalAlunos}, pago: ${receitaPago}, parcial: ${receitaParcial}, total: ${receitaTotal}`);
 
                     turmasDetalhadas.push({
+                        id: turma.id,
                         nome: turma.nome,
-                        receita,
-                        alunos: 0
+                        totalAlunos,
+                        receitaCentavos: receitaTotal,
+                        receitaPagoCentavos: receitaPago,
+                        receitaParcialCentavos: receitaParcial
                     });
                 }
 
@@ -129,10 +144,24 @@ class TemporadaController {
                     console.log(`[Temporadas] Temporada ${temporada.id} não possui turmas vinculadas.`);
                 }
 
+                const totalAlunosTemporada = turmasDetalhadas.reduce((acc, turma) => acc + turma.totalAlunos, 0);
+                const totalReceitaTemporada = turmasDetalhadas.reduce((acc, turma) => acc + turma.receitaCentavos, 0);
+                const totalReceitaPagoTemporada = turmasDetalhadas.reduce((acc, turma) => acc + (turma.receitaPagoCentavos ?? 0), 0);
+                const totalReceitaParcialTemporada = turmasDetalhadas.reduce((acc, turma) => acc + (turma.receitaParcialCentavos ?? 0), 0);
+
+                console.log(`  [Temporadas] Totais da temporada ${temporada.id} -> alunos: ${totalAlunosTemporada}, receita total: ${totalReceitaTemporada}`);
+
                 // 4. Adiciona ao resultado final
                 resultado.push({
+                    id: temporada.id,
                     ano: temporada.ano,
                     status: temporada.status,
+                    totais: {
+                        alunos: totalAlunosTemporada,
+                        receitaCentavos: totalReceitaTemporada,
+                        receitaPagoCentavos: totalReceitaPagoTemporada,
+                        receitaParcialCentavos: totalReceitaParcialTemporada
+                    },
                     turmas: turmasDetalhadas
                 });
             }

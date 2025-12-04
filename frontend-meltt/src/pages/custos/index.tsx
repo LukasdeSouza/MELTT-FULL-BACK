@@ -16,11 +16,25 @@ import { getToken } from '../../utils/token';
 import { jwtDecode } from 'jwt-decode';
 import { CustomJwtPayload } from '../../components/customDrawer';
 
-const initialForm = {
+type CostForm = {
+  tipo_custo: string;
+  turma_id: number | null;
+  evento: string;
+  fornecedor_id: number | null;
+  beneficiario: string;
+  chave_pix: string | null;
+  categoria: string;
+  valor: string;
+  valor_pago_parcial: string;
+  vencimento: string;
+  situacao: string;
+};
+
+const initialForm: CostForm = {
   tipo_custo: '',
   turma_id: null,
   evento: '',
-  fornecedor_id: '',
+  fornecedor_id: null,
   beneficiario: '',
   chave_pix: null,
   categoria: '',
@@ -38,7 +52,7 @@ const tiposCusto = [
 
 const situacoes = [
   { value: 'Pendente', label: 'Pendente' },
-  { value: 'pago', label: 'Pago' },
+  { value: 'Pago', label: 'Pago' },
   { value: 'Parcialmente Pago', label: 'Pago Parcial' },
   { value: 'Vencido', label: 'Vencido' },
 ];
@@ -64,7 +78,7 @@ const CustosPage = () => {
 
   const navigate = useNavigate();
   const [openModal, setOpenModal] = useState(false);
-  const [form, setForm] = useState(initialForm);
+  const [form, setForm] = useState<CostForm>(initialForm);
   const [loading, setLoading] = useState(false);
 
   const [turmas, setTurmas] = useState([]);
@@ -114,21 +128,71 @@ const CustosPage = () => {
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+
+    setForm((prev) => {
+      if (name === 'turma_id') {
+        return { ...prev, turma_id: value ? Number(value) : null };
+      }
+
+      if (name === 'fornecedor_id') {
+        return { ...prev, fornecedor_id: value ? Number(value) : null };
+      }
+
+      if (name === 'tipo_custo' && value === 'Fixo') {
+        return { ...prev, tipo_custo: value, turma_id: null };
+      }
+
+      if (name === 'situacao') {
+        return {
+          ...prev,
+          situacao: value,
+          valor_pago_parcial: value === 'Parcialmente Pago' ? prev.valor_pago_parcial : '',
+        };
+      }
+
+      return { ...prev, [name]: value };
+    });
   };
 
   const handleSubmit = async () => {
+    console.log(form.situacao);
+    
     setLoading(true);
-    const valorNumero = parseFloat(form.valor.replace(/\./g, '').replace('R$', '').replace(',', '.'));
-    const valorCentavos = Math.round(valorNumero * 100);
-    const valorPagoParcialNumero = parseFloat(form.valor_pago_parcial.replace(/\./g, '').replace('R$', '').replace(',', '.'));
-    const valorPagoParcialCentavos = Math.round(valorPagoParcialNumero * 100);
+    const normalizeCurrencyField = (input: string) => {
+      if (!input) return 0;
+
+      const numeric = input
+        .replace(/\s/g, '')
+        .replace(/\./g, '')
+        .replace('R$', '')
+        .replace(',', '.');
+
+      const parsed = Number(numeric);
+      return Number.isFinite(parsed) ? Math.round(parsed * 100) : 0;
+    };
+
+    const valorCentavos = normalizeCurrencyField(form.valor);
+    const allowedSituacoes = ['Pendente', 'Pago', 'Parcialmente Pago', 'Vencido'];
+    const situacao = allowedSituacoes.includes(form.situacao) ? form.situacao : 'Pendente';
+    const valorPagoParcialCentavos =
+      situacao === 'Parcialmente Pago' ? normalizeCurrencyField(form.valor_pago_parcial) : 0;
 
     const dataObj = {
       ...form,
+      situacao,
+      valor_pago_parcial: valorPagoParcialCentavos,
+      valor_pago_total: situacao === 'Pago' ? valorCentavos : 0,
+      turma_id: form.tipo_custo === 'Fixo' ? null : form.turma_id,
+      fornecedor_id: form.fornecedor_id,
       valor: valorCentavos,
-      valor_pago_parcial: valorPagoParcialCentavos ?? 0,
     };
+
+    if (form.tipo_custo !== 'Fixo' && !dataObj.turma_id) {
+      toast.error('Selecione uma turma antes de salvar o custo.');
+      setLoading(false);
+      return;
+    }
 
     try {
       const response = await apiPostData('academic', '/custos', dataObj);
@@ -786,7 +850,7 @@ const CustosPage = () => {
               size='small'
               fullWidth
             />
-            {form.situacao.includes('Parcialmente') && (
+            {form.situacao === 'Parcialmente Pago' && (
               <NumericFormat
                 value={form.valor_pago_parcial}
                 allowLeadingZeros

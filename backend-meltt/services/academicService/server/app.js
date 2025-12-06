@@ -8,10 +8,11 @@ import FormData from 'form-data'
 import multer from "multer";
 
 // Jobs (apenas em ambiente local, não na Vercel)
-const isVercel = process.env.VERCEL === '1';
-if (!isVercel) {
-  import("./jobs/blingSync.js").catch(err => {
-    console.log("Jobs não carregados (ambiente serverless):", err.message);
+// Cron jobs não funcionam em ambiente serverless, então pulamos o import na Vercel
+// Usamos import dinâmico para evitar erros em ambiente serverless
+if (process.env.VERCEL !== '1') {
+  import("./jobs/blingSync.js").catch(() => {
+    // Ignora erros silenciosamente
   });
 }
 
@@ -22,7 +23,8 @@ import comercialRoutes from "./routes/comercialRoutes.js";
 const uploadMiddleware = multer({ storage: multer.memoryStorage() });
 
 // Configurações
-import "dotenv/config";
+// dotenv já é carregado no db.js quando necessário
+// Na Vercel, as variáveis de ambiente já estão disponíveis em process.env
 
 const app = express();
 const corsOptions = { origin: "*", credentials: true };
@@ -145,6 +147,20 @@ app.post("/api/d4sign/contrato-meltt", uploadMiddleware.single('file'), async (r
 
 app.get("/", (req, res) => {
   res.send("Serviço de GERENCIAMENTO ACADÊMICO MELTT");
+});
+
+// Middleware de tratamento de erros global
+app.use((err, req, res, next) => {
+  console.error('Erro não tratado:', err);
+  res.status(err.status || 500).json({
+    error: err.message || 'Erro interno do servidor',
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+  });
+});
+
+// Handler para rotas não encontradas
+app.use((req, res) => {
+  res.status(404).json({ error: 'Rota não encontrada' });
 });
 
 // Export para Vercel (serverless)

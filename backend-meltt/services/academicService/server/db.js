@@ -1,10 +1,12 @@
 import dotenv from 'dotenv';
 import { Pool } from 'pg';
 
-const envFile = process.env.NODE_ENV === 'production' ? '.env' : '.env.local';
-dotenv.config({ path: envFile });
-
-console.log(`Using ${envFile} for configuration`);
+// Na Vercel, as variáveis de ambiente já estão disponíveis, não precisa carregar arquivo .env
+if (!process.env.VERCEL) {
+  const envFile = process.env.NODE_ENV === 'production' ? '.env' : '.env.local';
+  dotenv.config({ path: envFile });
+  console.log(`Using ${envFile} for configuration`);
+}
 
 const pool = new Pool({
   connectionString: process.env.POSTGRES_DATABASE_URL,

@@ -7,8 +7,13 @@ import FormData from 'form-data'
 // import authMiddleware from "./middlewares/auth";
 import multer from "multer";
 
-// Jobs
-import "./jobs/blingSync.js";
+// Jobs (apenas em ambiente local, não na Vercel)
+const isVercel = process.env.VERCEL === '1';
+if (!isVercel) {
+  import("./jobs/blingSync.js").catch(err => {
+    console.log("Jobs não carregados (ambiente serverless):", err.message);
+  });
+}
 
 // Routes
 import routes from "./routes/index.js";
@@ -142,10 +147,16 @@ app.get("/", (req, res) => {
   res.send("Serviço de GERENCIAMENTO ACADÊMICO MELTT");
 });
 
-// Server
-const PORT = process.env.PORT || 5001;
-app.listen(PORT, () => {
-  console.log(
-    `Serviço de GERENCIAMENTO ACADÊMICO MELTT está rodando na porta :${PORT}`
-  );
-});
+// Export para Vercel (serverless)
+export default app;
+
+// Server (apenas em ambiente local - não Vercel)
+const isVercel = process.env.VERCEL === '1';
+if (!isVercel) {
+  const PORT = process.env.PORT || 5001;
+  app.listen(PORT, () => {
+    console.log(
+      `Serviço de GERENCIAMENTO ACADÊMICO MELTT está rodando na porta :${PORT}`
+    );
+  });
+}

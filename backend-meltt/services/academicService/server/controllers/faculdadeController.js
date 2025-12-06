@@ -7,14 +7,16 @@ class FaculdadeController {
     const offset = (page - 1) * limit;
 
     try {
-      const [results] = await pool.query(
-        "SELECT * FROM faculdades LIMIT ? OFFSET ?",
+      const resultsResult = await pool.query(
+        "SELECT * FROM faculdades LIMIT $1 OFFSET $2",
         [limit, offset]
       );
+      const results = resultsResult.rows;
       
-      const [[{ total }]] = await pool.query(
+      const countResult = await pool.query(
         "SELECT COUNT(*) AS total FROM faculdades"
       );
+      const total = parseInt(countResult.rows[0].total);
       
       const totalPages = Math.ceil(total / limit);
 
@@ -33,8 +35,8 @@ class FaculdadeController {
   async getFaculdadeById(req, res) {
     const id = req.params.id;
     try {
-      const [result] = await pool.query("SELECT * FROM faculdades WHERE id = ?", [id]);
-      res.status(200).json(result);
+      const result = await pool.query("SELECT * FROM faculdades WHERE id = $1", [id]);
+      res.status(200).json(result.rows);
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
@@ -43,11 +45,11 @@ class FaculdadeController {
   async createFaculdade(req, res) {
     const { nome, endereco, telefone } = req.body;
     try {
-      const [result] = await pool.query(
-        "INSERT INTO faculdades (nome, endereco, telefone) VALUES (?, ?, ?)",
+      const result = await pool.query(
+        "INSERT INTO faculdades (nome, endereco, telefone) VALUES ($1, $2, $3) RETURNING id",
         [nome, endereco, telefone]
       );
-      res.status(201).json({ id: result.insertId, ...req.body });
+      res.status(201).json({ id: result.rows[0].id, ...req.body });
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
@@ -58,7 +60,7 @@ class FaculdadeController {
     const { nome, endereco, telefone } = req.body;
     try {
       await pool.query(
-        "UPDATE faculdades SET nome = ?, endereco = ?, telefone = ? WHERE id = ?",
+        "UPDATE faculdades SET nome = $1, endereco = $2, telefone = $3 WHERE id = $4",
         [nome, endereco, telefone, id]
       );
       res.status(200).json({ message: "Faculdade atualizada com sucesso!", result: req.body });
@@ -70,7 +72,7 @@ class FaculdadeController {
   async deleteFaculdade(req, res) {
     const id = req.params.id;
     try {
-      await pool.query("DELETE FROM faculdades WHERE id = ?", [id]);
+      await pool.query("DELETE FROM faculdades WHERE id = $1", [id]);
       res.status(200).json({ message: "Faculdade deletada com sucesso!" });
     } catch (err) {
       res.status(500).json({ error: err.message });

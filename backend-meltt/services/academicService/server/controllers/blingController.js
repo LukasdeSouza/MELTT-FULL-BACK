@@ -13,17 +13,18 @@ class BlingController {
 
       if (situacoes) {
         const situacoesList = Array.isArray(situacoes) ? situacoes : [situacoes];
-        whereClauses.push(`situacao IN (${situacoesList.map(() => "?").join(",")})`);
+        const placeholders = situacoesList.map((_, i) => `$${params.length + i + 1}`).join(',');
+        whereClauses.push(`situacao IN (${placeholders})`);
         params.push(...situacoesList);
       }
 
       if (dataInicial) {
-        whereClauses.push("vencimento >= ?");
+        whereClauses.push(`vencimento >= $${params.length + 1}`);
         params.push(dataInicial);
       }
 
       if (dataFinal) {
-        whereClauses.push("vencimento <= ?");
+        whereClauses.push(`vencimento <= $${params.length + 1}`);
         params.push(dataFinal);
       }
 
@@ -31,19 +32,39 @@ class BlingController {
         query += ` WHERE ${whereClauses.join(" AND ")}`;
       }
 
-      query += " ORDER BY vencimento DESC LIMIT ? OFFSET ?";
+      const limitParam = params.length + 1;
+      const offsetParam = params.length + 2;
+      query += ` ORDER BY vencimento DESC LIMIT $${limitParam} OFFSET $${offsetParam}`;
       params.push(parseInt(limit), parseInt(offset));
 
-      const [rows] = await pool.promise().query(query, params);
+      const rowsResult = await pool.query(query, params);
+      const rows = rowsResult.rows;
 
       let countQuery = "SELECT COUNT(*) as count FROM pagamentos";
+      const countParams = [];
       if (whereClauses.length > 0) {
-        countQuery += ` WHERE ${whereClauses.join(" AND ")}`;
-        const [countRows] = await pool.promise().query(countQuery, params.slice(0, params.length - 2));
-        res.json({ data: rows, total: countRows[0].count });
+        const countWhereClauses = [];
+        let countParamIndex = 1;
+        if (situacoes) {
+          const situacoesList = Array.isArray(situacoes) ? situacoes : [situacoes];
+          const placeholders = situacoesList.map(() => `$${countParamIndex++}`).join(',');
+          countWhereClauses.push(`situacao IN (${placeholders})`);
+          countParams.push(...situacoesList);
+        }
+        if (dataInicial) {
+          countWhereClauses.push(`vencimento >= $${countParamIndex++}`);
+          countParams.push(dataInicial);
+        }
+        if (dataFinal) {
+          countWhereClauses.push(`vencimento <= $${countParamIndex++}`);
+          countParams.push(dataFinal);
+        }
+        countQuery += ` WHERE ${countWhereClauses.join(" AND ")}`;
+        const countRowsResult = await pool.query(countQuery, countParams);
+        res.json({ data: rows, total: parseInt(countRowsResult.rows[0].count) });
       } else {
-        const [countRows] = await pool.promise().query(countQuery);
-        res.json({ data: rows, total: countRows[0].count });
+        const countRowsResult = await pool.query(countQuery);
+        res.json({ data: rows, total: parseInt(countRowsResult.rows[0].count) });
       }
 
     } catch (error) {

@@ -28,8 +28,6 @@ import formatCentavosToBRL from '../../../utils/functions/formatCentavosToBRL';
 import { Custos } from '../../../types';
 import toast from 'react-hot-toast';
 import { NumericFormat } from 'react-number-format';
-import parseCurrencyToCents from '../../../utils/functions/currency_to_cents';
-import { parse } from 'path';
 
 const situacoes = [
   { value: 'Pendente', label: 'Pendente' },

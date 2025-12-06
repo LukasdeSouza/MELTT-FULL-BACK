@@ -15,12 +15,12 @@ class UsuarioController {
 
       // Construção dinâmica das cláusulas WHERE
       if (ativo !== undefined) {
-        whereClauses.push("ativo = ?");
+        whereClauses.push(`ativo = $${queryParams.length + 1}`);
         queryParams.push(parseInt(ativo));
       }
 
       if (nome) {
-        whereClauses.push("nome LIKE CONCAT(?, '%')");
+        whereClauses.push(`nome LIKE $${queryParams.length + 1} || '%'`);
         queryParams.push(nome);
       }
 
@@ -32,16 +32,16 @@ class UsuarioController {
       }
 
       // Query principal com paginação
-      query += " LIMIT ? OFFSET ?";
+      query += ` LIMIT $${queryParams.length + 1} OFFSET $${queryParams.length + 2}`;
       const paginationParams = [...queryParams, limit, offset];
 
       // Executa as queries em paralelo
-      const [results, [countResult]] = await Promise.all([
+      const [results, countResult] = await Promise.all([
         pool.query(query, paginationParams),
         pool.query(countQuery, queryParams)
       ]);
 
-      const total = countResult[0].total;
+      const total = parseInt(countResult.rows[0].total);
       const totalPages = Math.ceil(total / limit);
 
       res.status(200).json({
@@ -49,7 +49,7 @@ class UsuarioController {
         totalPages,
         totalItems: total,
         itemsPerPage: limit,
-        data: results[0],
+        data: results.rows,
       });
 
     } catch (err) {
@@ -61,15 +61,15 @@ class UsuarioController {
     try {
       const { email, senha, tipo, documento, nome, id_bling, ativo, telefone, faculdade, turma_id } = req.body;
       
-      const [result] = await pool.query(
+      const result = await pool.query(
         `INSERT INTO usuarios 
         (email, senha, tipo, documento, nome, id_bling, ativo, telefone, faculdade, turma_id) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id`,
         [email, senha, tipo, documento, nome, id_bling, ativo, telefone, faculdade, turma_id]
       );
 
       res.status(201).json({ 
-        id: result.insertId, 
+        id: result.rows[0].id, 
         ...req.body 
       });
 
@@ -80,16 +80,16 @@ class UsuarioController {
 
   async getUsuarioById(req, res) {
     try {
-      const [results] = await pool.query(
-        "SELECT * FROM usuarios WHERE id = ?", 
+      const result = await pool.query(
+        "SELECT * FROM usuarios WHERE id = $1", 
         [req.params.id]
       );
 
-      if (results.length === 0) {
+      if (result.rows.length === 0) {
         return res.status(404).json({ error: "Usuário não encontrado" });
       }
 
-      res.status(200).json(results[0]);
+      res.status(200).json(result.rows[0]);
 
     } catch (err) {
       res.status(500).json({ error: err.message });
@@ -98,12 +98,12 @@ class UsuarioController {
 
   async getUsuariosByTurmaId(req, res) {
     try {
-      const [results] = await pool.query(
-        "SELECT * FROM usuarios WHERE turma_id = ?",
+      const result = await pool.query(
+        "SELECT * FROM usuarios WHERE turma_id = $1",
         [req.params.id]
       );
 
-      res.status(200).json(results);
+      res.status(200).json(result.rows);
 
     } catch (err) {
       res.status(500).json({ error: err.message });
@@ -117,9 +117,9 @@ class UsuarioController {
 
       const updateQuery = `
         UPDATE usuarios
-        SET email = ?, senha = ?, tipo = ?, documento = ?, 
-            nome = ?, id_bling = ?, ativo = ?, telefone = ?, faculdade = ?, turma_id = ?
-        WHERE id = ?`;
+        SET email = $1, senha = $2, tipo = $3, documento = $4, 
+            nome = $5, id_bling = $6, ativo = $7, telefone = $8, faculdade = $9, turma_id = $10
+        WHERE id = $11`;
 
       const params = [
         fields.email,
@@ -135,20 +135,20 @@ class UsuarioController {
         id
       ];
 
-      const [result] = await pool.query(updateQuery, params);
+      const result = await pool.query(updateQuery, params);
 
-      if (result.affectedRows === 0) {
+      if (result.rowCount === 0) {
         return res.status(404).json({ error: "Usuário não encontrado" });
       }
 
-      const [updatedUser] = await pool.query(
-        "SELECT * FROM usuarios WHERE id = ?", 
+      const updatedUserResult = await pool.query(
+        "SELECT * FROM usuarios WHERE id = $1", 
         [id]
       );
 
       res.status(200).json({
         message: "Usuário atualizado com sucesso!",
-        data: updatedUser[0]
+        data: updatedUserResult.rows[0]
       });
 
     } catch (err) {
@@ -158,12 +158,12 @@ class UsuarioController {
 
   async updateUsuarioStatus(req, res) {
     try {
-      const [result] = await pool.query(
-        "UPDATE usuarios SET ativo = 0 WHERE id = ?",
+      const result = await pool.query(
+        "UPDATE usuarios SET ativo = 0 WHERE id = $1",
         [req.params.id]
       );
 
-      if (result.affectedRows === 0) {
+      if (result.rowCount === 0) {
         return res.status(404).json({ message: "Usuário não encontrado!" });
       }
 

@@ -1,4 +1,4 @@
-import db from "../db.js";
+import pool from "../db.js";
 
 class MusicasController {
   async getAllMusicas(req, res) {
@@ -7,13 +7,13 @@ class MusicasController {
     const offset = (page - 1) * limit;
 
     try {
-      const [data, total] = await Promise.all([
-        db.query("SELECT * FROM musicas LIMIT ? OFFSET ?", [limit, offset]),
-        db.query("SELECT COUNT(*) AS total FROM musicas"),
+      const [dataResult, totalResult] = await Promise.all([
+        pool.query("SELECT * FROM musicas LIMIT $1 OFFSET $2", [limit, offset]),
+        pool.query("SELECT COUNT(*) AS total FROM musicas"),
       ]);
 
-      const dataRows = data[0];
-      const totalCount = total[0]?.[0]?.total || 0;
+      const dataRows = dataResult.rows;
+      const totalCount = parseInt(totalResult.rows[0]?.total) || 0;
 
       res.status(200).json({
         page,
@@ -29,8 +29,8 @@ class MusicasController {
 
   async getMusicaById(req, res) {
     try {
-      const [rows] = await db.query("SELECT * FROM musicas WHERE id = ?", [req.params.id]);
-      res.status(rows.length ? 200 : 404).json(rows[0] || { error: "Música não encontrada" });
+      const result = await pool.query("SELECT * FROM musicas WHERE id = $1", [req.params.id]);
+      res.status(result.rows.length ? 200 : 404).json(result.rows[0] || { error: "Música não encontrada" });
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
@@ -38,8 +38,8 @@ class MusicasController {
 
   async getMusicasByTurmaId(req, res) {
     try {
-      const [rows] = await db.query("SELECT * FROM musicas WHERE turma_id = ?", [req.params.id]);
-      res.status(200).json(rows);
+      const result = await pool.query("SELECT * FROM musicas WHERE turma_id = $1", [req.params.id]);
+      res.status(200).json(result.rows);
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
@@ -54,12 +54,12 @@ class MusicasController {
         return res.status(400).json({ error: "Todos os campos são obrigatórios" });
       }
 
-      const [result] = await db.query(
-        "INSERT INTO musicas SET ?",
-        { turma_id, nome, url_arquivo, user_id }
+      const result = await pool.query(
+        "INSERT INTO musicas (turma_id, nome, url_arquivo, user_id) VALUES ($1, $2, $3, $4) RETURNING id",
+        [turma_id, nome, url_arquivo, user_id]
       );
 
-      res.status(201).json({ id: result.insertId, turma_id, nome, url_arquivo, user_id });
+      res.status(201).json({ id: result.rows[0].id, turma_id, nome, url_arquivo, user_id });
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
@@ -67,17 +67,18 @@ class MusicasController {
 
   async updateMusica(req, res) {
     try {
-      const [result] = await db.query(
-        "UPDATE musicas SET ? WHERE id = ?",
-        [req.body, req.params.id]
+      const { turma_id, nome, url_arquivo, user_id } = req.body;
+      const updateResult = await pool.query(
+        "UPDATE musicas SET turma_id = $1, nome = $2, url_arquivo = $3, user_id = $4 WHERE id = $5",
+        [turma_id, nome, url_arquivo, user_id, req.params.id]
       );
 
-      if (!result.affectedRows) {
+      if (updateResult.rowCount === 0) {
         return res.status(404).json({ error: "Música não encontrada" });
       }
 
-      const [rows] = await db.query("SELECT * FROM musicas WHERE id = ?", [req.params.id]);
-      res.status(200).json({ message: "Atualizada com sucesso", value: rows[0] });
+      const result = await pool.query("SELECT * FROM musicas WHERE id = $1", [req.params.id]);
+      res.status(200).json({ message: "Atualizada com sucesso", value: result.rows[0] });
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
@@ -85,9 +86,9 @@ class MusicasController {
 
   async deleteMusica(req, res) {
     try {
-      const [result] = await db.query("DELETE FROM musicas WHERE id = ?", [req.params.id]);
+      const result = await pool.query("DELETE FROM musicas WHERE id = $1", [req.params.id]);
 
-      if (!result.affectedRows) {
+      if (result.rowCount === 0) {
         return res.status(404).json({ error: "Música não encontrada" });
       }
 

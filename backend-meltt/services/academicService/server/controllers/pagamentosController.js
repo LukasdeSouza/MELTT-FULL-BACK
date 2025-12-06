@@ -8,15 +8,16 @@ class PagamentosController {
     const offset = (page - 1) * limit; // Calcula o deslocamento
 
     try {
-      const [results] = await pool.query(
-        "SELECT * FROM pagamentos LIMIT ? OFFSET ?",
+      const resultsResult = await pool.query(
+        "SELECT * FROM pagamentos LIMIT $1 OFFSET $2",
         [limit, offset]
       );
+      const results = resultsResult.rows;
 
-      const [countResult] = await pool.query(
+      const countResult = await pool.query(
         "SELECT COUNT(*) AS total FROM pagamentos"
       );
-      const total = countResult[0].total;
+      const total = parseInt(countResult.rows[0].total);
       const totalPages = Math.ceil(total / limit);
 
       res.status(200).json({
@@ -35,18 +36,19 @@ class PagamentosController {
     const situacao = req.params.id;
     const { periodo } = req.query;
 
-    let query = "SELECT * FROM pagamentos WHERE situacao = ?";
+    let query = "SELECT * FROM pagamentos WHERE situacao = $1";
     let params = [situacao];
+    let paramIndex = 2;
 
     if (periodo) {
       const dataAtual = new Date().toISOString().split("T")[0];
-      query += " AND vencimento BETWEEN ? AND ?";
+      query += ` AND vencimento BETWEEN $${paramIndex} AND $${paramIndex + 1}`;
       params.push(periodo, dataAtual);
     }
 
     try {
-      const [results] = await pool.query(query, params);
-      res.status(200).json(results);
+      const result = await pool.query(query, params);
+      res.status(200).json(result.rows);
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
@@ -56,8 +58,8 @@ class PagamentosController {
     const id_bling = req.params.id;
 
     try {
-      const [results] = await pool.query("SELECT * FROM pagamentos WHERE id_bling = ?", [id_bling]);
-      res.status(200).json(results);
+      const result = await pool.query("SELECT * FROM pagamentos WHERE id_bling = $1", [id_bling]);
+      res.status(200).json(result.rows);
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
@@ -67,11 +69,11 @@ class PagamentosController {
     const { numeroDocumento } = req.query;
 
     try {
-      const [results] = await pool.query(
-        "SELECT * FROM pagamentos WHERE numeroDocumento = ? ORDER BY dataEmissao DESC LIMIT 1",
+      const result = await pool.query(
+        "SELECT * FROM pagamentos WHERE numeroDocumento = $1 ORDER BY dataEmissao DESC LIMIT 1",
         [numeroDocumento]
       );
-      res.status(200).json(results || null);
+      res.status(200).json(result.rows[0] || null);
     } catch (err) {
       res.status(500).json({ error: err.message });
     }

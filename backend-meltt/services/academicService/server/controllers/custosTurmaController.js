@@ -17,13 +17,13 @@ class CustosTurmaController {
       let whereConditions = [];
 
       if (turma_id) {
-        whereConditions.push("turma_id = ?");
+        whereConditions.push(`turma_id = $${queryParams.length + 1}`);
         queryParams.push(turma_id);
         countParams.push(turma_id);
       }
 
       if (tipo) {
-        whereConditions.push("tipo = ?");
+        whereConditions.push(`tipo = $${queryParams.length + 1}`);
         queryParams.push(tipo);
         countParams.push(tipo);
       }
@@ -31,15 +31,27 @@ class CustosTurmaController {
       if (whereConditions.length > 0) {
         const whereClause = " WHERE " + whereConditions.join(" AND ");
         query += whereClause;
-        countQuery += whereClause;
+        // Construir countQuery com placeholders corretos
+        const countConditions = [];
+        countParams.forEach((param, index) => {
+          if (turma_id && param === turma_id) {
+            countConditions.push(`turma_id = $${index + 1}`);
+          } else if (tipo && param === tipo) {
+            countConditions.push(`tipo = $${index + 1}`);
+          }
+        });
+        countQuery += " WHERE " + countConditions.join(" AND ");
       }
 
       if (!noPagination) {
-        query += " LIMIT ? OFFSET ?";
+        const limitParam = queryParams.length + 1;
+        const offsetParam = queryParams.length + 2;
+        query += ` LIMIT $${limitParam} OFFSET $${offsetParam}`;
         queryParams.push(limit, offset);
       }
 
-      const [results] = await pool.query(query, queryParams);
+      const result = await pool.query(query, queryParams);
+      const results = result.rows;
 
       if (noPagination) {
         res.status(200).json({
@@ -47,8 +59,8 @@ class CustosTurmaController {
           data: results,
         });
       } else {
-        const [countResult] = await pool.query(countQuery, countParams);
-        const total = countResult[0].total;
+        const countResult = await pool.query(countQuery, countParams);
+        const total = parseInt(countResult.rows[0].total);
         const totalPages = Math.ceil(total / limit);
 
         res.status(200).json({
@@ -67,8 +79,8 @@ class CustosTurmaController {
   async getCustoTurmaById(req, res) {
     const id = req.params.id;
     try {
-      const [result] = await pool.query("SELECT * FROM custos_turma WHERE turma_id = ?", [id]);
-      res.status(200).json({ data: result });
+      const result = await pool.query("SELECT * FROM custos_turma WHERE turma_id = $1", [id]);
+      res.status(200).json({ data: result.rows });
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
@@ -78,12 +90,12 @@ class CustosTurmaController {
     const id = req.params.id;
 
     try {
-      const [totalByTipoResult] = await pool.query(
+      const totalByTipoResult = await pool.query(
         `SELECT 
           tipo,
           SUM(valor) AS total
        FROM custos_turma
-       WHERE turma_id = ?
+       WHERE turma_id = $1
        GROUP BY tipo`,
         [id]
       );
@@ -100,7 +112,7 @@ class CustosTurmaController {
         saida: 0
       };
 
-      totalByTipoResult.forEach(row => {
+      totalByTipoResult.rows.forEach(row => {
         if (row.tipo === 'entrada') {
           totais.entrada = row.total || 0;
         } else if (row.tipo === 'saida') {
@@ -129,11 +141,11 @@ class CustosTurmaController {
   async createCustoTurma(req, res) {
     const { valor, tipo, data, descricao, categoria, turma_id } = req.body;
     console.log(req.body);
-    const query = "INSERT INTO custos_turma (valor, tipo, data, descrição, categoria, turma_id) VALUES (?, ?, ?, ?, ?, ?)";
+    const query = "INSERT INTO custos_turma (valor, tipo, data, descrição, categoria, turma_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id";
     try {
-      const [result] = await pool.query(query, [valor, tipo, data, descricao, categoria, turma_id]);
+      const result = await pool.query(query, [valor, tipo, data, descricao, categoria, turma_id]);
       console.log(result);
-      res.status(201).json({ id: result.insertId, ...req.body });
+      res.status(201).json({ id: result.rows[0].id, ...req.body });
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
@@ -154,7 +166,7 @@ class CustosTurmaController {
   async deleteCustoTurma(req, res) {
     const id = req.params.id;
     try {
-      await pool.query("DELETE FROM custos_turma WHERE id = ?", [id]);
+      await pool.query("DELETE FROM custos_turma WHERE id = $1", [id]);
       res.status(200).json({ message: "Custo da turma deletado com sucesso!" });
     } catch (err) {
       res.status(500).json({ error: err.message });

@@ -28,31 +28,31 @@ class CustosController {
       const countParams = [];
 
       if (situacao && situacoesValidas.includes(situacao)) {
-        conditions.push("custos.situacao = ?");
+        conditions.push(`custos.situacao = $${params.length + 1}`);
         params.push(situacao);
         countParams.push(situacao);
       }
 
       if (tipoCusto && tiposValidos.includes(tipoCusto)) {
-        conditions.push("custos.tipo_custo = ?");
+        conditions.push(`custos.tipo_custo = $${params.length + 1}`);
         params.push(tipoCusto);
         countParams.push(tipoCusto);
       }
 
       if (evento) {
-        conditions.push("custos.evento LIKE ?");
+        conditions.push(`custos.evento LIKE $${params.length + 1}`);
         params.push(`%${evento}%`);
         countParams.push(`%${evento}%`);
       }
 
       if (turmaId) {
-        conditions.push("custos.turma_id = ?");
+        conditions.push(`custos.turma_id = $${params.length + 1}`);
         params.push(turmaId);
         countParams.push(turmaId);
       }
 
       if (vencimento) {
-        conditions.push("custos.vencimento = ?");
+        conditions.push(`custos.vencimento = $${params.length + 1}`);
         params.push(vencimento);
         countParams.push(vencimento);
       }
@@ -60,21 +60,39 @@ class CustosController {
       if (conditions.length > 0) {
         const whereClause = " WHERE " + conditions.join(" AND ");
         query += whereClause;
-        countQuery += whereClause;
+        // Construir countQuery com placeholders corretos
+        const countConditions = [];
+        countParams.forEach((param, index) => {
+          if (situacao && param === situacao) {
+            countConditions.push(`custos.situacao = $${index + 1}`);
+          } else if (tipoCusto && param === tipoCusto) {
+            countConditions.push(`custos.tipo_custo = $${index + 1}`);
+          } else if (evento && param === `%${evento}%`) {
+            countConditions.push(`custos.evento LIKE $${index + 1}`);
+          } else if (turmaId && param === turmaId) {
+            countConditions.push(`custos.turma_id = $${index + 1}`);
+          } else if (vencimento && param === vencimento) {
+            countConditions.push(`custos.vencimento = $${index + 1}`);
+          }
+        });
+        countQuery += " WHERE " + countConditions.join(" AND ");
       }
 
       query += " ORDER BY custos.criado_em DESC";
 
       // Aplicar LIMIT e OFFSET APENAS quando há limite definido (não é 'all')
       if (limit) {
-        query += ` LIMIT ? OFFSET ?`;
+        const limitParam = params.length + 1;
+        const offsetParam = params.length + 2;
+        query += ` LIMIT $${limitParam} OFFSET $${offsetParam}`;
         params.push(limit, offset);
       }
       // Quando limit=all, não adiciona LIMIT/OFFSET - traz TUDO
 
-      const [results] = await pool.query(query, params);
-      const [countResult] = await pool.query(countQuery, countParams);
-      const total = countResult[0].total;
+      const resultsResult = await pool.query(query, params);
+      const results = resultsResult.rows;
+      const countResult = await pool.query(countQuery, countParams);
+      const total = parseInt(countResult.rows[0].total);
 
       const totalPages = limit ? Math.ceil(total / limit) : 1;
 
@@ -93,15 +111,15 @@ class CustosController {
   async getCustosById(req, res) {
     const id = req.params.id;
     try {
-      const [result] = await pool.query(
+      const result = await pool.query(
         `SELECT custos.*, turmas.nome AS turma_nome, fornecedores.nome AS fornecedor_nome
          FROM custos
          LEFT JOIN turmas ON custos.turma_id = turmas.id
          LEFT JOIN fornecedores ON custos.fornecedor_id = fornecedores.id
-         WHERE custos.id_custo = ?`,
+         WHERE custos.id_custo = $1`,
         [id]
       );
-      res.status(200).json(result);
+      res.status(200).json(result.rows);
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
@@ -109,11 +127,11 @@ class CustosController {
 
   async getTotalCustos(req, res) {
     try {
-      const [totalResult] = await pool.query(
+      const totalResult = await pool.query(
         `SELECT SUM(valor) AS total FROM custos`
       );
 
-      const [totalByTypeResult] = await pool.query(
+      const totalByTypeResult = await pool.query(
         `SELECT
         tipo_custo,
         SUM(valor) AS total
@@ -122,29 +140,31 @@ class CustosController {
       );
 
       // Detalhamento por situação de pagamento
-      const [paymentDetailsByType] = await pool.query(
+      const paymentDetailsByTypeResult = await pool.query(
         `SELECT
           tipo_custo,
           situacao,
           SUM(valor) AS total_valor,
           SUM(CASE WHEN situacao = 'Parcialmente Pago' THEN valor_pago_parcial ELSE 0 END) AS total_pago_parcial,
-          SUM(CASE WHEN situacao = 'pago' THEN valor ELSE 0 END) AS total_pago_completo
+          SUM(CASE WHEN situacao = 'Pago' THEN valor ELSE 0 END) AS total_pago_completo
         FROM custos
         GROUP BY tipo_custo, situacao`
       );
+      const paymentDetailsByType = paymentDetailsByTypeResult.rows;
 
       // Totais gerais por situação
-      const [paymentDetailsGeneral] = await pool.query(
+      const paymentDetailsGeneralResult = await pool.query(
         `SELECT
           situacao,
           SUM(valor) AS total_valor,
           SUM(CASE WHEN situacao = 'Parcialmente Pago' THEN valor_pago_parcial ELSE 0 END) AS total_pago_parcial,
-          SUM(CASE WHEN situacao = 'pago' THEN valor ELSE 0 END) AS total_pago_completo
+          SUM(CASE WHEN situacao = 'Pago' THEN valor ELSE 0 END) AS total_pago_completo
         FROM custos
         GROUP BY situacao`
       );
+      const paymentDetailsGeneral = paymentDetailsGeneralResult.rows;
 
-      const totalGeralCentavos = totalResult[0].total || 0;
+      const totalGeralCentavos = parseFloat(totalResult.rows[0]?.total) || 0;
       const totalGeralReais = totalGeralCentavos / 100;
 
       const formatToCurrency = (centavos) => {
@@ -161,7 +181,7 @@ class CustosController {
         'Temporada': 0
       };
 
-      totalByTypeResult.forEach(row => {
+      totalByTypeResult.rows.forEach(row => {
         if (totaisPorTipo.hasOwnProperty(row.tipo_custo)) {
           totaisPorTipo[row.tipo_custo] = row.total || 0;
         }
@@ -180,7 +200,7 @@ class CustosController {
         details.forEach(row => {
           const valor = parseFloat(row.total_valor) || 0;
 
-          if (row.situacao === 'pago') {
+          if (row.situacao === 'Pago') {
             totalPago += valor;
           } else if (row.situacao === 'Pendente') {
             totalPendente += valor; // Valor completo está pendente
@@ -235,7 +255,7 @@ class CustosController {
       paymentDetailsGeneral.forEach(row => {
         const valor = parseFloat(row.total_valor) || 0;
 
-        if (row.situacao === 'pago') {
+        if (row.situacao === 'Pago') {
           totalGeralPago += valor;
         } else if (row.situacao === 'Pendente') {
           totalGeralPendente += valor; // Valor completo está pendente
@@ -313,24 +333,24 @@ class CustosController {
   async getTotalCustosById(req, res) {
     const turmaId = req.params.id; // id da turma vindo da rota
     try {
-      const [totalResult] = await pool.query(
+      const totalResult = await pool.query(
         `SELECT SUM(valor) AS total 
        FROM custos 
-       WHERE turma_id = ?`,
+       WHERE turma_id = $1`,
         [turmaId]
       );
 
-      const [totalByTypeResult] = await pool.query(
+      const totalByTypeResult = await pool.query(
         `SELECT 
         tipo_custo,
         SUM(valor) AS total
        FROM custos 
-       WHERE turma_id = ?
+       WHERE turma_id = $1
        GROUP BY tipo_custo`,
         [turmaId]
       );
 
-      const totalGeralCentavos = totalResult[0].total || 0;
+      const totalGeralCentavos = parseFloat(totalResult.rows[0]?.total) || 0;
       const totalGeralReais = totalGeralCentavos / 100;
 
       const formatToCurrency = (centavos) => {
@@ -347,7 +367,7 @@ class CustosController {
         'Temporada': 0
       };
 
-      totalByTypeResult.forEach(row => {
+      totalByTypeResult.rows.forEach(row => {
         if (totaisPorTipo.hasOwnProperty(row.tipo_custo)) {
           totaisPorTipo[row.tipo_custo] = row.total || 0;
         }
@@ -401,9 +421,9 @@ class CustosController {
     console.log(req.body, "req.body custos");
     const query =
       `INSERT INTO custos (tipo_custo, turma_id, evento, fornecedor_id, beneficiario, categoria, valor, valor_pago_parcial, vencimento, situacao, chave_pix)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`;
     try {
-      const [result] = await pool.query(query, [
+      const result = await pool.query(query, [
         tipo_custo,
         turma_id,
         evento,
@@ -416,7 +436,7 @@ class CustosController {
         situacao,
         chave_pix ?? null
       ]);
-      res.status(201).json(result);
+      res.status(201).json(result.rows[0]);
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
@@ -438,7 +458,7 @@ class CustosController {
       chave_pix
     } = req.body;
     const query =
-      `UPDATE custos SET tipo_custo = ?, turma_id = ?, evento = ?, fornecedor_id = ?, beneficiario = ?, categoria = ?, valor = ?, valor_pago_parcial = ?, vencimento = ?, situacao = ?, chave_pix = ? WHERE id_custo = ?`;
+      `UPDATE custos SET tipo_custo = $1, turma_id = $2, evento = $3, fornecedor_id = $4, beneficiario = $5, categoria = $6, valor = $7, valor_pago_parcial = $8, vencimento = $9, situacao = $10, chave_pix = $11 WHERE id_custo = $12`;
     try {
       await pool.query(query, [
         tipo_custo,
@@ -466,7 +486,7 @@ class CustosController {
   async deleteCustos(req, res) {
     const id = req.params.id;
     try {
-      await pool.query("DELETE FROM custos WHERE id_custo = ?", [id]);
+      await pool.query("DELETE FROM custos WHERE id_custo = $1", [id]);
       res
         .status(200)
         .json({ message: "Custo deletado com sucesso!" });

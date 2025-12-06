@@ -16,19 +16,22 @@ class TurmaController {
 
       // Aplica filtro se fornecido
       if (nome) {
-        query += " WHERE nome LIKE ?";
-        countQuery += " WHERE nome LIKE ?";
+        query += ` WHERE nome LIKE $1`;
+        countQuery += ` WHERE nome LIKE $1`;
         queryParams.push(`%${nome}%`);
         countParams.push(`%${nome}%`);
       }
 
       // Aplica paginação apenas se não for solicitado todos os registros
       if (!noPagination) {
-        query += " LIMIT ? OFFSET ?";
+        const limitParam = queryParams.length + 1;
+        const offsetParam = queryParams.length + 2;
+        query += ` LIMIT $${limitParam} OFFSET $${offsetParam}`;
         queryParams.push(limit, offset);
       }
 
-      const [results] = await pool.query(query, queryParams);
+      const result = await pool.query(query, queryParams);
+      const results = result.rows;
 
       // Se não há paginação, retorna formato simplificado
       if (noPagination) {
@@ -38,8 +41,8 @@ class TurmaController {
         });
       } else {
         // Com paginação, mantém o formato original
-        const [countResult] = await pool.query(countQuery, countParams);
-        const total = countResult[0].total;
+        const countResult = await pool.query(countQuery, countParams);
+        const total = parseInt(countResult.rows[0].total);
         const totalPages = Math.ceil(total / limit);
 
         res.status(200).json({
@@ -58,10 +61,10 @@ class TurmaController {
   async getTurmaById(req, res) {
     const id = req.params.id;
     try {
-      const [result] = await pool.query("SELECT * FROM turmas WHERE id = ?", [
+      const result = await pool.query("SELECT * FROM turmas WHERE id = $1", [
         id,
       ]);
-      res.status(200).json({ data: result });
+      res.status(200).json({ data: result.rows });
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
@@ -70,11 +73,11 @@ class TurmaController {
   async getTurmaByFaculdadeId(req, res) {
     const id = req.params.id;
     try {
-      const [result] = await pool.query(
-        "SELECT * FROM turmas WHERE faculdade_id = ?",
+      const result = await pool.query(
+        "SELECT * FROM turmas WHERE faculdade_id = $1",
         [id]
       );
-      res.status(200).json(result);
+      res.status(200).json(result.rows);
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
@@ -97,9 +100,9 @@ class TurmaController {
       temporada_id
     } = req.body;
     const query =
-      "INSERT INTO turmas (nome, identificador, regras_adesao, regras_renegociacao, regras_rescisao, arquivo_url, meltt_contrato_url, ano_formatura, estatuto_uuid, meltt_contrato_uuid, tem_brinde, instituicao, temporada_id ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+      "INSERT INTO turmas (nome, identificador, regras_adesao, regras_renegociacao, regras_rescisao, arquivo_url, meltt_contrato_url, ano_formatura, estatuto_uuid, meltt_contrato_uuid, tem_brinde, instituicao, temporada_id ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING id";
     try {
-      const [result] = await pool.query(query, [
+      const result = await pool.query(query, [
         nome,
         identificador,
         regras_adesao,
@@ -114,7 +117,7 @@ class TurmaController {
         instituicao,
         temporada_id
       ]);
-      res.status(201).json({ id: result.insertId, ...req.body });
+      res.status(201).json({ id: result.rows[0].id, ...req.body });
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
@@ -134,7 +137,7 @@ class TurmaController {
       tem_brinde
     } = req.body;
     const query =
-      "UPDATE turmas SET nome = ?, identificador = ?, regras_adesao = ?, regras_renegociacao = ?, regras_rescisao = ?, ano_formatura = ?, arquivo_url = ?, meltt_contrato_url = ?, tem_brinde = ? WHERE id = ?";
+      "UPDATE turmas SET nome = $1, identificador = $2, regras_adesao = $3, regras_renegociacao = $4, regras_rescisao = $5, ano_formatura = $6, arquivo_url = $7, meltt_contrato_url = $8, tem_brinde = $9 WHERE id = $10";
     try {
       await pool.query(query, [
         nome,
@@ -157,7 +160,7 @@ class TurmaController {
   async deleteTurma(req, res) {
     const id = req.params.id;
     try {
-      await pool.query("DELETE FROM turmas WHERE id = ?", [id]);
+      await pool.query("DELETE FROM turmas WHERE id = $1", [id]);
       res.status(200).json({ message: "Turma deletado com sucesso!" });
     } catch (err) {
       res.status(500).json({ error: err.message });
@@ -167,7 +170,7 @@ class TurmaController {
   async vincularPlanoFormatura(req, res) {
     const { turma_id, plano_id } = req.body; // Dados do corpo da requisição
     const query =
-      "INSERT INTO turma_plano_formatura (turma_id, plano_id) VALUES (?, ?)";
+      "INSERT INTO turma_plano_formatura (turma_id, plano_id) VALUES ($1, $2)";
     try {
       await pool.query(query, [turma_id, plano_id]);
       res
@@ -181,7 +184,7 @@ class TurmaController {
   async desvincularPlanoFormatura(req, res) {
     const { turma_id, plano_id } = req.body; // Dados do corpo da requisição
     const query =
-      "DELETE FROM turma_plano_formatura WHERE turma_id = ? AND plano_id = ?";
+      "DELETE FROM turma_plano_formatura WHERE turma_id = $1 AND plano_id = $2";
     try {
       await pool.query(query, [turma_id, plano_id]);
       res
@@ -199,12 +202,11 @@ class TurmaController {
       return res.status(400).json({ message: "Dados inválidos" });
     }
 
-    const querySelecionados = 'SELECT plano_id FROM turma_plano_formatura WHERE turma_id = ?';
+    const querySelecionados = 'SELECT plano_id FROM turma_plano_formatura WHERE turma_id = $1';
 
-    await pool.query(querySelecionados, [turma_id], (err, result) => {
-      if (err) return res.status(500).json(err);
-
-      const planosAtuais = result.map(row => row.plano_id);
+    try {
+      const result = await pool.query(querySelecionados, [turma_id]);
+      const planosAtuais = result.rows.map(row => row.plano_id);
 
       // Identificar planos a remover (presentes antes, mas não agora)
       const planosRemover = planosAtuais.filter(plano => !planos_ids.includes(plano));
@@ -212,36 +214,36 @@ class TurmaController {
       // Identificar planos a adicionar (não estavam antes, mas foram selecionados agora)
       const planosAdicionar = planos_ids.filter(plano => !planosAtuais.includes(plano));
 
-      // Monta as queries necessárias
-      const removerQuery = 'DELETE FROM turma_plano_formatura WHERE turma_id = ? AND plano_id IN (?)';
-      const adicionarQuery = 'INSERT INTO turma_plano_formatura (turma_id, plano_id) VALUES ?';
-
       // Executa as operações
       const promises = [];
 
       if (planosRemover.length > 0) {
-        promises.push(pool.query(removerQuery, [turma_id, planosRemover]));
+        const placeholders = planosRemover.map((_, i) => `$${i + 2}`).join(',');
+        const removerQuery = `DELETE FROM turma_plano_formatura WHERE turma_id = $1 AND plano_id IN (${placeholders})`;
+        promises.push(pool.query(removerQuery, [turma_id, ...planosRemover]));
       }
 
       if (planosAdicionar.length > 0) {
-        const valoresAdicionar = planosAdicionar.map(plano => [turma_id, plano]);
-        promises.push(pool.query(adicionarQuery, [valoresAdicionar]));
+        for (const plano of planosAdicionar) {
+          promises.push(pool.query('INSERT INTO turma_plano_formatura (turma_id, plano_id) VALUES ($1, $2)', [turma_id, plano]));
+        }
       }
 
-      Promise.all(promises)
-        .then(() => res.status(200).json({ message: "Planos de formatura atualizados com sucesso!" }))
-        .catch(error => res.status(500).json(error));
-    });
+      await Promise.all(promises);
+      res.status(200).json({ message: "Planos de formatura atualizados com sucesso!" });
+    } catch (error) {
+      res.status(500).json(error);
+    }
   }
 
   async getEventosByTurmaId(req, res) {
     const turma_id = req.params.id;
     try {
-      const [result] = await pool.query(
-        "SELECT * FROM eventos WHERE turma_id = ?",
+      const result = await pool.query(
+        "SELECT * FROM eventos WHERE turma_id = $1",
         [turma_id]
       );
-      res.status(200).json({ data: result });
+      res.status(200).json({ data: result.rows });
     } catch (err) {
       res.status(500).json({ error: err.message });
     }

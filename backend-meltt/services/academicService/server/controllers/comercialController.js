@@ -11,16 +11,13 @@ export const addTurmaToPipeline = async (req, res) => {
   }
 
   try {
-    const connection = await pool.getConnection();
-
     // Verifica se a turma já está no pipeline
-    const [existing] = await connection.query(
-      'SELECT * FROM turmas_comercial WHERE turma_id = ?',
+    const existingResult = await pool.query(
+      'SELECT * FROM turmas_comercial WHERE turma_id = $1',
       [turma_id]
     );
 
-    if (existing.length > 0) {
-      connection.release();
+    if (existingResult.rows.length > 0) {
       return res.status(409).json({ message: 'Esta turma já está no pipeline comercial.' });
     }
 
@@ -35,14 +32,12 @@ export const addTurmaToPipeline = async (req, res) => {
       reunioes: { agendadas: 0, realizadas: 0, remarcadas: 0 },
     };
 
-    const [result] = await connection.query(
-      'INSERT INTO turmas_comercial (turma_id, contatoPrincipal, telefone, status, timeline, estatisticas, createdBy) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    const result = await pool.query(
+      'INSERT INTO turmas_comercial (turma_id, contatoPrincipal, telefone, status, timeline, estatisticas, createdBy) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id',
       [turma_id, contatoPrincipal, telefone, status || 'contato', JSON.stringify(timeline), JSON.stringify(estatisticas), createdBy]
     );
 
-    connection.release();
-
-    res.status(201).json({ id: result.insertId, turma_id, contatoPrincipal, status: status || 'contato' });
+    res.status(201).json({ id: result.rows[0].id, turma_id, contatoPrincipal, status: status || 'contato' });
   } catch (error) {
     console.error('Erro ao adicionar turma ao pipeline:', error);
     res.status(500).json({ message: 'Erro de servidor' });
@@ -65,11 +60,7 @@ export const getPipelineTurmas = async (req, res) => {
     }
   };
 
-  let connection;
-
   try {
-    connection = await pool.getConnection();
-
     let query = `
       SELECT 
         tc.id,
@@ -90,15 +81,15 @@ export const getPipelineTurmas = async (req, res) => {
 
     const params = [];
     if (status) {
-      query += ' WHERE tc.status = ?';
+      query += ' WHERE tc.status = $1';
       params.push(status);
     }
 
     query += ' ORDER BY tc.createdAt DESC';
 
-    const [rows] = await connection.query(query, params);
+    const result = await pool.query(query, params);
 
-    const results = rows.map(row => ({
+    const results = result.rows.map(row => ({
       ...row,
       timeline: safeJsonParse(row.timeline, []),
       estatisticas: safeJsonParse(row.estatisticas, {}),
@@ -108,8 +99,6 @@ export const getPipelineTurmas = async (req, res) => {
   } catch (error) {
     console.error('Erro ao obter turmas do pipeline:', error.message);
     res.status(500).json({ message: error.message || 'Erro de servidor' });
-  } finally {
-    if (connection) connection.release();
   }
 };
 
@@ -125,17 +114,14 @@ export const updateTurmaStatus = async (req, res) => {
   }
 
   try {
-    const connection = await pool.getConnection();
-
     // Buscar a turma para obter a timeline atual
-    const [turmas] = await connection.query('SELECT * FROM turmas_comercial WHERE id = ?', [id]);
+    const turmasResult = await pool.query('SELECT * FROM turmas_comercial WHERE id = $1', [id]);
 
-    if (turmas.length === 0) {
-      connection.release();
+    if (turmasResult.rows.length === 0) {
       return res.status(404).json({ message: 'Turma não encontrada no pipeline' });
     }
 
-    const turma = turmas[0];
+    const turma = turmasResult.rows[0];
 
     let timeline = [];
     try {
@@ -180,12 +166,10 @@ export const updateTurmaStatus = async (req, res) => {
       estatisticas.propostas = (estatisticas.propostas || 0) + 1;
     }
 
-    await connection.query(
-      'UPDATE turmas_comercial SET status = ?, timeline = ?, estatisticas = ? WHERE id = ?',
+    await pool.query(
+      'UPDATE turmas_comercial SET status = $1, timeline = $2, estatisticas = $3 WHERE id = $4',
       [status, JSON.stringify(timeline), JSON.stringify(estatisticas), id]
     );
-
-    connection.release();
 
     res.status(200).json({ message: 'Status da turma atualizado com sucesso' });
   } catch (error) {
@@ -199,13 +183,9 @@ export const updateTurmaStatus = async (req, res) => {
 // @access  Private
 export const getPipelineStats = async (req, res) => {
   try {
-    const connection = await pool.getConnection();
-
-    const [statusCounts] = await connection.query(
+    const statusCountsResult = await pool.query(
       'SELECT status, COUNT(*) as count FROM turmas_comercial GROUP BY status'
     );
-
-    connection.release();
 
     const stats = {
       contato: 0,
@@ -216,8 +196,8 @@ export const getPipelineStats = async (req, res) => {
       perdida: 0,
     };
 
-    statusCounts.forEach(item => {
-      stats[item.status] = item.count;
+    statusCountsResult.rows.forEach(item => {
+      stats[item.status] = parseInt(item.count);
     });
 
     const totalInitial = stats.contato + stats.reuniao + stats.proposta + stats.negociacao + stats.fechada + stats.perdida;

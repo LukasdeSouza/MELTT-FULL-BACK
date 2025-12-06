@@ -1,4 +1,4 @@
-import db from "../db.js";
+import pool from "../db.js";
 
 class PropostaController {
   async getAllPropostas(req, res) {
@@ -7,15 +7,15 @@ class PropostaController {
     const offset = (page - 1) * limit;
 
     try {
-      const [data, total] = await Promise.all([
-        db.query("SELECT * FROM propostas LIMIT ? OFFSET ?", [limit, offset]),
-        db.query("SELECT COUNT(*) AS total FROM propostas")
+      const [dataResult, totalResult] = await Promise.all([
+        pool.query("SELECT * FROM propostas LIMIT $1 OFFSET $2", [limit, offset]),
+        pool.query("SELECT COUNT(*) AS total FROM propostas")
       ]);
 
-      const dataRows = data[0];
-      const totalRows = total[0];
+      const dataRows = dataResult.rows;
+      const totalRows = totalResult.rows;
 
-      const totalCount = totalRows.length > 0 ? totalRows[0].total : 0;
+      const totalCount = totalRows.length > 0 ? parseInt(totalRows[0].total) : 0;
 
       res.status(200).json({
         page,
@@ -32,8 +32,8 @@ class PropostaController {
 
   async getPropostaById(req, res) {
     try {
-      const [rows] = await db.query("SELECT * FROM propostas WHERE id = ?", [req.params.id]);
-      res.status(rows.length ? 200 : 404).json(rows[0] || { error: "Proposta não encontrada" });
+      const result = await pool.query("SELECT * FROM propostas WHERE id = $1", [req.params.id]);
+      res.status(result.rows.length ? 200 : 404).json(result.rows[0] || { error: "Proposta não encontrada" });
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
@@ -41,8 +41,8 @@ class PropostaController {
 
   async getPropostasByTurmaId(req, res) {
     try {
-      const [rows] = await db.query("SELECT * FROM propostas WHERE turma_id = ?", [req.params.id]);
-      res.status(200).json(rows);
+      const result = await pool.query("SELECT * FROM propostas WHERE turma_id = $1", [req.params.id]);
+      res.status(200).json(result.rows);
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
@@ -51,11 +51,11 @@ class PropostaController {
   async createProposta(req, res) {
     try {
       const { nome_proposta, turma_id, enviado_por, valor_proposta, file_uuid, observacoes } = req.body;
-      const [result] = await db.query(
-        "INSERT INTO propostas SET ?", 
-        { nome_proposta, turma_id, enviado_por, valor_proposta, file_uuid, observacoes }
+      const result = await pool.query(
+        "INSERT INTO propostas (nome_proposta, turma_id, enviado_por, valor_proposta, file_uuid, observacoes) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id", 
+        [nome_proposta, turma_id, enviado_por, valor_proposta, file_uuid, observacoes]
       );
-      res.status(201).json({ id: result.insertId, ...req.body });
+      res.status(201).json({ id: result.rows[0].id, ...req.body });
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
@@ -63,16 +63,17 @@ class PropostaController {
 
   async updateProposta(req, res) {
     try {
-      const { affectedRows } = await db.query(
-        "UPDATE propostas SET ? WHERE id = ?",
-        [req.body, req.params.id]
+      const { nome_proposta, turma_id, enviado_por, valor_proposta, file_uuid, observacoes } = req.body;
+      const updateResult = await pool.query(
+        "UPDATE propostas SET nome_proposta = $1, turma_id = $2, enviado_por = $3, valor_proposta = $4, file_uuid = $5, observacoes = $6 WHERE id = $7",
+        [nome_proposta, turma_id, enviado_por, valor_proposta, file_uuid, observacoes, req.params.id]
       );
 
-      if (!affectedRows) {
+      if (updateResult.rowCount === 0) {
         return res.status(404).json({ error: "Proposta não encontrada" });
       }
-      const [rows] = await db.query("SELECT * FROM propostas WHERE id = ?", [req.params.id]);
-      res.status(200).json({ message: "Atualizado com sucesso", value: rows[0] });
+      const result = await pool.query("SELECT * FROM propostas WHERE id = $1", [req.params.id]);
+      res.status(200).json({ message: "Atualizado com sucesso", value: result.rows[0] });
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
@@ -80,9 +81,9 @@ class PropostaController {
 
   async deleteProposta(req, res) {
     try {
-      const [result] = await db.query("DELETE FROM propostas WHERE id = ?", [req.params.id]);
+      const result = await pool.query("DELETE FROM propostas WHERE id = $1", [req.params.id]);
       
-      if (!result.affectedRows) {
+      if (result.rowCount === 0) {
         return res.status(404).json({ error: "Proposta não encontrada" });
       }
       

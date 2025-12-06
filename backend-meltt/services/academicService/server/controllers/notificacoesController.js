@@ -4,11 +4,10 @@ class NotificacoesController {
   async getAllNotificacoes(req, res) {
     const { id } = req.query;
     const query =
-      "SELECT * FROM notificacoes WHERE usuario_id = ? ORDER BY criada_em DESC";
+      "SELECT * FROM notificacoes WHERE usuario_id = $1 ORDER BY criada_em DESC";
     try {
-      const [result] = await pool.query(query, [id]);
-      console.log(result);
-      res.status(200).json(result);
+      const result = await pool.query(query, [id]);
+      res.status(200).json(result.rows);
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
@@ -16,7 +15,7 @@ class NotificacoesController {
 
   async updateNotificacao(req, res) {
     const { id } = req.query;
-    const query = "UPDATE notificacoes SET lida = TRUE WHERE id = ?";
+    const query = "UPDATE notificacoes SET lida = TRUE WHERE id = $1";
     try {
       await pool.query(query, [id]);
       res.status(200).json({ message: "Notificação marcada como lida" });

@@ -1,5 +1,5 @@
 import axios from "axios";
-import { pool } from "../database.js";
+import pool from "../db.js";
 import { format, subMonths, addMonths } from "date-fns";
 
 class BlingSyncService {
@@ -47,13 +47,17 @@ class BlingSyncService {
           const { id: blingContactId, numeroDocumento } = conta.contato;
 
           try {
-            const [result] = await pool.promise().query(
+            const result = await pool.query(
               `INSERT INTO pagamentos (
                 bling_payment_id, id_bling, valor, vencimento, situacao, dataEmissao, linkBoleto, numeroDocumento
-              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?) 
-              ON DUPLICATE KEY UPDATE 
-                valor = VALUES(valor), vencimento = VALUES(vencimento), situacao = VALUES(situacao),
-                dataEmissao = VALUES(dataEmissao), linkBoleto = VALUES(linkBoleto), numeroDocumento = VALUES(numeroDocumento)`,
+              ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
+              ON CONFLICT (bling_payment_id) DO UPDATE SET 
+                valor = EXCLUDED.valor, 
+                vencimento = EXCLUDED.vencimento, 
+                situacao = EXCLUDED.situacao,
+                dataEmissao = EXCLUDED.dataEmissao, 
+                linkBoleto = EXCLUDED.linkBoleto, 
+                numeroDocumento = EXCLUDED.numeroDocumento`,
               [
                 blingPaymentId,
                 blingContactId,
@@ -66,7 +70,7 @@ class BlingSyncService {
               ]
             );
 
-            if (result.affectedRows === 1) insertedCount++;
+            if (result.rowCount === 1) insertedCount++;
             else duplicateCount++;
           } catch (queryErr) {
             console.error("Erro no banco:", queryErr);

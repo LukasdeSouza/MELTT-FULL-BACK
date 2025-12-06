@@ -38,17 +38,21 @@ const syncBlingContas = async () => {
       const { id: blingContactId, numeroDocumento } = conta.contato;
 
       try {
-        const [result] = await pool.promise().query(
+        const result = await pool.query(
           `INSERT INTO pagamentos (
           bling_payment_id, id_bling, valor, vencimento, situacao, dataEmissao, linkBoleto, numeroDocumento
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        ON DUPLICATE KEY UPDATE
-          valor = VALUES(valor), vencimento = VALUES(vencimento), situacao = VALUES(situacao),
-          dataEmissao = VALUES(dataEmissao), linkBoleto = VALUES(linkBoleto), numeroDocumento = VALUES(numeroDocumento)`,
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        ON CONFLICT (bling_payment_id) DO UPDATE SET
+          valor = EXCLUDED.valor, 
+          vencimento = EXCLUDED.vencimento, 
+          situacao = EXCLUDED.situacao,
+          dataEmissao = EXCLUDED.dataEmissao, 
+          linkBoleto = EXCLUDED.linkBoleto, 
+          numeroDocumento = EXCLUDED.numeroDocumento`,
           [blingPaymentId, blingContactId, valor, vencimento, situacao, dataEmissao, linkBoleto || null, numeroDocumento]
         );
 
-        if (result.affectedRows === 1) insertedCount++;
+        if (result.rowCount === 1) insertedCount++;
         else duplicateCount++;
 
       } catch (queryErr) {

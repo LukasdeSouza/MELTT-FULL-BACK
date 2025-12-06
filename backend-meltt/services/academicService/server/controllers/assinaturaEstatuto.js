@@ -7,14 +7,16 @@ class AssinaturaEstatutoController {
       const limit = parseInt(req.query.limit) || 10;
       const offset = (page - 1) * limit;
 
-      const [results] = await pool.promise().query(
-        "SELECT * FROM assinatura_estatuto LIMIT ? OFFSET ?",
+      const resultsResult = await pool.query(
+        "SELECT * FROM assinatura_estatuto LIMIT $1 OFFSET $2",
         [limit, offset]
       );
+      const results = resultsResult.rows;
 
-      const [[{ total }]] = await pool.promise().query(
+      const countResult = await pool.query(
         "SELECT COUNT(*) AS total FROM assinatura_estatuto"
       );
+      const total = parseInt(countResult.rows[0].total);
 
       const totalPages = Math.ceil(total / limit);
 
@@ -33,11 +35,11 @@ class AssinaturaEstatutoController {
   async getEstatutoAssinadosById(req, res) {
     try {
       const id = req.params.id;
-      const [result] = await pool.promise().query(
-        "SELECT * FROM assinatura_estatuto WHERE id = ?",
+      const result = await pool.query(
+        "SELECT * FROM assinatura_estatuto WHERE id = $1",
         [id]
       );
-      res.status(200).json(result);
+      res.status(200).json(result.rows);
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
@@ -46,11 +48,11 @@ class AssinaturaEstatutoController {
   async getEstatutoAssinadosByUser(req, res) {
     try {
       const id = req.params.id;
-      const [result] = await pool.promise().query(
-        "SELECT * FROM assinatura_estatuto WHERE id_usuario = ?",
+      const result = await pool.query(
+        "SELECT * FROM assinatura_estatuto WHERE id_usuario = $1",
         [id]
       );
-      res.status(200).json(result);
+      res.status(200).json(result.rows);
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
@@ -59,11 +61,11 @@ class AssinaturaEstatutoController {
   async assinaturEstatuto(req, res) {
     try {
       const { id_usuario, id_turma, email, nome, data_assinada } = req.body;
-      const [result] = await pool.promise().query(
-        "INSERT INTO assinatura_estatuto (id_usuario, id_turma, email, nome, data_assinada) VALUES (?, ?, ?, ?, ?)",
+      const result = await pool.query(
+        "INSERT INTO assinatura_estatuto (id_usuario, id_turma, email, nome, data_assinada) VALUES ($1, $2, $3, $4, $5) RETURNING id",
         [id_usuario, id_turma, email, nome, data_assinada]
       );
-      res.status(201).json({ id: result.insertId, ...req.body });
+      res.status(201).json({ id: result.rows[0].id, ...req.body });
     } catch (err) {
       res.status(500).json({ error: err.message });
     }

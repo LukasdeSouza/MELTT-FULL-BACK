@@ -1,31 +1,29 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import db from "../db"; // Importa a conexão com o banco de dados
+import pool from "../db.js"; // Importa a conexão com o banco de dados
 
 async function createUser({ aluno_id, email, senha, tipo }) {
   const hashedPassword = await bcrypt.hash(senha, 10);
   console.log(hashedPassword);
-  return new Promise((resolve, reject) => {
-    const query =
-      "INSERT INTO usuarios (aluno_id, email, senha, tipo) VALUES (?, ?, ?, ?)";
-    db.query(query, [aluno_id, email, hashedPassword, tipo], (err, results) => {
-      console.log('err', err);
-      console.log('results', results);
-      if (err) return reject(err);
-
-      resolve({ id: results.id, email, tipo });
-    });
-  });
+  try {
+    const result = await pool.query(
+      "INSERT INTO usuarios (aluno_id, email, senha, tipo) VALUES ($1, $2, $3, $4) RETURNING id",
+      [aluno_id, email, hashedPassword, tipo]
+    );
+    return { id: result.rows[0].id, email, tipo };
+  } catch (err) {
+    console.log('err', err);
+    throw err;
+  }
 }
 
 async function findUserByEmail(email) {
-  return new Promise((resolve, reject) => {
-    const query = "SELECT * FROM usuarios WHERE email = ?";
-    db.query(query, [email], (err, results) => {
-      if (err) return reject(err);
-      resolve(results[0]);
-    });
-  });
+  try {
+    const result = await pool.query("SELECT * FROM usuarios WHERE email = $1", [email]);
+    return result.rows[0];
+  } catch (err) {
+    throw err;
+  }
 }
 
 async function verifyPassword(storedPassword, password) {

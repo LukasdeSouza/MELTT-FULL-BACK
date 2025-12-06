@@ -3,9 +3,9 @@ import express from 'express';
 import bcrypt from "bcryptjs";
 
 // Modulos
-import authMiddleware from '../middlewares/auth';
-import connection from '../db';
-import { createUser, findUserByEmail, verifyPassword, generateToken } from '../models/user';
+import authMiddleware from '../middlewares/auth/index.js';
+import pool from '../db.js';
+import { createUser, findUserByEmail, verifyPassword, generateToken } from '../models/user.js';
 
 // Instâncias
 const router = express.Router();
@@ -111,7 +111,7 @@ router.post('/reset-password/', authMiddleware, async (req, res) => {
     const newPassword = await bcrypt.hash(senha, 10);
     console.log('newPassword', newPassword)
     // user.senha = await bcrypt.hash(senha, 10);
-    connection.query('UPDATE usuarios SET senha = ? WHERE id = ?', [newPassword, user.id]);
+    await pool.query('UPDATE usuarios SET senha = $1 WHERE id = $2', [newPassword, user.id]);
     res.json({ message: 'Senha resetada com sucesso' });
   } catch (error) {
     res.status(500).json({ error: 'Erro ao resetar senha' });
@@ -122,12 +122,12 @@ router.delete('/:id', authMiddleware, async (req, res) => {
   const id = req.params.id;
 
   try {
-    const [user] = await db.query('SELECT * FROM usuarios WHERE id = ?', [id]);
-    if (!user) {
+    const result = await pool.query('SELECT * FROM usuarios WHERE id = $1', [id]);
+    if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Usuário não encontrado' });
     }
 
-    await db.query('DELETE FROM usuarios WHERE id = ?', [id]);
+    await pool.query('DELETE FROM usuarios WHERE id = $1', [id]);
 
     res.json({ message: 'Usuário deletado com sucesso' });
   } catch (error) {

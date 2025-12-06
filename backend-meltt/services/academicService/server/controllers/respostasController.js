@@ -7,15 +7,16 @@ class RespostasController {
     const offset = (page - 1) * limit; // Calcula o deslocamento
 
     try {
-      const [results] = await pool.query(
-        "SELECT * FROM respostas LIMIT ? OFFSET ?",
+      const resultsResult = await pool.query(
+        "SELECT * FROM respostas LIMIT $1 OFFSET $2",
         [limit, offset]
       );
+      const results = resultsResult.rows;
 
-      const [countResult] = await pool.query(
+      const countResult = await pool.query(
         "SELECT COUNT(*) AS total FROM respostas"
       );
-      const total = countResult[0].total;
+      const total = parseInt(countResult.rows[0].total);
       const totalPages = Math.ceil(total / limit);
 
       res.status(200).json({
@@ -33,11 +34,11 @@ class RespostasController {
   async getRespostaById(req, res) {
     const id = req.params.id;
     try {
-      const [result] = await pool.query(
-        "SELECT * FROM respostas WHERE id = ?",
+      const result = await pool.query(
+        "SELECT * FROM respostas WHERE id = $1",
         [id]
       );
-      res.status(200).json(result);
+      res.status(200).json(result.rows);
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
@@ -46,11 +47,11 @@ class RespostasController {
   async getRespostaByTopicoId(req, res) {
     const id = req.params.id;
     try {
-      const [result] = await pool.query(
-        "SELECT * FROM respostas WHERE topico_id = ?",
+      const result = await pool.query(
+        "SELECT * FROM respostas WHERE topico_id = $1",
         [id]
       );
-      res.status(200).json(result);
+      res.status(200).json(result.rows);
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
@@ -59,10 +60,10 @@ class RespostasController {
   async createResposta(req, res) {
     const { topico_id, usuario_id, resposta } = req.body;
     const query =
-      "INSERT INTO respostas (topico_id, usuario_id, resposta) VALUES (?, ?, ?)";
+      "INSERT INTO respostas (topico_id, usuario_id, resposta) VALUES ($1, $2, $3) RETURNING id";
     try {
-      const [result] = await pool.query(query, [topico_id, usuario_id, resposta]);
-      res.status(201).json({ id: result.insertId, ...req.body });
+      const result = await pool.query(query, [topico_id, usuario_id, resposta]);
+      res.status(201).json({ id: result.rows[0].id, ...req.body });
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
@@ -72,7 +73,7 @@ class RespostasController {
     const id = req.params.id;
     const { topico_id, usuario_id, resposta } = req.body;
     const query =
-      "UPDATE respostas SET topico_id = ?, usuario_id = ?, resposta = ? WHERE id = ?";
+      "UPDATE respostas SET topico_id = $1, usuario_id = $2, resposta = $3 WHERE id = $4";
     try {
       await pool.query(query, [topico_id, usuario_id, resposta, id]);
       res.status(200).json({ message: "Resposta atualizada com sucesso!" });
@@ -84,7 +85,7 @@ class RespostasController {
   async deleteResposta(req, res) {
     const id = req.params.id;
     try {
-      await pool.query("DELETE FROM respostas WHERE id = ?", [id]);
+      await pool.query("DELETE FROM respostas WHERE id = $1", [id]);
       res.status(200).json({ message: "Resposta deletada com sucesso!" });
     } catch (err) {
       res.status(500).json({ error: err.message });

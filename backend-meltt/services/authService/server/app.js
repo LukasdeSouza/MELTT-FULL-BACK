@@ -22,11 +22,11 @@ app.use(cors(corsOptions));
 async function createUser({ aluno_id, nome, email, senha, tipo }) {
   const hashedPassword = await bcrypt.hash(senha, 10);
   try {
-    const [results] = await pool.query(
-      "INSERT INTO usuarios (aluno_id, nome, email, senha, tipo) VALUES (?, ?, ?, ?, ?)",
+    const result = await pool.query(
+      "INSERT INTO usuarios (aluno_id, nome, email, senha, tipo) VALUES ($1, $2, $3, $4, $5) RETURNING id",
       [aluno_id, nome, email, hashedPassword, tipo]
     );
-    return { id: results.insertId, email, tipo };
+    return { id: result.rows[0].id, email, tipo };
   } catch (err) {
     console.log("Erro ao criar usuário:", err);
     throw err;
@@ -35,8 +35,8 @@ async function createUser({ aluno_id, nome, email, senha, tipo }) {
 
 async function findUserByEmail(email) {
   try {
-    const [results] = await pool.query("SELECT * FROM usuarios WHERE email = ?", [email]);
-    return results[0];
+    const result = await pool.query("SELECT * FROM usuarios WHERE email = $1", [email]);
+    return result.rows[0];
   } catch (err) {
     console.log("Erro ao buscar usuário:", err);
     throw err;
@@ -132,7 +132,7 @@ app.post("/api/users/reset-password/", authMiddleware, async (req, res) => {
     }
 
     // const newPassword = await bcrypt.hash(senha, 10);
-    await pool.query("UPDATE usuarios SET senha = ? WHERE id = ?", [senha, user.id]);
+    await pool.query("UPDATE usuarios SET senha = $1 WHERE id = $2", [senha, user.id]);
     res.json({ message: "Senha resetada com sucesso" });
   } catch (error) {
     res.status(500).json({ error: "Erro ao resetar senha" });
@@ -143,11 +143,11 @@ app.delete("/api/users/:id", authMiddleware, async (req, res) => {
   const id = req.params.id;
 
   try {
-    const [users] = await pool.query("SELECT * FROM usuarios WHERE id = ?", [id]);
-    if (users.length === 0) {
+    const result = await pool.query("SELECT * FROM usuarios WHERE id = $1", [id]);
+    if (result.rows.length === 0) {
       return res.status(404).json({ error: "Usuário não encontrado" });
     }
-    await pool.query("DELETE FROM usuarios WHERE id = ?", [id]);
+    await pool.query("DELETE FROM usuarios WHERE id = $1", [id]);
     res.json({ message: "Usuário deletado com sucesso" });
   } catch (error) {
     console.error(error);
@@ -163,13 +163,13 @@ app.get("/api/users/getByTipo", authMiddleware, async (req, res) => {
   }
 
   try {
-    const [users] = await pool.query("SELECT * FROM usuarios WHERE tipo = ?", [tipo]);
+    const result = await pool.query("SELECT * FROM usuarios WHERE tipo = $1", [tipo]);
     
-    if (users.length === 0) {
+    if (result.rows.length === 0) {
       return res.status(404).json({ error: `Nenhum usuário encontrado para o tipo ${tipo}` });
     }
 
-    res.json({ result: users });
+    res.json({ result: result.rows });
   } catch (error) {
     console.error("Erro ao buscar usuários:", error);
     res.status(500).json({ error: "Falha ao retornar usuários para este TIPO" });
@@ -236,6 +236,8 @@ app.post("/api/external/bling/refresh", async (req, res) => {
     };
 
     const response = await axios.post(url, data, config);
+    console.log('response', response.data);
+    const { access_token, refresh_token: new_refresh_token } = response.data;
 
     return res.json({
       access_token,

@@ -15,8 +15,8 @@ class FornecedoresController {
       let countParams = [];
 
       if (nome) {
-        query += " WHERE nome LIKE ?";
-        countQuery += " WHERE nome LIKE ?";
+        query += ` WHERE nome LIKE $1`;
+        countQuery += ` WHERE nome LIKE $1`;
         queryParams.push(`%${nome}%`);
         countParams.push(`%${nome}%`);
       }
@@ -24,11 +24,14 @@ class FornecedoresController {
       query += " ORDER BY criado_em DESC";
 
       if (!noPagination) {
-        query += " LIMIT ? OFFSET ?";
+        const limitParam = queryParams.length + 1;
+        const offsetParam = queryParams.length + 2;
+        query += ` LIMIT $${limitParam} OFFSET $${offsetParam}`;
         queryParams.push(limit, offset);
       }
 
-      const [results] = await pool.query(query, queryParams);
+      const result = await pool.query(query, queryParams);
+      const results = result.rows;
 
       if (noPagination) {
         res.status(200).json({
@@ -36,8 +39,8 @@ class FornecedoresController {
           data: results,
         });
       } else {
-        const [countResult] = await pool.query(countQuery, countParams);
-        const total = countResult[0].total;
+        const countResult = await pool.query(countQuery, countParams);
+        const total = parseInt(countResult.rows[0].total);
         const totalPages = Math.ceil(total / limit);
 
         res.status(200).json({
@@ -55,11 +58,11 @@ class FornecedoresController {
   async getFornecedoresById(req, res) {
     const id = req.params.id;
     try {
-      const [result] = await pool.query(
-        "SELECT * FROM fornecedores WHERE id = ?",
+      const result = await pool.query(
+        "SELECT * FROM fornecedores WHERE id = $1",
         [id]
       );
-      res.status(200).json(result);
+      res.status(200).json(result.rows);
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
@@ -73,15 +76,15 @@ class FornecedoresController {
       responsavel,
     } = req.body;
     const query =
-      "INSERT INTO fornecedores (nome, telefone, cnpj, responsavel) VALUES (?, ?, ?, ?)";
+      "INSERT INTO fornecedores (nome, telefone, cnpj, responsavel) VALUES ($1, $2, $3, $4) RETURNING id";
     try {
-      const [result] = await pool.query(query, [
+      const result = await pool.query(query, [
         nome,
         telefone,
         cnpj,
         responsavel,
       ]);
-      res.status(201).json({ id: result.insertId, ...req.body });
+      res.status(201).json({ id: result.rows[0].id, ...req.body });
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
@@ -96,7 +99,7 @@ class FornecedoresController {
       responsavel,
     } = req.body;
     const query =
-      "UPDATE fornecedores SET nome = ?, telefone = ?, cnpj = ?, responsavel = ? WHERE id = ?";
+      "UPDATE fornecedores SET nome = $1, telefone = $2, cnpj = $3, responsavel = $4 WHERE id = $5";
     try {
       await pool.query(query, [
         nome,
@@ -117,7 +120,7 @@ class FornecedoresController {
   async deleteFornecedores(req, res) {
     const id = req.params.id;
     try {
-      await pool.query("DELETE FROM fornecedores WHERE id = ?", [id]);
+      await pool.query("DELETE FROM fornecedores WHERE id = $1", [id]);
       res
         .status(200)
         .json({ message: "Fornecedor deletado com sucesso!" });

@@ -1,4 +1,4 @@
-import db from "../db.js";
+import pool from "../db.js";
 
 class AdesaoController {
   async getAllAdesoes(req, res) {
@@ -7,32 +7,32 @@ class AdesaoController {
     const offset = (page - 1) * limit;
   
     try {
-      const [data, total, status] = await Promise.all([
-        db.query("SELECT * FROM adesoes LIMIT ? OFFSET ?", [limit, offset]),
-        db.query("SELECT COUNT(*) AS total FROM adesoes"),
-        db.query(`
+      const [dataResult, totalResult, statusResult] = await Promise.all([
+        pool.query("SELECT * FROM adesoes LIMIT $1 OFFSET $2", [limit, offset]),
+        pool.query("SELECT COUNT(*) AS total FROM adesoes"),
+        pool.query(`
           SELECT 
-            SUM(status = 'concluida') AS totalConcluidas,
-            SUM(status = 'pendente') AS totalPendentes,
-            SUM(status = 'cancelado') AS totalCancelado 
+            SUM(CASE WHEN status = 'concluida' THEN 1 ELSE 0 END) AS totalConcluidas,
+            SUM(CASE WHEN status = 'pendente' THEN 1 ELSE 0 END) AS totalPendentes,
+            SUM(CASE WHEN status = 'cancelado' THEN 1 ELSE 0 END) AS totalCancelado 
           FROM adesoes
         `)
       ]);
   
-      const dataRows = data[0]; // Retorna um array de objetos
-      const totalRows = total[0]; // Retorna um array [{ total: 10 }]
-      const statusRows = status[0]; // Retorna um array [{ totalConcluidas: 5, totalPendentes: 5 }]
+      const dataRows = dataResult.rows;
+      const totalRows = totalResult.rows;
+      const statusRows = statusResult.rows;
   
-      const totalCount = totalRows.length > 0 ? totalRows[0].total : 0;
+      const totalCount = totalRows.length > 0 ? parseInt(totalRows[0].total) : 0;
   
       res.status(200).json({
         page,
         totalPages: Math.ceil(totalCount / limit),
         totalItems: totalCount,
         itemsPerPage: limit,
-        totalConcluidas: statusRows.length > 0 ? statusRows[0].totalConcluidas || 0 : 0,
-        totalPendentes: statusRows.length > 0 ? statusRows[0].totalPendentes || 0 : 0,
-        totalCancelado: statusRows.length > 0 ? statusRows[0].totalCancelado || 0 : 0,
+        totalConcluidas: statusRows.length > 0 ? parseInt(statusRows[0].totalConcluidas) || 0 : 0,
+        totalPendentes: statusRows.length > 0 ? parseInt(statusRows[0].totalPendentes) || 0 : 0,
+        totalCancelado: statusRows.length > 0 ? parseInt(statusRows[0].totalCancelado) || 0 : 0,
         data: dataRows
       });
   
@@ -44,8 +44,8 @@ class AdesaoController {
 
   async getAdesaoById(req, res) {
     try {
-      const [rows] = await db.query("SELECT * FROM adesoes WHERE id = ?", [req.params.id]);
-      res.status(rows.length ? 200 : 404).json(rows[0] || { error: "Adesão não encontrada" });
+      const result = await pool.query("SELECT * FROM adesoes WHERE id = $1", [req.params.id]);
+      res.status(result.rows.length ? 200 : 404).json(result.rows[0] || { error: "Adesão não encontrada" });
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
@@ -53,8 +53,8 @@ class AdesaoController {
 
   async getAdesoesByTurmaId(req, res) {
     try {
-      const [rows] = await db.query("SELECT * FROM adesoes WHERE turma_id = ?", [req.params.id]);
-      res.status(200).json(rows);
+      const result = await pool.query("SELECT * FROM adesoes WHERE turma_id = $1", [req.params.id]);
+      res.status(200).json(result.rows);
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
@@ -62,8 +62,8 @@ class AdesaoController {
 
   async getAdesoesByAlunoId(req, res) {
     try {
-      const [rows] = await db.query("SELECT * FROM adesoes WHERE aluno_id = ?", [req.params.id]);
-      res.status(200).json(rows);
+      const result = await pool.query("SELECT * FROM adesoes WHERE aluno_id = $1", [req.params.id]);
+      res.status(200).json(result.rows);
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
@@ -72,11 +72,11 @@ class AdesaoController {
   async createAdesao(req, res) {
     try {
       const { usuario_id, turma_id, status, data_assinatura, faculdade, file_uuid, observacoes } = req.body;
-      const [result] = await db.query(
-        "INSERT INTO adesoes SET ?", 
-        { usuario_id, turma_id, status, data_assinatura, faculdade, file_uuid, observacoes }
+      const result = await pool.query(
+        "INSERT INTO adesoes (usuario_id, turma_id, status, data_assinatura, faculdade, file_uuid, observacoes) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id", 
+        [usuario_id, turma_id, status, data_assinatura, faculdade, file_uuid, observacoes]
       );
-      res.status(201).json({ id: result.insertId, ...req.body });
+      res.status(201).json({ id: result.rows[0].id, ...req.body });
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
@@ -84,16 +84,17 @@ class AdesaoController {
 
   async updateAdesao(req, res) {
     try {
-      const { affectedRows } = await db.query(
-        "UPDATE adesoes SET ? WHERE id = ?",
-        [req.body, req.params.id]
+      const { usuario_id, turma_id, status, data_assinatura, faculdade, file_uuid, observacoes } = req.body;
+      const updateResult = await pool.query(
+        "UPDATE adesoes SET usuario_id = $1, turma_id = $2, status = $3, data_assinatura = $4, faculdade = $5, file_uuid = $6, observacoes = $7 WHERE id = $8",
+        [usuario_id, turma_id, status, data_assinatura, faculdade, file_uuid, observacoes, req.params.id]
       );
 
-      if (!affectedRows) {
+      if (updateResult.rowCount === 0) {
         return res.status(404).json({ error: "Adesão não encontrada" });
       }
-      const [rows] = await db.query("SELECT * FROM adesoes WHERE id = ?", [req.params.id]);
-      res.status(200).json({ message: "Atualizado com sucesso", value: rows[0] });
+      const result = await pool.query("SELECT * FROM adesoes WHERE id = $1", [req.params.id]);
+      res.status(200).json({ message: "Atualizado com sucesso", value: result.rows[0] });
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
@@ -102,9 +103,9 @@ class AdesaoController {
 
   async deleteAdesao(req, res) {
     try {
-      const [result] = await db.query("DELETE FROM adesoes WHERE id = ?", [req.params.id]);
+      const result = await pool.query("DELETE FROM adesoes WHERE id = $1", [req.params.id]);
       
-      if (!result.affectedRows) {
+      if (result.rowCount === 0) {
         return res.status(404).json({ error: "Adesão não encontrada" });
       }
       

@@ -7,15 +7,16 @@ class TopicosController {
     const offset = (page - 1) * limit; // Calcula o deslocamento
 
     try {
-      const [results] = await pool.query(
-        "SELECT * FROM topicos LIMIT ? OFFSET ?",
+      const resultsResult = await pool.query(
+        "SELECT * FROM topicos LIMIT $1 OFFSET $2",
         [limit, offset]
       );
+      const results = resultsResult.rows;
 
-      const [countResult] = await pool.query(
+      const countResult = await pool.query(
         "SELECT COUNT(*) AS total FROM topicos"
       );
-      const total = countResult[0].total;
+      const total = parseInt(countResult.rows[0].total);
       const totalPages = Math.ceil(total / limit);
 
       res.status(200).json({
@@ -33,10 +34,10 @@ class TopicosController {
   async getTopicoById(req, res) {
     const id = req.params.id;
     try {
-      const [result] = await pool.query("SELECT * FROM topicos WHERE id = ?", [
+      const result = await pool.query("SELECT * FROM topicos WHERE id = $1", [
         id,
       ]);
-      res.status(200).json(result);
+      res.status(200).json(result.rows);
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
@@ -45,11 +46,11 @@ class TopicosController {
   async getTopicoByTurmaId(req, res) {
     const id = req.params.id;
     try {
-      const [result] = await pool.query(
-        "SELECT * FROM topicos WHERE turma_id = ?",
+      const result = await pool.query(
+        "SELECT * FROM topicos WHERE turma_id = $1",
         [id]
       );
-      res.status(200).json(result);
+      res.status(200).json(result.rows);
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
@@ -58,19 +59,19 @@ class TopicosController {
   async createTopico(req, res) {
     const { turma_id, titulo, descricao, usuario_id } = req.body;
     try {
-      const [result] = await pool.query(
-        "INSERT INTO topicos (turma_id, titulo, descricao) VALUES (?, ?, ?)",
+      const result = await pool.query(
+        "INSERT INTO topicos (turma_id, titulo, descricao) VALUES ($1, $2, $3) RETURNING id",
         [turma_id, titulo, descricao]
       );
 
       const mensagem = `Novo Tópico criado: ${titulo}`;
       const tipo = "ALUNO";
       await pool.query(
-        "INSERT INTO notificacoes (usuario_id, tipo, mensagem) VALUES (?, ?, ?)",
+        "INSERT INTO notificacoes (usuario_id, tipo, mensagem) VALUES ($1, $2, $3)",
         [usuario_id, tipo, mensagem]
       );
 
-      res.status(201).json({ id: result.insertId, turma_id, titulo, descricao, usuario_id });
+      res.status(201).json({ id: result.rows[0].id, turma_id, titulo, descricao, usuario_id });
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
@@ -93,7 +94,7 @@ class TopicosController {
   async deleteTopico(req, res) {
     const id = req.params.id;
     try {
-      await pool.query("DELETE FROM topicos WHERE id = ?", [id]);
+      await pool.query("DELETE FROM topicos WHERE id = $1", [id]);
       res.status(200).json({ message: "Tópico deletado com sucesso!" });
     } catch (err) {
       res.status(500).json({ error: err.message });

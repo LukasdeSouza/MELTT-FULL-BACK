@@ -7,7 +7,8 @@ import jwt from "jsonwebtoken";
 import authMiddleware from "./middlewares/auth/index.js";
 import bodyParser from "body-parser";
 import axios from "axios";
-import "dotenv/config";
+// dotenv já é carregado no db.js quando necessário
+// Na Vercel, as variáveis de ambiente já estão disponíveis em process.env
 
 const app = express();
 app.use(bodyParser.json());
@@ -261,7 +262,28 @@ app.post("/api/external/bling/refresh", async (req, res) => {
 
 app.get("/", (req, res) => res.send("API AUTH MELTT"));
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+// Middleware de tratamento de erros global
+app.use((err, req, res, next) => {
+  console.error('Erro não tratado:', err);
+  res.status(err.status || 500).json({
+    error: err.message || 'Erro interno do servidor',
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+  });
 });
+
+// Handler para rotas não encontradas
+app.use((req, res) => {
+  res.status(404).json({ error: 'Rota não encontrada' });
+});
+
+// Export para Vercel (serverless)
+export default app;
+
+// Server (apenas em ambiente local - não Vercel)
+const isVercel = process.env.VERCEL === '1';
+if (!isVercel) {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+}

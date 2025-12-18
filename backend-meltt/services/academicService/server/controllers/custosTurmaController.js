@@ -172,6 +172,44 @@ class CustosTurmaController {
       res.status(500).json({ error: err.message });
     }
   }
+
+  async updateSituacao(req, res) {
+    const id = req.params.id;
+    const { situacao, valor_pago_parcial } = req.body;
+
+    if (!situacao) {
+      return res.status(400).json({ error: "O campo 'situacao' é obrigatório" });
+    }
+
+    if (
+      situacao === "Parcialmente Pago" &&
+      (valor_pago_parcial === undefined || valor_pago_parcial === null)
+    ) {
+      return res
+        .status(400)
+        .json({ error: "Informe 'valor_pago_parcial' para situação Parcialmente Pago" });
+    }
+
+    const valorParcialNormalizado =
+      situacao === "Parcialmente Pago"
+        ? Number(valor_pago_parcial ?? 0)
+        : 0;
+
+    try {
+      await pool.query(
+        `UPDATE custos
+            SET situacao = $1,
+                valor_pago_parcial = $2
+          WHERE id_custo = $3`,
+        [situacao, valorParcialNormalizado, id]
+      );
+
+      res.status(200).json({ message: "Situação atualizada com sucesso" });
+    } catch (error) {
+      console.error("[CustosTurmaController] Erro ao atualizar situação:", error);
+      res.status(500).json({ error: error.message ?? "Erro ao atualizar situação" });
+    }
+  }
 }
 
 export default new CustosTurmaController();

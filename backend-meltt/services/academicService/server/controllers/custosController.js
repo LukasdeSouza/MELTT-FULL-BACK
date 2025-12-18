@@ -1,5 +1,30 @@
 import pool from "../db.js";
 
+const normalizeDateFilter = (value) => {
+  if (!value) return null;
+
+  const trimmed = String(value).trim();
+
+  const isoMatch = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (isoMatch) {
+    return trimmed;
+  }
+
+  const brSlashMatch = trimmed.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (brSlashMatch) {
+    const [, day, month, year] = brSlashMatch;
+    return `${year}-${month}-${day}`;
+  }
+
+  const brDashMatch = trimmed.match(/^(\d{2})-(\d{2})-(\d{4})$/);
+  if (brDashMatch) {
+    const [, day, month, year] = brDashMatch;
+    return `${year}-${month}-${day}`;
+  }
+
+  return trimmed;
+};
+
 class CustosController {
   async getAllCustos(req, res) {
     const page = parseInt(req.query.page) || 1;
@@ -12,70 +37,77 @@ class CustosController {
     const tipoCusto = req.query.tipo_custo;
     const evento = req.query.evento;
     const turmaId = req.query.turma_id;
-    const vencimento = req.query.vencimento;
+    const vencimento = normalizeDateFilter(req.query.vencimento);
 
     const situacoesValidas = ["Pendente", "Pago", "Parcialmente Pago", "Vencido"];
     const tiposValidos = ["Fixo", "Pre-evento", "Temporada"];
 
     try {
-      let query = `SELECT custos.*, turmas.nome AS turma_nome
+      let query = `SELECT custos.*, turmas.nome AS turma_nome, turmas.identificador AS turma_identificador
                    FROM custos
                    LEFT JOIN turmas ON custos.turma_id = turmas.id`;
       let countQuery = `SELECT COUNT(*) AS total FROM custos LEFT JOIN turmas ON custos.turma_id = turmas.id`;
 
-      const conditions = [];
-      const params = [];
-      const countParams = [];
+      const filters = [];
 
       if (situacao && situacoesValidas.includes(situacao)) {
-        conditions.push(`custos.situacao = $${params.length + 1}`);
-        params.push(situacao);
-        countParams.push(situacao);
+        filters.push({
+          clause: (index) => `custos.situacao = $${index}`,
+          value: situacao,
+        });
       }
 
-      if (tipoCusto && tiposValidos.includes(tipoCusto)) {
-        conditions.push(`custos.tipo_custo = $${params.length + 1}`);
-        params.push(tipoCusto);
-        countParams.push(tipoCusto);
+      const tipoFiltroValido = tipoCusto && tipoCusto !== "Todos" && tiposValidos.includes(tipoCusto);
+
+      if (tipoFiltroValido) {
+        filters.push({
+          clause: (index) => `custos.tipo_custo = $${index}`,
+          value: tipoCusto,
+        });
       }
 
       if (evento) {
-        conditions.push(`custos.evento LIKE $${params.length + 1}`);
-        params.push(`%${evento}%`);
-        countParams.push(`%${evento}%`);
+        filters.push({
+          clause: (index) => `custos.evento LIKE $${index}`,
+          value: `%${evento}%`,
+        });
       }
 
       if (turmaId) {
-        conditions.push(`custos.turma_id = $${params.length + 1}`);
-        params.push(turmaId);
-        countParams.push(turmaId);
+        filters.push({
+          clause: (index) => `custos.turma_id = $${index}`,
+          value: turmaId,
+        });
       }
 
       if (vencimento) {
-        conditions.push(`custos.vencimento = $${params.length + 1}`);
-        params.push(vencimento);
-        countParams.push(vencimento);
+        filters.push({
+          clause: (index) => `DATE(custos.vencimento) = $${index}::date`,
+          value: vencimento,
+        });
       }
 
-      if (conditions.length > 0) {
-        const whereClause = " WHERE " + conditions.join(" AND ");
-        query += whereClause;
-        // Construir countQuery com placeholders corretos
-        const countConditions = [];
-        countParams.forEach((param, index) => {
-          if (situacao && param === situacao) {
-            countConditions.push(`custos.situacao = $${index + 1}`);
-          } else if (tipoCusto && param === tipoCusto) {
-            countConditions.push(`custos.tipo_custo = $${index + 1}`);
-          } else if (evento && param === `%${evento}%`) {
-            countConditions.push(`custos.evento LIKE $${index + 1}`);
-          } else if (turmaId && param === turmaId) {
-            countConditions.push(`custos.turma_id = $${index + 1}`);
-          } else if (vencimento && param === vencimento) {
-            countConditions.push(`custos.vencimento = $${index + 1}`);
-          }
+      if (filters.length > 0) {
+        const whereClause = filters
+          .map((filter, idx) => filter.clause(idx + 1))
+          .join(" AND ");
+
+        query += ` WHERE ${whereClause}`;
+        countQuery += ` WHERE ${whereClause}`;
+      }
+
+      const params = filters.map((filter) => filter.value);
+      const countParams = [...params];
+
+      if (process.env.NODE_ENV !== "production") {
+        console.log("[CustosController] filtros aplicados:", {
+          situacao,
+          tipoCusto,
+          evento,
+          turmaId,
+          vencimento,
         });
-        countQuery += " WHERE " + countConditions.join(" AND ");
+        console.log("[CustosController] params query:", params);
       }
 
       query += " ORDER BY custos.criado_em DESC";
@@ -112,7 +144,7 @@ class CustosController {
     const id = req.params.id;
     try {
       const result = await pool.query(
-        `SELECT custos.*, turmas.nome AS turma_nome, fornecedores.nome AS fornecedor_nome
+        `SELECT custos.*, turmas.nome AS turma_nome, turmas.identificador AS turma_identificador, fornecedores.nome AS fornecedor_nome
          FROM custos
          LEFT JOIN turmas ON custos.turma_id = turmas.id
          LEFT JOIN fornecedores ON custos.fornecedor_id = fornecedores.id
@@ -458,7 +490,19 @@ class CustosController {
       chave_pix
     } = req.body;
     const query =
-      `UPDATE custos SET tipo_custo = $1, turma_id = $2, evento = $3, fornecedor_id = $4, beneficiario = $5, categoria = $6, valor = $7, valor_pago_parcial = $8, vencimento = $9, situacao = $10, chave_pix = $11 WHERE id_custo = $12`;
+      `UPDATE custos
+         SET tipo_custo = $1,
+             turma_id = $2,
+             evento = $3,
+             fornecedor_id = $4,
+             beneficiario = $5,
+             categoria = $6,
+             valor = $7,
+             valor_pago_parcial = $8,
+             vencimento = $9,
+             situacao = $10,
+             chave_pix = $11
+       WHERE id_custo = $12`;
     try {
       await pool.query(query, [
         tipo_custo,

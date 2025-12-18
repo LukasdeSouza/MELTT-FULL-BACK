@@ -148,9 +148,10 @@ const ComercialPage = () => {
       status: statusApi,
     };
 
-    await addTurma(data);
+    let restart = await addTurma(data);
+    console.log('restart', restart);
     await fetchStats();
-    window.location.reload();
+    // window.location.reload();
   };
 
   if (loading && turmas.length === 0) {

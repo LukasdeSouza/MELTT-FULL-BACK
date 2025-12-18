@@ -1,5 +1,25 @@
 import pool from "../db.js";
 
+const parseTemBrinde = (value) => {
+  if (typeof value === "boolean") {
+    return value;
+  }
+
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+
+    if (["true", "1", "sim", "yes"].includes(normalized)) {
+      return true;
+    }
+
+    if (["false", "0", "nao", "não", "no"].includes(normalized)) {
+      return false;
+    }
+  }
+
+  return false;
+};
+
 class TurmaController {
   async getAllTurmas(req, res) {
     const page = parseInt(req.query.page) || 1; // Página atual (default: 1)
@@ -99,6 +119,8 @@ class TurmaController {
       instituicao,
       temporada_id
     } = req.body;
+
+    const temBrindeValue = parseTemBrinde(tem_brinde);
     const query =
       "INSERT INTO turmas (nome, identificador, regras_adesao, regras_renegociacao, regras_rescisao, arquivo_url, meltt_contrato_url, ano_formatura, estatuto_uuid, meltt_contrato_uuid, tem_brinde, instituicao, temporada_id ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING id";
     try {
@@ -113,7 +135,7 @@ class TurmaController {
         ano_formatura,
         estatuto_uuid,
         meltt_contrato_uuid,
-        tem_brinde ?? "nao",
+        temBrindeValue,
         instituicao,
         temporada_id
       ]);
@@ -136,6 +158,8 @@ class TurmaController {
       meltt_contrato_url,
       tem_brinde
     } = req.body;
+
+    const temBrindeValue = parseTemBrinde(tem_brinde);
     const query =
       "UPDATE turmas SET nome = $1, identificador = $2, regras_adesao = $3, regras_renegociacao = $4, regras_rescisao = $5, ano_formatura = $6, arquivo_url = $7, meltt_contrato_url = $8, tem_brinde = $9 WHERE id = $10";
     try {
@@ -148,7 +172,7 @@ class TurmaController {
         ano_formatura,
         arquivo_url,
         meltt_contrato_url,
-        tem_brinde ?? "nao",
+        temBrindeValue,
         id,
       ]);
       res.status(200).json({ message: "Turma atualizado com sucesso!" });

@@ -65,7 +65,18 @@ export const useComercialStore = create<ComercialState>((set, get) => ({
 
       const turmaResponse = await apiPostData('academic', '/turmas', {
         nome,
+        identificador: nome || `turma-${Date.now()}`, // Usa o nome como identificador padrão
+        regras_adesao: '', // Campo obrigatório, mas vazio para turmas comerciais
+        regras_renegociacao: null,
+        regras_rescisao: null,
+        arquivo_url: null,
+        meltt_contrato_url: null,
+        ano_formatura: null,
+        estatuto_uuid: null,
+        meltt_contrato_uuid: null,
+        tem_brinde: 'nao',
         instituicao,
+        temporada_id: null,
       });
 
       const turmaId = turmaResponse.id;

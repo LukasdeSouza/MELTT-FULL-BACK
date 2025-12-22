@@ -67,14 +67,14 @@ export const getPipelineTurmas = async (req, res) => {
         tc.turma_id,
         t.nome,
         t.instituicao,
-        tc.contatoPrincipal,
+        tc.contatoprincipal,
         tc.telefone,
         tc.status,
         tc.timeline,
         tc.estatisticas,
-        tc.dataPrimeiroContato,
-        tc.createdAt,
-        tc.updateAt
+        tc.dataprimeirocontato,
+        tc.createdat,
+        tc.updated_at
       FROM turmas_comercial tc
       JOIN turmas t ON tc.turma_id = t.id
     `;
@@ -108,6 +108,10 @@ export const getPipelineTurmas = async (req, res) => {
 export const updateTurmaStatus = async (req, res) => {
   const { id } = req.params;
   const { status, acao, responsavel } = req.body;
+
+  console.log(req.body);
+  console.log(id);
+  
 
   if (!status || !acao) {
     return res.status(400).json({ message: 'status e acao são obrigatórios' });
@@ -167,7 +171,12 @@ export const updateTurmaStatus = async (req, res) => {
     }
 
     await pool.query(
-      'UPDATE turmas_comercial SET status = $1, timeline = $2, estatisticas = $3 WHERE id = $4',
+      `UPDATE turmas_comercial 
+         SET status = $1,
+             timeline = $2,
+             estatisticas = $3,
+             "updated_at" = CURRENT_TIMESTAMP
+       WHERE id = $4`,
       [status, JSON.stringify(timeline), JSON.stringify(estatisticas), id]
     );
 

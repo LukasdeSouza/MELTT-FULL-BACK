@@ -156,12 +156,16 @@ class TurmaController {
       ano_formatura,
       arquivo_url,
       meltt_contrato_url,
-      tem_brinde
+      tem_brinde,
+      instituicao,
+      temporada_id,
+      estatuto_uuid,
+      meltt_contrato_uuid,
     } = req.body;
 
     const temBrindeValue = parseTemBrinde(tem_brinde);
     const query =
-      "UPDATE turmas SET nome = $1, identificador = $2, regras_adesao = $3, regras_renegociacao = $4, regras_rescisao = $5, ano_formatura = $6, arquivo_url = $7, meltt_contrato_url = $8, tem_brinde = $9 WHERE id = $10";
+      "UPDATE turmas SET nome = $1, identificador = $2, regras_adesao = $3, regras_renegociacao = $4, regras_rescisao = $5, ano_formatura = $6, arquivo_url = $7, meltt_contrato_url = $8, tem_brinde = $9, instituicao = $10, temporada_id = $11, estatuto_uuid = $12, meltt_contrato_uuid = $13 WHERE id = $14";
     try {
       await pool.query(query, [
         nome,
@@ -173,6 +177,10 @@ class TurmaController {
         arquivo_url,
         meltt_contrato_url,
         temBrindeValue,
+        instituicao ?? null,
+        temporada_id ?? null,
+        estatuto_uuid ?? null,
+        meltt_contrato_uuid ?? null,
         id,
       ]);
       res.status(200).json({ message: "Turma atualizado com sucesso!" });

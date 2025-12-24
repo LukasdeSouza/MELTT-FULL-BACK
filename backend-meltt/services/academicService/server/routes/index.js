@@ -27,7 +27,9 @@ import custosRoutes from './custosRoutes.js';
 import custosTurmaRoutes from './custosTurmaRoutes.js';
 import d4SignRoutes from './d4SignRoutes.js';
 import comercialRoutes from './comercialRoutes.js';
+import feedbackRoutes from './feedbackRoutes.js';
 import temporadaRoutes from './temporadaRoutes.js';
+import eventosTurmaRoutes from './eventosTurmaRoutes.js';
 
 
 const router = express.Router();
@@ -59,7 +61,9 @@ router.use("/custos-turma", custosTurmaRoutes);
 router.use("/custos", custosRoutes);
 router.use("/d4sign", d4SignRoutes);
 router.use("/comercial", comercialRoutes);
+router.use("/feedback", feedbackRoutes);
 router.use("/temporadas", temporadaRoutes);
+router.use("/eventos-turma", eventosTurmaRoutes);
 
 
 export default router;
